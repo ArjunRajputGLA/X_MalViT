@@ -26,7 +26,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse, FileResponse
 from pydantic import BaseModel
 
-from dataset_generator import MALWARE_FAMILIES, FAMILY_CATEGORIES, generate_synthetic_malware_image, ensure_sample_dataset
+from dataset_generator import (
+    MALWARE_FAMILIES, 
+    FAMILY_CATEGORIES, 
+    generate_synthetic_malware_image, 
+    ensure_sample_dataset,
+    get_disk_sample_image,
+    normalize_family_name
+)
 from model_engine import XMalViTEngine
 from train import train_model
 
@@ -120,8 +127,13 @@ def get_system_status():
 # ==================== 2. MALIMG DATASET INTELLIGENCE ====================
 @app.get("/api/dataset/overview")
 def get_dataset_overview():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    sample_dir = os.path.join(base_dir, "data", "sample")
+
     distribution = []
-    for f in MALWARE_FAMILIES:
+    total_samples = 0
+    for raw_f in MALWARE_FAMILIES:
+        f = normalize_family_name(raw_f)
         if f in FAMILY_CATEGORIES["Worm"]:
             cat = "Worm"
         elif f in FAMILY_CATEGORIES["Trojan"]:
@@ -133,11 +145,19 @@ def get_dataset_overview():
         else:
             cat = "Downloader"
             
-        samples = 3050 if "Allaple" in f else 400 if "Yuner" in f else 250
+        fam_dir = os.path.join(sample_dir, f)
+        if os.path.isdir(fam_dir):
+            disk_count = len([x for x in os.listdir(fam_dir) if x.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))])
+        else:
+            disk_count = 0
+
+        # If on disk, use real count; otherwise benchmark standard count
+        samples = disk_count if disk_count > 0 else (2949 if "Allaple.A" in f else 1591 if "Allaple.L" in f else 400 if "Yuner" in f else 250)
+        total_samples += samples
         risk = "CRITICAL" if ("Allaple" in f or "Autorun" in f) else "HIGH"
         
         distribution.append({
-            "family": f,
+            "family": raw_f,
             "category": cat,
             "samples": samples,
             "risk": risk
@@ -145,7 +165,7 @@ def get_dataset_overview():
 
     return {
         "total_families": len(MALWARE_FAMILIES),
-        "total_benchmark_samples": 9339,
+        "total_benchmark_samples": total_samples if total_samples > 0 else 9339,
         "categories": FAMILY_CATEGORIES,
         "families": MALWARE_FAMILIES,
         "distribution": distribution
@@ -153,18 +173,19 @@ def get_dataset_overview():
 
 @app.get("/api/dataset/sample")
 def get_synthetic_sample(family: str = Query(..., description="Target malware family name"), seed: Optional[int] = None):
-    if family not in MALWARE_FAMILIES:
+    fam = normalize_family_name(family)
+    if fam not in MALWARE_FAMILIES and family not in MALWARE_FAMILIES:
         raise HTTPException(status_code=400, detail=f"Unknown family '{family}'. Must be one of {MALWARE_FAMILIES}")
 
-    # Generate synthetic image preserving PE structure
-    img = generate_synthetic_malware_image(family, seed=seed)
+    # Load actual image from disk (or generate realistic synthetic fallback)
+    img = get_disk_sample_image(fam, index=(seed if seed is not None else 0))
     arr = np.array(img, dtype=np.uint8)
     
     # Compute 64-bin histogram
     hist_counts, bin_edges = np.histogram(arr.ravel(), bins=64, range=(0, 256))
     
     # Category lookup
-    cat = next((c for c, fams in FAMILY_CATEGORIES.items() if family in fams), "Unknown")
+    cat = next((c for c, fams in FAMILY_CATEGORIES.items() if fam in fams or family in fams), "Unknown")
 
     return {
         "family": family,
@@ -182,12 +203,13 @@ def get_synthetic_sample(family: str = Query(..., description="Target malware fa
 # ==================== 3. REAL-TIME FORENSIC CLASSIFIER & GRAD-CAM ====================
 @app.post("/api/predict/sample")
 def predict_sample(req: SamplePredictRequest):
-    """Predicts a sample generated from the Malimg Sample Bank."""
+    """Predicts a sample loaded from the Malimg Sample Bank on disk."""
     eng = get_engine()
-    seed = req.seed if req.seed is not None else (abs(hash(req.family)) % 9999)
-    img = generate_synthetic_malware_image(req.family, seed=seed)
+    fam = normalize_family_name(req.family)
+    seed = req.seed if req.seed is not None else (abs(hash(fam)) % 9999)
+    img = get_disk_sample_image(fam, index=seed)
     
-    pred = eng.predict(img, target_family=req.family, colormap_name=req.colormap)
+    pred = eng.predict(img, target_family=fam, colormap_name=req.colormap)
     
     raw_url = to_base64_data_url(img)
     heatmap_url = to_base64_data_url(pred['heatmap'])

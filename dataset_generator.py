@@ -11,20 +11,53 @@ from PIL import Image
 
 # The 25 ground-truth malware families in the Malimg Benchmark
 MALWARE_FAMILIES = [
-    "Allaple.A", "Allaple.L", "Alueron.gen!J", "Autorun.K", "C2LOP.P",
-    "C2LOP.gen!g", "Dialplatform.B", "Dontovo.A", "Fakerean", "Instantaccess",
-    "Lolyda.AA1", "Lolyda.AA2", "Lolyda.AT", "Malex.gen!J", "Obfuscator.AD",
-    "Rbot!gen", "Skintrim.N", "Swizzor.gen!E", "Swizzor.gen!I", "VB.AT",
-    "Wintrim.BX", "Yuner.A", "Adialer.C", "Agent.FYI", "Hardoing"
+    "Adialer.C", "Agent.FYI", "Allaple.A", "Allaple.L", "Alueron.gen!J",
+    "Autorun.K", "C2LOP.P", "C2LOP.gen!g", "Dialplatform.B", "Dontovo.A",
+    "Fakerean", "Instantaccess", "Lolyda.AA1", "Lolyda.AA2", "Lolyda.AA3",
+    "Lolyda.AT", "Malex.gen!J", "Obfuscator.AD", "Rbot!gen", "Skintrim.N",
+    "Swizzor.gen!E", "Swizzor.gen!I", "VB.AT", "Wintrim.BX", "Yuner.A"
 ]
 
 FAMILY_CATEGORIES = {
     "Worm": ["Allaple.A", "Allaple.L", "Yuner.A", "Autorun.K"],
-    "Trojan": ["Dialplatform.B", "Dontovo.A", "Fakerean", "Instantaccess", "Skintrim.N", "Agent.FYI", "Hardoing", "Adialer.C"],
+    "Trojan": ["Dialplatform.B", "Dontovo.A", "Fakerean", "Instantaccess", "Skintrim.N", "Agent.FYI", "Adialer.C"],
     "Rogue": ["Alueron.gen!J", "C2LOP.P", "C2LOP.gen!g"],
     "Backdoor": ["Rbot!gen", "Malex.gen!J", "VB.AT"],
-    "Downloader": ["Swizzor.gen!E", "Swizzor.gen!I", "Obfuscator.AD", "Lolyda.AA1", "Lolyda.AA2", "Lolyda.AT", "Wintrim.BX"]
+    "Downloader": ["Swizzor.gen!E", "Swizzor.gen!I", "Obfuscator.AD", "Lolyda.AA1", "Lolyda.AA2", "Lolyda.AA3", "Lolyda.AT", "Wintrim.BX"]
 }
+
+FAMILY_ALIASES = {
+    "Hardoing": "Lolyda.AA3"
+}
+
+def normalize_family_name(family_name: str) -> str:
+    return FAMILY_ALIASES.get(family_name, family_name)
+
+def get_disk_sample_image(family_name: str, index: int = 0, sample_dir: str = None, image_size=(224, 224)) -> Image.Image:
+    """
+    Loads an authentic Malimg benchmark grayscale image from disk (data/sample/<family>).
+    Falls back to high-fidelity synthetic generation if no disk images are found.
+    """
+    family = normalize_family_name(family_name)
+    if sample_dir is None:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        sample_dir = os.path.join(base_dir, "data", "sample")
+
+    family_dir = os.path.join(sample_dir, family)
+    if os.path.isdir(family_dir):
+        files = [f for f in sorted(os.listdir(family_dir)) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))]
+        if files:
+            target_idx = abs(index) % len(files)
+            target_path = os.path.join(family_dir, files[target_idx])
+            try:
+                img = Image.open(target_path).convert('L')
+                if img.size != image_size:
+                    img = img.resize(image_size, Image.BILINEAR)
+                return img
+            except Exception:
+                pass
+
+    return generate_synthetic_malware_image(family, image_size=image_size, seed=index)
 
 def generate_synthetic_malware_image(family_name, image_size=(224, 224), seed=None):
     """

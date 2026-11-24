@@ -35,3 +35,7 @@ node_modules/
 .next/
 out/
 build/
+
+# Dataset Binaries
+data/sample/
+data/*.zip
