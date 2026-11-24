@@ -4,14 +4,18 @@ import React from "react";
 import { 
   Bell, 
   Sparkles,
-  PanelLeft
+  PanelLeft,
+  PanelLeftClose
 } from "lucide-react";
 import { ModuleKey } from "@/components/SidebarNav";
+import { cn } from "@/lib/utils";
 
 interface TopHeaderProps {
   activeModule: ModuleKey;
   systemStatus: any;
   onNavigate: (module: ModuleKey) => void;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
 const MODULE_TITLES: Record<ModuleKey, { title: string; subtitle: string }> = {
@@ -44,7 +48,9 @@ const MODULE_TITLES: Record<ModuleKey, { title: string; subtitle: string }> = {
 export const TopHeader: React.FC<TopHeaderProps> = ({
   activeModule,
   systemStatus,
-  onNavigate
+  onNavigate,
+  isCollapsed,
+  onToggleCollapse
 }) => {
   const currentMeta = MODULE_TITLES[activeModule] || MODULE_TITLES.briefing;
 
@@ -54,10 +60,15 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
       <div className="flex items-center gap-3">
         <button
           type="button"
-          title="Toggle Navigation"
-          className="w-9 h-9 rounded-xl bg-white border border-slate-200/80 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors shadow-xs"
+          onClick={onToggleCollapse}
+          title={isCollapsed ? "Expand Sidebar (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
+          className="w-9 h-9 rounded-xl bg-white border border-slate-200/80 hover:bg-slate-50 flex items-center justify-center text-slate-600 hover:text-emerald-700 transition-all shadow-xs cursor-pointer active:scale-95"
         >
-          <PanelLeft className="w-4 h-4" />
+          {isCollapsed ? (
+            <PanelLeft className="w-4 h-4 text-emerald-600 transition-transform" />
+          ) : (
+            <PanelLeftClose className="w-4 h-4 transition-transform" />
+          )}
         </button>
 
         <div>
