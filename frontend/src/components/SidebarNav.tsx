@@ -219,26 +219,16 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
           </div>
         ) : (
           <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-xs hover:border-emerald-300 transition-all">
-            {/* Top Row: IEEE Tag + Conference Status */}
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200/60 font-mono tracking-wide">
-                IEEE 2026
-              </span>
-              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/50">
-                Conference Paper
-              </span>
-            </div>
-
             {/* Paper Title & Authors from X-MalViT_IEEE_Conference.pdf */}
             <div className="mb-2.5">
               <div className="text-xs font-bold text-slate-900 leading-snug line-clamp-1" title="X-MalViT: Explainable Vision Transformer">
                 X-MalViT Framework
               </div>
-              <div className="text-[11px] text-slate-600 font-medium truncate mt-0.5">
+              <div className="text-[11px] text-slate-700 font-semibold truncate mt-0.5">
                 Keshav Agrawal & Arjun S. Rajput
               </div>
-              <div className="text-[10px] text-slate-400 font-sans truncate">
-                Dept of CSE, GLA University
+              <div className="text-[10px] text-slate-500 font-sans truncate mt-0.5" title="B.Tech Hons CS final year, GLA University">
+                B.Tech Hons CS final year, GLA University
               </div>
             </div>
 
