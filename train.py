@@ -76,14 +76,18 @@ class MalimgDataset(Dataset):
 
         if len(self.file_items) <= 2000:
             self.log(f"[DATASET] Preloading {len(self.file_items)} tensors into memory (224x224 grayscale) for maximum throughput...")
-            for item in self.file_items:
+            preload_interval = max(25, len(self.file_items) // 5)
+            for idx, item in enumerate(self.file_items):
                 tensor, label = self._load_item(item)
                 self.cached_images.append(tensor)
                 self.cached_labels.append(label)
+                if (idx + 1) % preload_interval == 0 or idx == len(self.file_items) - 1:
+                    pct = int(((idx + 1) / len(self.file_items)) * 100)
+                    self.log(f"[PRELOAD] Ingested {idx + 1}/{len(self.file_items)} binary tensors ({pct}% complete)...")
             self.cached_images = torch.stack(self.cached_images)
             self.cached_labels = torch.tensor(self.cached_labels, dtype=torch.long)
             self.preloaded = True
-            self.log("[DATASET] RAM caching complete. In-memory tensors ready.")
+            self.log(f"[DATASET] RAM caching complete. {len(self.cached_labels)} high-speed tensors ready for execution.")
 
     def _load_item(self, item):
         filepath, class_idx, family, seed = item
@@ -227,6 +231,9 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
         total = 0
         epoch_start = time.time()
 
+        # Log progress periodically per batch so output flows in real time
+        batch_log_interval = max(1, len(train_loader) // 4)
+
         for batch_idx, (images, targets) in enumerate(train_loader):
             images, targets = images.to(device, non_blocking=True), targets.to(device, non_blocking=True)
             optimizer.zero_grad()
@@ -244,10 +251,16 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
 
+            if (batch_idx + 1) % batch_log_interval == 0 or batch_idx == len(train_loader) - 1:
+                cur_loss = running_loss / max(1, total)
+                cur_acc = (correct / max(1, total)) * 100
+                log(f"[BATCH {batch_idx + 1:02d}/{len(train_loader):02d}] Epoch {epoch:02d} | Step Loss: {loss.item():.4f} | Running Loss: {cur_loss:.4f} | Batch Acc: {cur_acc:.1f}%")
+
         epoch_loss = running_loss / max(1, total)
         epoch_acc = correct / max(1, total)
 
         # Validation
+        log(f"[EVAL] Evaluating validation set on {device} across {len(val_loader)} batches...")
         model.eval()
         val_loss = 0.0
         val_correct = 0

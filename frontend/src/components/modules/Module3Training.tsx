@@ -126,15 +126,16 @@ export const Module3Training: React.FC = () => {
 
     try {
       let res: Response;
+      // Connect directly to backend port 8000 to eliminate any Next.js proxy buffering, falling back to /api/train
       try {
-        res = await fetch("/api/train", {
+        res = await fetch("http://127.0.0.1:8000/api/train", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: payload,
         });
-      } catch (netErr) {
-        console.warn("Direct proxy failed, trying fallback to port 8000...", netErr);
-        res = await fetch("http://127.0.0.1:8000/api/train", {
+      } catch (directErr) {
+        console.warn("Direct port 8000 connection failed, falling back to /api/train...", directErr);
+        res = await fetch("/api/train", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: payload,
@@ -158,8 +159,11 @@ export const Module3Training: React.FC = () => {
         buffer = lines.pop() || "";
 
         for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const dataStr = line.replace("data: ", "").trim();
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith(":")) continue; // ignore comments / buffer flushes
+
+          if (trimmed.startsWith("data: ")) {
+            const dataStr = trimmed.replace("data: ", "").trim();
             if (!dataStr) continue;
 
             try {
@@ -169,11 +173,11 @@ export const Module3Training: React.FC = () => {
                 let logType: TrainingLog["type"] = "info";
                 if (msg.includes("[SYSTEM]") || msg.includes("[INIT]") || msg.includes("[HARDWARE]") || msg.includes("[DEVICE]")) {
                   logType = "system";
-                } else if (msg.includes("[DATASET]")) {
+                } else if (msg.includes("[DATASET]") || msg.includes("[PRELOAD]")) {
                   logType = "dataset";
                 } else if (msg.includes("[MODEL]") || msg.includes("[OPTIMIZER]") || msg.includes("[HYPERPARAMS]") || msg.includes("[ENGINE]")) {
                   logType = "model";
-                } else if (msg.includes("[EPOCH")) {
+                } else if (msg.includes("[BATCH") || msg.includes("[EPOCH") || msg.includes("[EVAL]")) {
                   logType = "epoch";
                 } else if (msg.includes("[CHECKPOINT]") || msg.includes("[COMPLETE]")) {
                   logType = "checkpoint";
@@ -659,6 +663,12 @@ export const Module3Training: React.FC = () => {
                     badgeClass = "text-yellow-300 bg-yellow-950/80 border-yellow-600/80";
                   } else if (badgeLabel.includes("DATASET")) {
                     badgeClass = "text-emerald-400 bg-emerald-950/60 border-emerald-800/60";
+                  } else if (badgeLabel.includes("PRELOAD")) {
+                    badgeClass = "text-teal-300 bg-teal-950/60 border-teal-800/60";
+                  } else if (badgeLabel.includes("BATCH")) {
+                    badgeClass = "text-indigo-300 bg-indigo-950/60 border-indigo-800/60";
+                  } else if (badgeLabel.includes("EVAL")) {
+                    badgeClass = "text-purple-300 bg-purple-950/60 border-purple-800/60";
                   } else if (badgeLabel.includes("MODEL") || badgeLabel.includes("OPTIMIZER")) {
                     badgeClass = "text-purple-400 bg-purple-950/60 border-purple-800/60";
                   } else if (badgeLabel.includes("EPOCH")) {
@@ -697,6 +707,12 @@ export const Module3Training: React.FC = () => {
                         ? "text-emerald-300 font-semibold"
                         : badgeLabel.includes("EPOCH") && badgeLabel.includes("DONE")
                         ? "text-amber-200 font-medium"
+                        : badgeLabel.includes("BATCH")
+                        ? "text-indigo-200"
+                        : badgeLabel.includes("EVAL")
+                        ? "text-purple-200"
+                        : badgeLabel.includes("PRELOAD")
+                        ? "text-teal-200"
                         : "text-slate-300"
                     }`}>
                       {bodyText}

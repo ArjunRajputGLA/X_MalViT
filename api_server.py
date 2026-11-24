@@ -353,7 +353,10 @@ def launch_training(req: TrainRequest):
     threading.Thread(target=run_training_thread, daemon=True).start()
 
     def event_stream():
-        # Yield immediate connection handshake so HTTP 200 response headers flush to the client/proxy immediately
+        # Flush initial 2KB comment padding to bypass any proxy / HTTP buffer immediately
+        yield f": {'0' * 2048}\n\n"
+
+        # Immediate connection handshake
         init_event = {
             "type": "log",
             "message": "[SYSTEM] Connected to X-MalViT PyTorch Training Server. Data folder: X_MalVit\\data\\sample",
@@ -363,7 +366,7 @@ def launch_training(req: TrainRequest):
 
         while True:
             try:
-                item = event_queue.get(timeout=2.0)
+                item = event_queue.get(timeout=0.5)
                 yield f"data: {json.dumps(item)}\n\n"
                 if item.get("type") in ["complete", "error"]:
                     break
@@ -375,9 +378,10 @@ def launch_training(req: TrainRequest):
         event_stream(), 
         media_type="text/event-stream",
         headers={
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-cache, no-transform",
             "Connection": "keep-alive",
-            "X-Accel-Buffering": "no"
+            "X-Accel-Buffering": "no",
+            "Content-Type": "text/event-stream; charset=utf-8"
         }
     )
 
