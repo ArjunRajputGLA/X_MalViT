@@ -8,7 +8,7 @@ import { Module2Dataset } from "@/components/modules/Module2Dataset";
 import { Module3Training } from "@/components/modules/Module3Training";
 import { Module4Benchmark } from "@/components/modules/Module4Benchmark";
 import { Module5Classifier } from "@/components/modules/Module5Classifier";
-import { Module6Viva } from "@/components/modules/Module6Viva";
+import { Module6Manuscript } from "@/components/modules/Module6Manuscript";
 import { AnimatePresence, motion } from "framer-motion";
 
 export default function Home() {
@@ -69,7 +69,7 @@ export default function Home() {
               {activeModule === "training" && <Module3Training />}
               {activeModule === "benchmark" && <Module4Benchmark />}
               {activeModule === "classifier" && <Module5Classifier />}
-              {activeModule === "viva" && <Module6Viva />}
+              {(activeModule === "manuscript" || activeModule === "viva") && <Module6Manuscript />}
             </motion.div>
           </AnimatePresence>
         </main>

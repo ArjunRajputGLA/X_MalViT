@@ -22,6 +22,7 @@ export type ModuleKey =
   | "training"
   | "benchmark"
   | "classifier"
+  | "manuscript"
   | "viva";
 
 interface SidebarNavProps {
@@ -48,7 +49,7 @@ const COMMAND_CENTER_ITEMS: NavItem[] = [
 const ANALYTICS_ITEMS: NavItem[] = [
   { key: "classifier", label: "Grad-CAM Classifier", icon: SearchCode, tag: "XAI" },
   { key: "benchmark", label: "SOTA Benchmarks", icon: BarChart3, tag: "98.8%" },
-  { key: "viva", label: "IEEE Manuscript & Viva", icon: GraduationCap, tag: "Q&A" },
+  { key: "manuscript", label: "Research Manuscript", icon: FileText, tag: "IEEE" },
 ];
 
 export const SidebarNav: React.FC<SidebarNavProps> = ({

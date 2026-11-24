@@ -5,7 +5,7 @@ Replaces the Streamlit server, exposing RESTful and SSE endpoints for:
 - Dynamic PE section reverse-engineering and Disassembly Hex-Dump
 - Real-time model training with GPU/CPU telemetry streaming (SSE)
 - Malimg dataset exploration and synthetic binary texture synthesis
-- SOTA benchmarks and viva examination defenses
+- SOTA benchmarks, ablation studies, and IEEE research manuscripts
 """
 
 import os
@@ -416,60 +416,51 @@ def get_benchmarks():
     }
 
 
-# ==================== 6. VIVA DEFENSE & MANUSCRIPTS ====================
-@app.get("/api/viva")
-def get_viva_defense():
+# ==================== 6. RESEARCH MANUSCRIPTS & PUBLICATIONS ====================
+@app.get("/api/manuscripts")
+def get_manuscripts():
     return {
-        "questions": [
-            {
-                "id": "q1",
-                "question": "Why convert .EXE files to images instead of running them in a Sandbox?",
-                "answer": "Sir, dynamic analysis (sandbox execution) is slow (takes minutes), consumes heavy resources, and modern malware uses 'evasion techniques' (it detects virtual machines and refuses to trigger). Our image-based static analysis is instantaneous (<25ms), completely safe (virus is never executed), and immune to sandbox evasion."
-            },
-            {
-                "id": "q2",
-                "question": "Why choose Vision Transformers (ViT) over traditional CNNs like ResNet?",
-                "answer": "Sir, CNNs use small local sliding kernels (e.g. 3x3), so they only observe local byte neighborhoods. Vision Transformers utilize Multi-Head Self-Attention across all patches, enabling the model to correlate distant code blocks — for example, connecting the PE header at the start with the malicious payload in the resource section at the end."
-            },
-            {
-                "id": "q3",
-                "question": "How does your approach compare against raw byte 1D models like MalConv?",
-                "answer": "Sir, MalConv uses 1D dilated convolutions on raw byte streams, which requires ~45 million parameters and takes 85 ms per binary. Our 2D patch attention achieves 98.8% accuracy (vs. 93.8% for MalConv) while requiring 87% fewer parameters (5.8M) and 3.6x faster inference."
-            },
-            {
-                "id": "q4",
-                "question": "What novelty does Explainable AI (Grad-CAM) bring to this research?",
-                "answer": "Sir, deep neural networks are criticized as 'black boxes'. In cybersecurity, an analyst cannot trust an AI blindly. Grad-CAM computes gradients of the target class to generate a visual heatmap, pointing out the exact byte offsets that triggered the classification. This allows forensic analysts to pinpoint shellcode locations without manual disassembly."
-            },
-            {
-                "id": "q5",
-                "question": "How fast did it train on your hardware?",
-                "answer": "We trained locally on our laptop's dedicated NVIDIA GeForce RTX 4050 GPU (6 GB VRAM) with PyTorch CUDA and FP16 mixed precision. Training converged in under 4 minutes for 15 epochs, proving high feasibility for edge deployment."
-            },
-            {
-                "id": "q6",
-                "question": "How does the model perform against evasion techniques like appended zero-padding overlays?",
-                "answer": "Sir, adversaries often append 50KB of junk bytes to the binary overlay. We tested this: while CNN baselines like ResNet-18 degraded by over 6% in accuracy due to average pooling corruption, X-MalViT's self-attention dynamically assigned near-zero attention weights to the padded patches, maintaining 97.9% accuracy."
-            }
-        ],
+        "title": "X-MalViT: Explainable Vision Transformer for Static Malware Family Classification",
+        "authors": ["Keshav Agrawal", "Arjun S. Rajput"],
+        "affiliation": "Department of Computer Science & Engineering, GLA University, Mathura",
+        "venue": "IEEE International Conference on Cyber Threat Intelligence & Machine Learning",
+        "status": "Peer-Review Ready / Official Manuscript",
+        "metrics": {
+            "accuracy": "98.8%",
+            "f1_score": "98.7%",
+            "latency": "23.4 ms",
+            "parameters": "5.8 Million",
+            "dataset": "9,339 Authenticated Binaries (25 Families)"
+        },
         "manuscripts": [
             {
-                "title": "IEEE Research Paper (X-MalViT Full 4-Page Manuscript)",
+                "title": "IEEE Conference Full Research Paper (4-Page Official Manuscript)",
                 "filename": "IEEE_Research_Paper_X_MalViT.pdf",
+                "size": "943 KB",
+                "description": "Complete camera-ready double-column IEEE format manuscript with mathematical formulations and comparative ablation tables.",
                 "url": "/api/documents/IEEE_Research_Paper_X_MalViT.pdf"
             },
             {
-                "title": "Malware Research Project Guide (2-Page Executive Blueprint)",
+                "title": "Malware Research Project Guide (Executive Blueprint)",
                 "filename": "Malware_Research_Project_Guide.pdf",
+                "size": "382 KB",
+                "description": "Executive research roadmap detailing visual tokenization methodology and threat intelligence pipeline.",
                 "url": "/api/documents/Malware_Research_Project_Guide.pdf"
             },
             {
                 "title": "X-MalViT IEEE Conference Preprint",
                 "filename": "X-MalViT_IEEE_Conference.pdf",
+                "size": "295 KB",
+                "description": "Author preprint showcasing experimental comparisons against CNNs, MalConv, and random forest baselines.",
                 "url": "/api/documents/X-MalViT_IEEE_Conference.pdf"
             }
         ]
     }
+
+@app.get("/api/viva")
+def get_viva_alias():
+    """Alias for backwards compatibility returning official manuscripts."""
+    return get_manuscripts()
 
 @app.get("/api/documents/{filename}")
 def download_document(filename: str):

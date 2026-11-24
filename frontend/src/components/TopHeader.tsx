@@ -39,9 +39,13 @@ const MODULE_TITLES: Record<ModuleKey, { title: string; subtitle: string }> = {
     title: "Real-Time Classifier & Explainability (XAI)",
     subtitle: "Grad-CAM Activation Attribution & PE Header Disassembly Mapping"
   },
+  manuscript: {
+    title: "IEEE Research Manuscript & Documentation",
+    subtitle: "Official Camera-Ready Conference Paper, Architectural Specifications & Published Artifacts"
+  },
   viva: {
-    title: "IEEE Manuscript & Viva Defense",
-    subtitle: "Authoritative Defense Answers, Model Formulas & Artifact Downloads"
+    title: "IEEE Research Manuscript & Documentation",
+    subtitle: "Official Camera-Ready Conference Paper, Architectural Specifications & Published Artifacts"
   }
 };
 

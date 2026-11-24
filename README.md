@@ -104,7 +104,7 @@ X_MalVit/
 │   │   │   │   ├── Module3Training.tsx    # RTX 4050 Training Lab
 │   │   │   │   ├── Module4Benchmark.tsx   # SOTA Benchmarks & Confusion Matrix
 │   │   │   │   ├── Module5Classifier.tsx  # Real-Time Grad-CAM Classifier & Disassembly
-│   │   │   │   └── Module6Viva.tsx        # IEEE Manuscript & Viva Defense Panel
+│   │   │   │   └── Module6Manuscript.tsx  # IEEE Research Manuscript & Documentation Panel
 │   │   │   └── ui/             # Radix & shadcn reusable primitives
 │   │   └── lib/
 │   └── next.config.ts          # Transparent API proxy to FastAPI (port 8000)
