@@ -298,12 +298,25 @@ def launch_training(req: TrainRequest):
 
     def run_training_thread():
         req_dev = (req.device or "").lower().strip()
-        if req_dev in ["cuda", "gpu"]:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+        cuda_available = torch.cuda.is_available()
+        cuda_requested = req_dev in ["cuda", "gpu"]
+
+        if cuda_requested and not cuda_available:
+            log_handler("[HARDWARE WARNING] NVIDIA GPU (CUDA) execution was requested, but no CUDA-compatible GPU device or driver was detected on this system (torch.cuda.is_available() = False).")
+            log_handler("[FALLBACK] Automatically redirecting PyTorch training pipeline to multi-threaded CPU Host Cores (FP32 Single Precision Standard).")
+            device = "cpu"
+            fallback_applied = True
+        elif cuda_requested and cuda_available:
+            device = "cuda"
+            fallback_applied = False
+            log_handler(f"[HARDWARE] NVIDIA GPU detected: {torch.cuda.get_device_name(0)} | Dedicated VRAM: {torch.cuda.get_device_properties(0).total_memory / (1024**3):.2f} GB | FP16 AMP Enabled.")
         elif req_dev == "cpu":
             device = "cpu"
+            fallback_applied = False
+            log_handler("[HARDWARE] Running on CPU Host Cores (x86_64) as selected by user.")
         else:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device = "cuda" if cuda_available else "cpu"
+            fallback_applied = (device == "cpu" and cuda_requested)
 
         try:
             log_handler(f"[INIT] Worker started on device '{device}'. Loading Malimg training engine...")
@@ -325,6 +338,7 @@ def launch_training(req: TrainRequest):
                 "best_accuracy": max(hist["val_acc"]),
                 "history": hist,
                 "device_used": device,
+                "fallback_applied": fallback_applied,
                 "timestamp": time.strftime("%H:%M:%S")
             })
         except Exception as e:

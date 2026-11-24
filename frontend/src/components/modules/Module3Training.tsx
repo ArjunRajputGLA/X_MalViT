@@ -89,14 +89,31 @@ export const Module3Training: React.FC = () => {
     setEpochHistory([]);
     setProgressVal(0);
     setCurrentEpoch(0);
-    setLogs([
+    const initialLogs: TrainingLog[] = [
       {
         id: `log-${Date.now()}-init`,
         timestamp: new Date().toLocaleTimeString(),
         message: `[SYSTEM] Initializing connection to X-MalViT PyTorch training daemon (${deviceMode.toUpperCase()})...`,
         type: "system"
       }
-    ]);
+    ];
+
+    if (deviceMode === "cuda" && !systemStatus?.cuda_available) {
+      initialLogs.push({
+        id: `log-${Date.now()}-warn`,
+        timestamp: new Date().toLocaleTimeString(),
+        message: "[HARDWARE WARNING] NVIDIA GPU (CUDA) requested, but no local CUDA device is detected (torch.cuda.is_available() = False).",
+        type: "error"
+      });
+      initialLogs.push({
+        id: `log-${Date.now()}-fb`,
+        timestamp: new Date().toLocaleTimeString(),
+        message: "[FALLBACK] Automatic hardware fallback: PyTorch training pipeline routed to CPU Host Cores.",
+        type: "model"
+      });
+    }
+
+    setLogs(initialLogs);
 
     const payload = JSON.stringify({
       epochs: epochs,
@@ -179,15 +196,17 @@ export const Module3Training: React.FC = () => {
                 setEpochHistory((prev) => [...prev, event]);
               } else if (event.type === "complete") {
                 const usedDev = event.device_used ? event.device_used.toUpperCase() : deviceMode.toUpperCase();
-                setCompletionMessage(
-                  `Real PyTorch Training Converged on ${usedDev}! Weights compiled & saved to ${event.checkpoint_path} (Peak Accuracy: ${event.best_accuracy.toFixed(2)}%)`
-                );
+                const wasFallback = event.fallback_applied || (deviceMode === "cuda" && usedDev === "CPU");
+                const msg = wasFallback
+                  ? `Real PyTorch Training Converged on CPU (NVIDIA GPU was requested, but automatically fell back to CPU due to missing CUDA hardware)! Checkpoint saved to ${event.checkpoint_path} (Peak Accuracy: ${event.best_accuracy.toFixed(2)}%)`
+                  : `Real PyTorch Training Converged on ${usedDev}! Weights compiled & saved to ${event.checkpoint_path} (Peak Accuracy: ${event.best_accuracy.toFixed(2)}%)`;
+                setCompletionMessage(msg);
                 setLogs((prev) => [
                   ...prev,
                   {
                     id: `log-${Date.now()}-complete`,
                     timestamp: event.timestamp || new Date().toLocaleTimeString(),
-                    message: `[CHECKPOINT] PyTorch training finished successfully. Checkpoint saved to ${event.checkpoint_path}`,
+                    message: `[CHECKPOINT] PyTorch training finished successfully on ${usedDev}. Checkpoint saved to ${event.checkpoint_path}`,
                     type: "checkpoint"
                   }
                 ]);
@@ -276,7 +295,9 @@ export const Module3Training: React.FC = () => {
                   Compute Accelerator (Hardware Device)
                 </label>
                 <span className="text-[10px] font-mono font-bold text-slate-400 uppercase">
-                  {deviceMode === "cuda" ? "Hardware Acceleration" : "Host CPU Execution"}
+                  {deviceMode === "cuda" 
+                    ? (systemStatus?.cuda_available ? "Hardware Acceleration" : "GPU Selected (CPU Fallback)")
+                    : "Host CPU Execution"}
                 </span>
               </div>
               
@@ -294,7 +315,7 @@ export const Module3Training: React.FC = () => {
                   <Zap className={`w-3.5 h-3.5 ${deviceMode === "cuda" ? "text-blue-600" : "text-slate-400"}`} />
                   <span>NVIDIA GPU (CUDA)</span>
                   {deviceMode === "cuda" && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className={`w-1.5 h-1.5 rounded-full ${systemStatus?.cuda_available ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
                   )}
                 </button>
 
@@ -316,13 +337,30 @@ export const Module3Training: React.FC = () => {
                 </button>
               </div>
 
+              {/* Hardware Availability Alert when CUDA selected without hardware */}
+              {deviceMode === "cuda" && !systemStatus?.cuda_available && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 flex items-start gap-2.5 text-xs"
+                >
+                  <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-[11px] block text-amber-900">Notice: No NVIDIA CUDA GPU Detected on Host</span>
+                    <p className="text-[10.5px] text-amber-800/90 leading-snug mt-0.5">
+                      You have selected GPU mode on a CPU-only host. The PyTorch training engine will catch this, route execution to CPU Host Cores, and stream clear diagnostic warnings in the terminal console.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
               <div className="mt-1.5 px-1 flex items-center justify-between text-[11px] text-slate-500">
                 <span>
                   {deviceMode === "cuda" 
-                    ? "Tensor Cores active • FP16 Mixed Precision (AMP)" 
+                    ? (systemStatus?.cuda_available ? "Tensor Cores active • FP16 Mixed Precision (AMP)" : "CUDA unavailable • Automatic FP32 CPU Host fallback")
                     : "Standard multi-threaded host cores • FP32 Precision"}
                 </span>
-                {deviceMode === "cuda" && systemStatus?.total_vram && (
+                {deviceMode === "cuda" && systemStatus?.cuda_available && systemStatus?.total_vram && (
                   <span className="font-mono text-blue-700 font-semibold">{systemStatus.total_vram} VRAM</span>
                 )}
               </div>
@@ -429,12 +467,14 @@ export const Module3Training: React.FC = () => {
               onClick={handleStartTraining}
               disabled={isTraining}
               className="w-full mt-2 shadow-sm"
-              variant="cyber"
+              variant={deviceMode === "cuda" && !systemStatus?.cuda_available ? "outline" : "cyber"}
               size="lg"
             >
               <Play className={`w-4 h-4 mr-2 ${isTraining ? "animate-spin" : ""}`} />
               {isTraining 
                 ? (currentEpoch > 0 ? `Training Epoch ${currentEpoch}/${epochs} on ${deviceMode.toUpperCase()}...` : `Preloading Dataset & Initializing ViT...`)
+                : deviceMode === "cuda" && !systemStatus?.cuda_available
+                ? "Launch PyTorch Training (GPU Selected • CPU Fallback)"
                 : `Launch Real PyTorch Training on ${deviceMode === "cuda" ? "GPU (CUDA)" : "CPU"}`}
             </Button>
           </CardContent>
@@ -452,16 +492,20 @@ export const Module3Training: React.FC = () => {
             <CardContent className="pt-4 space-y-2.5 font-mono text-xs">
               <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex justify-between items-center">
                 <span className="text-slate-500 font-sans font-medium">Selected Device:</span>
-                <span className="text-blue-700 font-bold">
+                <span className={`font-bold ${deviceMode === "cuda" && !systemStatus?.cuda_available ? "text-amber-700" : "text-blue-700"}`}>
                   {deviceMode === "cuda"
-                    ? `${systemStatus?.device_name || "NVIDIA RTX 4050"} (${systemStatus?.total_vram || "6.00 GB"} VRAM)`
+                    ? systemStatus?.cuda_available
+                      ? `${systemStatus?.device_name || "NVIDIA GPU"} (${systemStatus?.total_vram || "6.00 GB"} VRAM)`
+                      : "CUDA Requested (Host: CPU Fallback)"
                     : "CPU Host (x86_64 Multi-Core)"}
                 </span>
               </div>
               <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex justify-between items-center">
                 <span className="text-slate-500 font-sans font-medium">Precision Standard:</span>
                 <span className="text-indigo-700 font-bold">
-                  {deviceMode === "cuda" ? "FP16 Mixed Precision (AMP)" : "FP32 Single Precision"}
+                  {deviceMode === "cuda" && systemStatus?.cuda_available
+                    ? "FP16 Mixed Precision (AMP)"
+                    : "FP32 Single Precision"}
                 </span>
               </div>
               <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex justify-between items-center">
@@ -609,7 +653,11 @@ export const Module3Training: React.FC = () => {
                   badgeLabel = matchTag[1];
                   bodyText = matchTag[2];
 
-                  if (badgeLabel.includes("DATASET")) {
+                  if (badgeLabel.includes("WARNING")) {
+                    badgeClass = "text-amber-400 bg-amber-950/80 border-amber-600/80";
+                  } else if (badgeLabel.includes("FALLBACK")) {
+                    badgeClass = "text-yellow-300 bg-yellow-950/80 border-yellow-600/80";
+                  } else if (badgeLabel.includes("DATASET")) {
                     badgeClass = "text-emerald-400 bg-emerald-950/60 border-emerald-800/60";
                   } else if (badgeLabel.includes("MODEL") || badgeLabel.includes("OPTIMIZER")) {
                     badgeClass = "text-purple-400 bg-purple-950/60 border-purple-800/60";
@@ -621,6 +669,8 @@ export const Module3Training: React.FC = () => {
                     badgeClass = "text-rose-400 bg-rose-950/60 border-rose-800/60";
                   } else if (badgeLabel.includes("ENGINE") || badgeLabel.includes("HYPERPARAMS")) {
                     badgeClass = "text-cyan-400 bg-cyan-950/60 border-cyan-800/60";
+                  } else if (badgeLabel.includes("HARDWARE") || badgeLabel.includes("DEVICE")) {
+                    badgeClass = "text-sky-300 bg-sky-950/60 border-sky-800/60";
                   } else {
                     badgeClass = "text-sky-400 bg-sky-950/60 border-sky-800/60";
                   }
@@ -637,8 +687,12 @@ export const Module3Training: React.FC = () => {
                       </span>
                     ) : null}
                     <span className={`flex-1 break-all ${
-                      log.type === "error" 
+                      log.type === "error" || badgeLabel.includes("ERROR")
                         ? "text-rose-400 font-semibold" 
+                        : badgeLabel.includes("WARNING")
+                        ? "text-amber-300 font-semibold"
+                        : badgeLabel.includes("FALLBACK")
+                        ? "text-yellow-200 font-medium"
                         : badgeLabel.includes("CHECKPOINT") || badgeLabel.includes("COMPLETE")
                         ? "text-emerald-300 font-semibold"
                         : badgeLabel.includes("EPOCH") && badgeLabel.includes("DONE")

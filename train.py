@@ -190,6 +190,8 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
     if is_cuda:
         total_vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
         log(f"[HARDWARE] Dedicated VRAM: {total_vram_gb:.2f} GB | FP16 Mixed Precision (AMP): ENABLED")
+    else:
+        log(f"[HARDWARE] Execution Standard: CPU Host Cores (x86_64) | Precision: FP32 Single Precision")
     log("="*65)
 
     os.makedirs(checkpoint_dir, exist_ok=True)
