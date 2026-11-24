@@ -271,9 +271,17 @@ async def predict_upload(
 @app.post("/api/train")
 def launch_training(req: TrainRequest):
     """
-    Launches real PyTorch training and streams real-time epoch telemetry using Server-Sent Events (SSE).
+    Launches real PyTorch training and streams real-time epoch telemetry and console logs
+    using Server-Sent Events (SSE).
     """
     event_queue = queue.Queue()
+
+    def log_handler(msg: str):
+        event_queue.put({
+            "type": "log",
+            "message": msg,
+            "timestamp": time.strftime("%H:%M:%S")
+        })
 
     def train_callback(epoch, epochs, ep_loss, ep_acc, val_loss, val_acc, vram_mb):
         event_queue.put({
@@ -284,7 +292,8 @@ def launch_training(req: TrainRequest):
             "train_acc": round(float(ep_acc * 100), 2),
             "val_loss": round(float(val_loss), 4),
             "val_acc": round(float(val_acc * 100), 2),
-            "vram_mb": round(float(vram_mb), 1)
+            "vram_mb": round(float(vram_mb), 1),
+            "timestamp": time.strftime("%H:%M:%S")
         })
 
     def run_training_thread():
@@ -297,13 +306,15 @@ def launch_training(req: TrainRequest):
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
         try:
+            log_handler(f"[INIT] Worker started on device '{device}'. Loading Malimg training engine...")
             ckpt_path, hist = train_model(
                 epochs=req.epochs,
                 batch_size=req.batch_size,
                 lr=req.lr,
                 num_samples_per_family=req.samples_per_family,
                 device=device,
-                callback=train_callback
+                callback=train_callback,
+                log_fn=log_handler
             )
             # Reload global engine with freshly trained weights
             global ENGINE
@@ -313,28 +324,48 @@ def launch_training(req: TrainRequest):
                 "checkpoint_path": ckpt_path,
                 "best_accuracy": max(hist["val_acc"]),
                 "history": hist,
-                "device_used": device
+                "device_used": device,
+                "timestamp": time.strftime("%H:%M:%S")
             })
         except Exception as e:
+            log_handler(f"[ERROR] Exception during training: {str(e)}")
             event_queue.put({
                 "type": "error",
-                "message": str(e)
+                "message": str(e),
+                "timestamp": time.strftime("%H:%M:%S")
             })
 
     # Start training in background thread
     threading.Thread(target=run_training_thread, daemon=True).start()
 
     def event_stream():
+        # Yield immediate connection handshake so HTTP 200 response headers flush to the client/proxy immediately
+        init_event = {
+            "type": "log",
+            "message": "[SYSTEM] Connected to X-MalViT PyTorch Training Server. Data folder: X_MalVit\\data\\sample",
+            "timestamp": time.strftime("%H:%M:%S")
+        }
+        yield f"data: {json.dumps(init_event)}\n\n"
+
         while True:
             try:
-                item = event_queue.get(timeout=60.0)
+                item = event_queue.get(timeout=2.0)
                 yield f"data: {json.dumps(item)}\n\n"
                 if item.get("type") in ["complete", "error"]:
                     break
             except queue.Empty:
-                yield f"data: {json.dumps({'type': 'heartbeat'})}\n\n"
+                # Periodic heartbeat ensures proxies and fetch never timeout
+                yield f"data: {json.dumps({'type': 'heartbeat', 'timestamp': time.strftime('%H:%M:%S')})}\n\n"
 
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
+    return StreamingResponse(
+        event_stream(), 
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
 
 
 # ==================== 5. SOTA BENCHMARKS & CONFUSION MATRIX ====================

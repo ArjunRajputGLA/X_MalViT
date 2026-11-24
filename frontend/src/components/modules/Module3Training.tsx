@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,11 @@ import {
   Settings2, 
   CheckCircle2, 
   Activity,
-  Zap
+  Zap,
+  Terminal,
+  AlertTriangle,
+  Trash2,
+  FolderCheck
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -24,6 +28,13 @@ interface EpochData {
   val_acc: number;
   vram_mb: number;
   device?: string;
+}
+
+interface TrainingLog {
+  id: string;
+  timestamp: string;
+  message: string;
+  type?: "system" | "dataset" | "model" | "epoch" | "checkpoint" | "error" | "info";
 }
 
 export const Module3Training: React.FC = () => {
@@ -40,10 +51,22 @@ export const Module3Training: React.FC = () => {
   const [progressVal, setProgressVal] = useState<number>(0);
   const [epochHistory, setEpochHistory] = useState<EpochData[]>([]);
   const [completionMessage, setCompletionMessage] = useState<string | null>(null);
+  const [logs, setLogs] = useState<TrainingLog[]>([]);
+  const terminalEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchStatus();
   }, []);
+
+  useEffect(() => {
+    if (terminalEndRef.current) {
+      terminalEndRef.current.scrollTop = terminalEndRef.current.scrollHeight;
+    }
+  }, [logs]);
+
+  const clearLogs = () => {
+    setLogs([]);
+  };
 
   const fetchStatus = async () => {
     try {
@@ -66,23 +89,43 @@ export const Module3Training: React.FC = () => {
     setEpochHistory([]);
     setProgressVal(0);
     setCurrentEpoch(0);
+    setLogs([
+      {
+        id: `log-${Date.now()}-init`,
+        timestamp: new Date().toLocaleTimeString(),
+        message: `[SYSTEM] Initializing connection to X-MalViT PyTorch training daemon (${deviceMode.toUpperCase()})...`,
+        type: "system"
+      }
+    ]);
+
+    const payload = JSON.stringify({
+      epochs: epochs,
+      batch_size: batchSize,
+      lr: learningRate,
+      samples_per_family: samplesPerFam,
+      architecture: architecture,
+      device: deviceMode,
+    });
 
     try {
-      const res = await fetch("/api/train", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          epochs: epochs,
-          batch_size: batchSize,
-          lr: learningRate,
-          samples_per_family: samplesPerFam,
-          architecture: architecture,
-          device: deviceMode,
-        }),
-      });
+      let res: Response;
+      try {
+        res = await fetch("/api/train", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: payload,
+        });
+      } catch (netErr) {
+        console.warn("Direct proxy failed, trying fallback to port 8000...", netErr);
+        res = await fetch("http://127.0.0.1:8000/api/train", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: payload,
+        });
+      }
 
       if (!res.ok || !res.body) {
-        throw new Error("Training request failed");
+        throw new Error(`Training request failed with HTTP ${res.status}`);
       }
 
       const reader = res.body.getReader();
@@ -104,7 +147,33 @@ export const Module3Training: React.FC = () => {
 
             try {
               const event = JSON.parse(dataStr);
-              if (event.type === "epoch_update") {
+              if (event.type === "log") {
+                const msg = event.message || "";
+                let logType: TrainingLog["type"] = "info";
+                if (msg.includes("[SYSTEM]") || msg.includes("[INIT]") || msg.includes("[HARDWARE]") || msg.includes("[DEVICE]")) {
+                  logType = "system";
+                } else if (msg.includes("[DATASET]")) {
+                  logType = "dataset";
+                } else if (msg.includes("[MODEL]") || msg.includes("[OPTIMIZER]") || msg.includes("[HYPERPARAMS]") || msg.includes("[ENGINE]")) {
+                  logType = "model";
+                } else if (msg.includes("[EPOCH")) {
+                  logType = "epoch";
+                } else if (msg.includes("[CHECKPOINT]") || msg.includes("[COMPLETE]")) {
+                  logType = "checkpoint";
+                } else if (msg.includes("[ERROR]")) {
+                  logType = "error";
+                }
+
+                setLogs((prev) => [
+                  ...prev,
+                  {
+                    id: `log-${Date.now()}-${Math.random()}`,
+                    timestamp: event.timestamp || new Date().toLocaleTimeString(),
+                    message: msg,
+                    type: logType
+                  }
+                ]);
+              } else if (event.type === "epoch_update") {
                 setCurrentEpoch(event.epoch);
                 setProgressVal((event.epoch / event.total_epochs) * 100);
                 setEpochHistory((prev) => [...prev, event]);
@@ -113,10 +182,28 @@ export const Module3Training: React.FC = () => {
                 setCompletionMessage(
                   `Real PyTorch Training Converged on ${usedDev}! Weights compiled & saved to ${event.checkpoint_path} (Peak Accuracy: ${event.best_accuracy.toFixed(2)}%)`
                 );
+                setLogs((prev) => [
+                  ...prev,
+                  {
+                    id: `log-${Date.now()}-complete`,
+                    timestamp: event.timestamp || new Date().toLocaleTimeString(),
+                    message: `[CHECKPOINT] PyTorch training finished successfully. Checkpoint saved to ${event.checkpoint_path}`,
+                    type: "checkpoint"
+                  }
+                ]);
                 setIsTraining(false);
                 fetchStatus();
               } else if (event.type === "error") {
                 setCompletionMessage(`Training error: ${event.message}`);
+                setLogs((prev) => [
+                  ...prev,
+                  {
+                    id: `log-${Date.now()}-err`,
+                    timestamp: event.timestamp || new Date().toLocaleTimeString(),
+                    message: `[ERROR] ${event.message}`,
+                    type: "error"
+                  }
+                ]);
                 setIsTraining(false);
               }
             } catch (err) {
@@ -126,7 +213,17 @@ export const Module3Training: React.FC = () => {
         }
       }
     } catch (e: any) {
-      setCompletionMessage(`Connection error: ${e.message}`);
+      const errorMsg = `Connection error: ${e.message}`;
+      setCompletionMessage(errorMsg);
+      setLogs((prev) => [
+        ...prev,
+        {
+          id: `log-${Date.now()}-conn-err`,
+          timestamp: new Date().toLocaleTimeString(),
+          message: `[ERROR] ${errorMsg}`,
+          type: "error"
+        }
+      ]);
       setIsTraining(false);
     }
   };
@@ -337,7 +434,7 @@ export const Module3Training: React.FC = () => {
             >
               <Play className={`w-4 h-4 mr-2 ${isTraining ? "animate-spin" : ""}`} />
               {isTraining 
-                ? `Training Epoch ${currentEpoch}/${epochs} on ${deviceMode.toUpperCase()}...` 
+                ? (currentEpoch > 0 ? `Training Epoch ${currentEpoch}/${epochs} on ${deviceMode.toUpperCase()}...` : `Preloading Dataset & Initializing ViT...`)
                 : `Launch Real PyTorch Training on ${deviceMode === "cuda" ? "GPU (CUDA)" : "CPU"}`}
             </Button>
           </CardContent>
@@ -421,9 +518,17 @@ export const Module3Training: React.FC = () => {
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2.5 font-medium"
+                  className={`p-3.5 rounded-xl border text-xs flex items-center gap-2.5 font-medium ${
+                    completionMessage.toLowerCase().includes("error") || completionMessage.toLowerCase().includes("failed")
+                      ? "bg-rose-50 border-rose-200 text-rose-800"
+                      : "bg-emerald-50 border-emerald-200 text-emerald-800"
+                  }`}
                 >
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                  {completionMessage.toLowerCase().includes("error") || completionMessage.toLowerCase().includes("failed") ? (
+                    <AlertTriangle className="w-5 h-5 text-rose-600 flex-shrink-0" />
+                  ) : (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                  )}
                   <span>{completionMessage}</span>
                 </motion.div>
               )}
@@ -431,6 +536,124 @@ export const Module3Training: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* Live PyTorch Console Stream */}
+      <Card className="border-slate-800 bg-slate-950 text-slate-100 shadow-md overflow-hidden">
+        <CardHeader className="py-3 px-4 bg-slate-900/90 border-b border-slate-800 flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Terminal className="w-4 h-4 text-emerald-400" />
+            <CardTitle className="text-xs font-mono font-bold text-slate-200 uppercase tracking-wider">
+              PyTorch Execution Stream &amp; Training Telemetry
+            </CardTitle>
+            {isTraining ? (
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-950 text-emerald-400 border border-emerald-700/60 font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                LIVE STREAM
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-800 text-slate-400 border border-slate-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                IDLE
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] font-mono text-slate-400 hidden sm:flex items-center gap-1.5">
+              <FolderCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Dataset:</span>
+              <span className="text-emerald-400 font-semibold">X_MalVit\data\sample</span>
+              <span className="text-slate-500">(9,339 binaries &bull; 25 classes)</span>
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearLogs}
+              title="Clear terminal log"
+              className="h-7 px-2 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" />
+              Clear
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-3 bg-slate-950">
+          <div 
+            ref={terminalEndRef}
+            className="h-64 overflow-y-auto space-y-1.5 font-mono text-xs leading-relaxed pr-2 select-text"
+          >
+            {logs.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 py-10">
+                <Terminal className="w-8 h-8 mb-2 opacity-30 text-slate-400" />
+                <p className="text-xs font-sans text-slate-400 font-medium">Console Idle &bull; Ready for Execution</p>
+                <p className="text-[11px] text-slate-500 mt-1 max-w-md">
+                  Click <span className="text-slate-300 font-semibold">Launch Real PyTorch Training</span> above to stream live dataset ingestion from <code className="text-emerald-400">X_MalVit\data\sample</code>, tensor preloading, and Vision Transformer forward/backward passes.
+                </p>
+              </div>
+            ) : (
+              logs.map((log) => {
+                const isDivider = log.message.startsWith("=");
+                if (isDivider) {
+                  return (
+                    <div key={log.id} className="text-slate-700 select-none py-0.5 overflow-hidden">
+                      {log.message}
+                    </div>
+                  );
+                }
+
+                let badgeClass = "text-sky-400 bg-sky-950/60 border-sky-800/60";
+                let badgeLabel = "";
+                let bodyText = log.message;
+
+                const matchTag = log.message.match(/^(\[[A-Z0-9_\-/\s!.]+\])(.*)/);
+                if (matchTag) {
+                  badgeLabel = matchTag[1];
+                  bodyText = matchTag[2];
+
+                  if (badgeLabel.includes("DATASET")) {
+                    badgeClass = "text-emerald-400 bg-emerald-950/60 border-emerald-800/60";
+                  } else if (badgeLabel.includes("MODEL") || badgeLabel.includes("OPTIMIZER")) {
+                    badgeClass = "text-purple-400 bg-purple-950/60 border-purple-800/60";
+                  } else if (badgeLabel.includes("EPOCH")) {
+                    badgeClass = "text-amber-300 bg-amber-950/60 border-amber-800/60";
+                  } else if (badgeLabel.includes("CHECKPOINT") || badgeLabel.includes("COMPLETE")) {
+                    badgeClass = "text-emerald-300 bg-emerald-950/60 border-emerald-800/60";
+                  } else if (badgeLabel.includes("ERROR")) {
+                    badgeClass = "text-rose-400 bg-rose-950/60 border-rose-800/60";
+                  } else if (badgeLabel.includes("ENGINE") || badgeLabel.includes("HYPERPARAMS")) {
+                    badgeClass = "text-cyan-400 bg-cyan-950/60 border-cyan-800/60";
+                  } else {
+                    badgeClass = "text-sky-400 bg-sky-950/60 border-sky-800/60";
+                  }
+                }
+
+                return (
+                  <div key={log.id} className="flex items-start gap-2 hover:bg-slate-900/50 px-1.5 py-0.5 rounded transition-colors">
+                    <span className="text-[10px] text-slate-500 select-none flex-shrink-0 pt-0.5">
+                      {log.timestamp}
+                    </span>
+                    {badgeLabel ? (
+                      <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border flex-shrink-0 ${badgeClass}`}>
+                        {badgeLabel}
+                      </span>
+                    ) : null}
+                    <span className={`flex-1 break-all ${
+                      log.type === "error" 
+                        ? "text-rose-400 font-semibold" 
+                        : badgeLabel.includes("CHECKPOINT") || badgeLabel.includes("COMPLETE")
+                        ? "text-emerald-300 font-semibold"
+                        : badgeLabel.includes("EPOCH") && badgeLabel.includes("DONE")
+                        ? "text-amber-200 font-medium"
+                        : "text-slate-300"
+                    }`}>
+                      {bodyText}
+                    </span>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </motion.div>
   );
 };

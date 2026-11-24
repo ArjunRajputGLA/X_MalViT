@@ -25,9 +25,10 @@ class MalimgDataset(Dataset):
     Loads real grayscale PE executable byte images directly from data/sample/<family>/.
     Supports both ultra-fast in-memory caching and on-the-fly streaming.
     """
-    def __init__(self, num_samples_per_family=25, image_size=(224, 224), data_dir=None):
+    def __init__(self, num_samples_per_family=25, image_size=(224, 224), data_dir=None, log_fn=None):
         self.image_size = image_size
         self.file_items = []  # List of (filepath_or_None, class_idx, family_name, seed)
+        self.log = log_fn or print
         
         if data_dir is None:
             base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -35,7 +36,7 @@ class MalimgDataset(Dataset):
         self.data_dir = data_dir
 
         total_disk_found = 0
-        print(f"[DATASET] Scanning Malimg benchmark repository at '{data_dir}'...")
+        self.log(f"[DATASET] Scanning Malimg benchmark repository at '{data_dir}'...")
 
         for class_idx, raw_family in enumerate(MALWARE_FAMILIES):
             family = normalize_family_name(raw_family)
@@ -65,8 +66,8 @@ class MalimgDataset(Dataset):
                     # Fallback to authentic synthesis if extra samples requested beyond disk
                     self.file_items.append((None, class_idx, family, s))
 
-        print(f"[DATASET] Found {total_disk_found} authentic images on disk across {len(MALWARE_FAMILIES)} families.")
-        print(f"[DATASET] Selected {len(self.file_items)} total training/validation samples.")
+        self.log(f"[DATASET] Found {total_disk_found} authentic binaries on disk across {len(MALWARE_FAMILIES)} families.")
+        self.log(f"[DATASET] Allocated {len(self.file_items)} total training/validation samples ({num_samples_per_family}/family).")
 
         # If sample count is <= 2000, preload into RAM for 10x-50x training acceleration
         self.preloaded = False
@@ -74,7 +75,7 @@ class MalimgDataset(Dataset):
         self.cached_labels = []
 
         if len(self.file_items) <= 2000:
-            print(f"[DATASET] Preloading {len(self.file_items)} images into RAM for maximum training throughput...")
+            self.log(f"[DATASET] Preloading {len(self.file_items)} tensors into memory (224x224 grayscale) for maximum throughput...")
             for item in self.file_items:
                 tensor, label = self._load_item(item)
                 self.cached_images.append(tensor)
@@ -82,7 +83,7 @@ class MalimgDataset(Dataset):
             self.cached_images = torch.stack(self.cached_images)
             self.cached_labels = torch.tensor(self.cached_labels, dtype=torch.long)
             self.preloaded = True
-            print("[DATASET] RAM caching complete. Tensor memory ready.")
+            self.log("[DATASET] RAM caching complete. In-memory tensors ready.")
 
     def _load_item(self, item):
         filepath, class_idx, family, seed = item
@@ -173,7 +174,8 @@ class XMalViTModel(nn.Module):
 
 
 # ==================== TRAINING ENGINE ====================
-def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, device=None, checkpoint_dir="checkpoints", callback=None):
+def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, device=None, checkpoint_dir="checkpoints", callback=None, log_fn=None):
+    log = log_fn or print
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     
@@ -181,38 +183,42 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
     is_cuda = "cuda" in str(device)
     gpu_name = torch.cuda.get_device_name(0) if is_cuda else "CPU Host"
     
-    print("\n" + "="*65)
-    print("  X-MalViT REAL PYTORCH TRAINING PIPELINE")
-    print(f"  Target Accelerator: {device} [{gpu_name}]")
-    print(f"  Hyperparameters: Epochs={epochs}, Batch Size={batch_size}, LR={lr}")
+    log("="*65)
+    log(f"[ENGINE] X-MalViT Real PyTorch Training Pipeline Initialized")
+    log(f"[DEVICE] Accelerator: {device} [{gpu_name}]")
+    log(f"[HYPERPARAMS] Epochs={epochs}, BatchSize={batch_size}, LR={lr}")
     if is_cuda:
         total_vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
-        print(f"  Hardware VRAM: {total_vram_gb:.2f} GB | FP16 AMP: ENABLED")
-    print("="*65 + "\n")
+        log(f"[HARDWARE] Dedicated VRAM: {total_vram_gb:.2f} GB | FP16 Mixed Precision (AMP): ENABLED")
+    log("="*65)
 
     os.makedirs(checkpoint_dir, exist_ok=True)
     checkpoint_path = os.path.join(checkpoint_dir, "x_malvit_weights.pt")
 
     # Load dataset
-    dataset = MalimgDataset(num_samples_per_family=num_samples_per_family)
+    dataset = MalimgDataset(num_samples_per_family=num_samples_per_family, log_fn=log)
     train_size = int(0.8 * len(dataset))
     val_size = len(dataset) - train_size
     train_set, val_set = torch.utils.data.random_split(dataset, [train_size, val_size])
 
+    log(f"[DATASET] Split configured: {train_size} Training samples, {val_size} Validation samples.")
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, drop_last=False)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)
 
+    log(f"[MODEL] Constructing X-MalViT Model (ViT-Tiny: 196 Patches, 8 Attention Heads, 6 Layers, 5.8M Params)...")
     model = XMalViTModel(num_classes=len(MALWARE_FAMILIES)).to(device)
     criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
     scaler = torch.amp.GradScaler('cuda', enabled=is_cuda)
+    log(f"[OPTIMIZER] AdamW initialized with CosineAnnealingLR scheduler.")
 
     best_val_acc = 0.0
     start_time = time.time()
     history = {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": [], "vram_mb": []}
 
     for epoch in range(1, epochs + 1):
+        log(f"[EPOCH {epoch:02d}/{epochs:02d}] Forward/backward pass in progress across {len(train_loader)} batches...")
         model.train()
         running_loss = 0.0
         correct = 0
@@ -267,7 +273,10 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
         history["val_acc"].append(val_acc * 100)
         history["vram_mb"].append(vram_mb)
 
-        print(f"Epoch [{epoch:02d}/{epochs:02d}] ({epoch_duration:.1f}s) | Train Loss: {epoch_loss:.4f} | Train Acc: {epoch_acc*100:.2f}% | Val Loss: {val_loss:.4f} | Val Acc: {val_acc*100:.2f}% | GPU VRAM: {vram_mb:.1f} MB")
+        epoch_log_str = f"Epoch [{epoch:02d}/{epochs:02d}] ({epoch_duration:.1f}s) | Train Loss: {epoch_loss:.4f} | Train Acc: {epoch_acc*100:.2f}% | Val Loss: {val_loss:.4f} | Val Acc: {val_acc*100:.2f}%"
+        if is_cuda:
+            epoch_log_str += f" | VRAM: {vram_mb:.1f} MB"
+        log(f"[EPOCH {epoch:02d}/{epochs:02d} DONE] {epoch_log_str}")
 
         if val_acc > best_val_acc or epoch == 1:
             best_val_acc = val_acc
@@ -278,13 +287,13 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
                 'accuracy': val_acc,
                 'classes': MALWARE_FAMILIES
             }, checkpoint_path)
-            print(f"  --> Saved new best checkpoint to {checkpoint_path} (Acc: {val_acc*100:.2f}%)")
+            log(f"[CHECKPOINT] Peak accuracy ({val_acc*100:.2f}%) achieved -> Saved to {checkpoint_path}")
 
         if callback is not None:
             callback(epoch, epochs, epoch_loss, epoch_acc, val_loss, val_acc, vram_mb)
 
     total_time = time.time() - start_time
-    print(f"\n[DONE] Real PyTorch training completed in {total_time:.2f} seconds. Peak Val Accuracy: {best_val_acc*100:.2f}%\n")
+    log(f"[COMPLETE] Real PyTorch training completed in {total_time:.2f} seconds. Peak Val Accuracy: {best_val_acc*100:.2f}%")
     return checkpoint_path, history
 
 
