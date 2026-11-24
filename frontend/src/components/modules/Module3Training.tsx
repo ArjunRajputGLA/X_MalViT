@@ -10,7 +10,8 @@ import {
   Play, 
   Settings2, 
   CheckCircle2, 
-  Activity 
+  Activity,
+  Zap
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -22,10 +23,12 @@ interface EpochData {
   val_loss: number;
   val_acc: number;
   vram_mb: number;
+  device?: string;
 }
 
 export const Module3Training: React.FC = () => {
   const [architecture, setArchitecture] = useState<string>("X-MalViT Tiny (Proposed - 5.8M Params)");
+  const [deviceMode, setDeviceMode] = useState<"cuda" | "cpu">("cuda");
   const [epochs, setEpochs] = useState<number>(4);
   const [batchSize, setBatchSize] = useState<number>(32);
   const [samplesPerFam, setSamplesPerFam] = useState<number>(20);
@@ -48,6 +51,9 @@ export const Module3Training: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         setSystemStatus(data);
+        if (!data.cuda_available) {
+          setDeviceMode("cpu");
+        }
       }
     } catch (e) {
       console.error("Error fetching status:", e);
@@ -71,6 +77,7 @@ export const Module3Training: React.FC = () => {
           lr: learningRate,
           samples_per_family: samplesPerFam,
           architecture: architecture,
+          device: deviceMode,
         }),
       });
 
@@ -102,8 +109,9 @@ export const Module3Training: React.FC = () => {
                 setProgressVal((event.epoch / event.total_epochs) * 100);
                 setEpochHistory((prev) => [...prev, event]);
               } else if (event.type === "complete") {
+                const usedDev = event.device_used ? event.device_used.toUpperCase() : deviceMode.toUpperCase();
                 setCompletionMessage(
-                  `Real PyTorch Training Converged! Weights compiled & saved to ${event.checkpoint_path} (Peak Accuracy: ${event.best_accuracy.toFixed(2)}%)`
+                  `Real PyTorch Training Converged on ${usedDev}! Weights compiled & saved to ${event.checkpoint_path} (Peak Accuracy: ${event.best_accuracy.toFixed(2)}%)`
                 );
                 setIsTraining(false);
                 fetchStatus();
@@ -140,6 +148,7 @@ export const Module3Training: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4 space-y-4">
+            {/* Target Neural Architecture */}
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1.5">
                 Target Neural Architecture
@@ -160,6 +169,66 @@ export const Module3Training: React.FC = () => {
                   MobileNetV2 (Edge Baseline - 3.4M Params)
                 </option>
               </select>
+            </div>
+
+            {/* Compute Accelerator Toggle (GPU vs CPU) */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                  <Cpu className="w-3.5 h-3.5 text-blue-600" />
+                  Compute Accelerator (Hardware Device)
+                </label>
+                <span className="text-[10px] font-mono font-bold text-slate-400 uppercase">
+                  {deviceMode === "cuda" ? "Hardware Acceleration" : "Host CPU Execution"}
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
+                <button
+                  type="button"
+                  disabled={isTraining}
+                  onClick={() => setDeviceMode("cuda")}
+                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all relative ${
+                    deviceMode === "cuda"
+                      ? "bg-white text-blue-700 shadow-xs border border-blue-200/60"
+                      : "text-slate-600 hover:text-slate-900 border border-transparent"
+                  }`}
+                >
+                  <Zap className={`w-3.5 h-3.5 ${deviceMode === "cuda" ? "text-blue-600" : "text-slate-400"}`} />
+                  <span>NVIDIA GPU (CUDA)</span>
+                  {deviceMode === "cuda" && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isTraining}
+                  onClick={() => setDeviceMode("cpu")}
+                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all relative ${
+                    deviceMode === "cpu"
+                      ? "bg-white text-indigo-700 shadow-xs border border-indigo-200/60"
+                      : "text-slate-600 hover:text-slate-900 border border-transparent"
+                  }`}
+                >
+                  <Cpu className={`w-3.5 h-3.5 ${deviceMode === "cpu" ? "text-indigo-600" : "text-slate-400"}`} />
+                  <span>CPU Host Cores</span>
+                  {deviceMode === "cpu" && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  )}
+                </button>
+              </div>
+
+              <div className="mt-1.5 px-1 flex items-center justify-between text-[11px] text-slate-500">
+                <span>
+                  {deviceMode === "cuda" 
+                    ? "Tensor Cores active • FP16 Mixed Precision (AMP)" 
+                    : "Standard multi-threaded host cores • FP32 Precision"}
+                </span>
+                {deviceMode === "cuda" && systemStatus?.total_vram && (
+                  <span className="font-mono text-blue-700 font-semibold">{systemStatus.total_vram} VRAM</span>
+                )}
+              </div>
             </div>
 
             {/* Epoch Slider */}
@@ -190,7 +259,7 @@ export const Module3Training: React.FC = () => {
             {/* Batch Size Selection */}
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1.5">
-                Batch Size (Tensor Cores)
+                Batch Size ({deviceMode === "cuda" ? "Tensor Cores" : "CPU Threads"})
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {[16, 32, 64].map((bs) => (
@@ -267,7 +336,9 @@ export const Module3Training: React.FC = () => {
               size="lg"
             >
               <Play className={`w-4 h-4 mr-2 ${isTraining ? "animate-spin" : ""}`} />
-              {isTraining ? `Training Epoch ${currentEpoch}/${epochs}...` : "Launch Real PyTorch Training on GPU"}
+              {isTraining 
+                ? `Training Epoch ${currentEpoch}/${epochs} on ${deviceMode.toUpperCase()}...` 
+                : `Launch Real PyTorch Training on ${deviceMode === "cuda" ? "GPU (CUDA)" : "CPU"}`}
             </Button>
           </CardContent>
         </Card>
@@ -283,12 +354,18 @@ export const Module3Training: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-4 space-y-2.5 font-mono text-xs">
               <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex justify-between items-center">
-                <span className="text-slate-500 font-sans font-medium">Active Accelerator:</span>
-                <span className="text-blue-700 font-bold">{systemStatus?.device_name || "NVIDIA RTX 4050"} ({systemStatus?.total_vram || "6.00 GB"} VRAM)</span>
+                <span className="text-slate-500 font-sans font-medium">Selected Device:</span>
+                <span className="text-blue-700 font-bold">
+                  {deviceMode === "cuda"
+                    ? `${systemStatus?.device_name || "NVIDIA RTX 4050"} (${systemStatus?.total_vram || "6.00 GB"} VRAM)`
+                    : "CPU Host (x86_64 Multi-Core)"}
+                </span>
               </div>
               <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex justify-between items-center">
                 <span className="text-slate-500 font-sans font-medium">Precision Standard:</span>
-                <span className="text-indigo-700 font-bold">FP16 Mixed Precision (AMP)</span>
+                <span className="text-indigo-700 font-bold">
+                  {deviceMode === "cuda" ? "FP16 Mixed Precision (AMP)" : "FP32 Single Precision"}
+                </span>
               </div>
               <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex justify-between items-center">
                 <span className="text-slate-500 font-sans font-medium">Checkpoint Target:</span>
@@ -310,7 +387,7 @@ export const Module3Training: React.FC = () => {
               </CardTitle>
               {isTraining && (
                 <Badge variant="cyber" className="animate-pulse">
-                  GPU Active
+                  {deviceMode === "cuda" ? "GPU Active" : "CPU Active"}
                 </Badge>
               )}
             </CardHeader>

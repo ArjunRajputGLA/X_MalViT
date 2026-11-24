@@ -265,7 +265,14 @@ def launch_training(req: TrainRequest):
         })
 
     def run_training_thread():
-        device = req.device or ("cuda" if torch.cuda.is_available() else "cpu")
+        req_dev = (req.device or "").lower().strip()
+        if req_dev in ["cuda", "gpu"]:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        elif req_dev == "cpu":
+            device = "cpu"
+        else:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+
         try:
             ckpt_path, hist = train_model(
                 epochs=req.epochs,
@@ -282,7 +289,8 @@ def launch_training(req: TrainRequest):
                 "type": "complete",
                 "checkpoint_path": ckpt_path,
                 "best_accuracy": max(hist["val_acc"]),
-                "history": hist
+                "history": hist,
+                "device_used": device
             })
         except Exception as e:
             event_queue.put({
