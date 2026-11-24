@@ -15,7 +15,8 @@ import {
   Terminal,
   AlertTriangle,
   Trash2,
-  FolderCheck
+  FolderCheck,
+  Square
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -47,6 +48,7 @@ export const Module3Training: React.FC = () => {
 
   const [systemStatus, setSystemStatus] = useState<any>(null);
   const [isTraining, setIsTraining] = useState<boolean>(false);
+  const [isStopping, setIsStopping] = useState<boolean>(false);
   const [currentEpoch, setCurrentEpoch] = useState<number>(0);
   const [progressVal, setProgressVal] = useState<number>(0);
   const [epochHistory, setEpochHistory] = useState<EpochData[]>([]);
@@ -68,6 +70,27 @@ export const Module3Training: React.FC = () => {
     setLogs([]);
   };
 
+  const handleStopTraining = async () => {
+    setIsStopping(true);
+    setLogs((prev) => [
+      ...prev,
+      {
+        id: `log-${Date.now()}-stop-req`,
+        timestamp: new Date().toLocaleTimeString(),
+        message: "[HALT] Stop signal issued by user. Halting active PyTorch training loop...",
+        type: "error"
+      }
+    ]);
+
+    try {
+      await fetch("http://127.0.0.1:8000/api/train/stop", { method: "POST" }).catch(() =>
+        fetch("/api/train/stop", { method: "POST" })
+      );
+    } catch (err) {
+      console.error("Error stopping training:", err);
+    }
+  };
+
   const fetchStatus = async () => {
     try {
       const res = await fetch("/api/status");
@@ -85,6 +108,7 @@ export const Module3Training: React.FC = () => {
 
   const handleStartTraining = async () => {
     setIsTraining(true);
+    setIsStopping(false);
     setCompletionMessage(null);
     setEpochHistory([]);
     setProgressVal(0);
@@ -198,6 +222,23 @@ export const Module3Training: React.FC = () => {
                 setCurrentEpoch(event.epoch);
                 setProgressVal((event.epoch / event.total_epochs) * 100);
                 setEpochHistory((prev) => [...prev, event]);
+              } else if (event.type === "stopped") {
+                const usedDev = event.device_used ? event.device_used.toUpperCase() : deviceMode.toUpperCase();
+                setCompletionMessage(
+                  `Training halted gracefully by user. Model checkpoint preserved at ${event.checkpoint_path}`
+                );
+                setLogs((prev) => [
+                  ...prev,
+                  {
+                    id: `log-${Date.now()}-stopped`,
+                    timestamp: event.timestamp || new Date().toLocaleTimeString(),
+                    message: `[HALT] ${event.message || "Training pipeline halted by user request."}`,
+                    type: "error"
+                  }
+                ]);
+                setIsTraining(false);
+                setIsStopping(false);
+                fetchStatus();
               } else if (event.type === "complete") {
                 const usedDev = event.device_used ? event.device_used.toUpperCase() : deviceMode.toUpperCase();
                 const wasFallback = event.fallback_applied || (deviceMode === "cuda" && usedDev === "CPU");
@@ -215,6 +256,7 @@ export const Module3Training: React.FC = () => {
                   }
                 ]);
                 setIsTraining(false);
+                setIsStopping(false);
                 fetchStatus();
               } else if (event.type === "error") {
                 setCompletionMessage(`Training error: ${event.message}`);
@@ -228,6 +270,7 @@ export const Module3Training: React.FC = () => {
                   }
                 ]);
                 setIsTraining(false);
+                setIsStopping(false);
               }
             } catch (err) {
               console.error("Error parsing SSE:", err);
@@ -248,6 +291,7 @@ export const Module3Training: React.FC = () => {
         }
       ]);
       setIsTraining(false);
+      setIsStopping(false);
     }
   };
 
@@ -483,20 +527,39 @@ export const Module3Training: React.FC = () => {
               </div>
             </div>
 
-            <Button
-              onClick={handleStartTraining}
-              disabled={isTraining}
-              className="w-full mt-2 shadow-sm"
-              variant={deviceMode === "cuda" && !systemStatus?.cuda_available ? "outline" : "cyber"}
-              size="lg"
-            >
-              <Play className={`w-4 h-4 mr-2 ${isTraining ? "animate-spin" : ""}`} />
-              {isTraining 
-                ? (currentEpoch > 0 ? `Training Epoch ${currentEpoch}/${epochs} on ${deviceMode.toUpperCase()}...` : `Preloading Dataset & Initializing ViT...`)
-                : deviceMode === "cuda" && !systemStatus?.cuda_available
-                ? "Launch PyTorch Training (GPU Selected • CPU Fallback)"
-                : `Launch Real PyTorch Training on ${deviceMode === "cuda" ? "GPU (CUDA)" : "CPU"}`}
-            </Button>
+            {isTraining ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                <div className="sm:col-span-2 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-semibold bg-slate-100 border border-slate-200 text-slate-700 select-none shadow-2xs">
+                  <Play className="w-4 h-4 animate-spin text-blue-600 flex-shrink-0" />
+                  <span className="truncate">
+                    {currentEpoch > 0 ? `Epoch ${currentEpoch}/${epochs} on ${deviceMode.toUpperCase()}...` : `Preloading ViT Dataset...`}
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  onClick={handleStopTraining}
+                  disabled={isStopping}
+                  className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold border-rose-600 shadow-sm transition-all"
+                  size="lg"
+                >
+                  <Square className="w-3.5 h-3.5 mr-1.5 fill-current" />
+                  {isStopping ? "Halting..." : "Stop"}
+                </Button>
+              </div>
+            ) : (
+              <Button
+                onClick={handleStartTraining}
+                disabled={isTraining}
+                className="w-full mt-2 shadow-sm"
+                variant={deviceMode === "cuda" && !systemStatus?.cuda_available ? "outline" : "cyber"}
+                size="lg"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                {deviceMode === "cuda" && !systemStatus?.cuda_available
+                  ? "Launch PyTorch Training (GPU Selected • CPU Fallback)"
+                  : `Launch Real PyTorch Training on ${deviceMode === "cuda" ? "GPU (CUDA)" : "CPU"}`}
+              </Button>
+            )}
           </CardContent>
         </Card>
 
@@ -610,10 +673,22 @@ export const Module3Training: React.FC = () => {
               PyTorch Execution Stream &amp; Training Telemetry
             </CardTitle>
             {isTraining ? (
-              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-950 text-emerald-400 border border-emerald-700/60 font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                LIVE STREAM
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-950 text-emerald-400 border border-emerald-700/60 font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  LIVE STREAM
+                </span>
+                <button
+                  type="button"
+                  onClick={handleStopTraining}
+                  disabled={isStopping}
+                  title="Halt active training execution"
+                  className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-rose-950 text-rose-300 border border-rose-700 hover:bg-rose-900 transition-colors cursor-pointer font-bold"
+                >
+                  <Square className="w-2.5 h-2.5 fill-current text-rose-400" />
+                  <span>{isStopping ? "Halting..." : "Stop"}</span>
+                </button>
+              </div>
             ) : (
               <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-800 text-slate-400 border border-slate-700">
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
@@ -677,6 +752,8 @@ export const Module3Training: React.FC = () => {
                     badgeClass = "text-amber-400 bg-amber-950/80 border-amber-600/80";
                   } else if (badgeLabel.includes("FALLBACK")) {
                     badgeClass = "text-yellow-300 bg-yellow-950/80 border-yellow-600/80";
+                  } else if (badgeLabel.includes("HALT")) {
+                    badgeClass = "text-rose-300 bg-rose-950/80 border-rose-600/80";
                   } else if (badgeLabel.includes("DATASET")) {
                     badgeClass = "text-emerald-400 bg-emerald-950/60 border-emerald-800/60";
                   } else if (badgeLabel.includes("PRELOAD")) {
@@ -715,6 +792,8 @@ export const Module3Training: React.FC = () => {
                     <span className={`flex-1 break-all ${
                       log.type === "error" || badgeLabel.includes("ERROR")
                         ? "text-rose-400 font-semibold" 
+                        : badgeLabel.includes("HALT")
+                        ? "text-rose-300 font-semibold"
                         : badgeLabel.includes("WARNING")
                         ? "text-amber-300 font-semibold"
                         : badgeLabel.includes("FALLBACK")

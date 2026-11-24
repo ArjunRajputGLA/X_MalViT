@@ -25,10 +25,11 @@ class MalimgDataset(Dataset):
     Loads real grayscale PE executable byte images directly from data/sample/<family>/.
     Supports both ultra-fast in-memory caching and on-the-fly streaming.
     """
-    def __init__(self, num_samples_per_family=25, image_size=(224, 224), data_dir=None, log_fn=None):
+    def __init__(self, num_samples_per_family=25, image_size=(224, 224), data_dir=None, log_fn=None, stop_event=None):
         self.image_size = image_size
         self.file_items = []  # List of (filepath_or_None, class_idx, family_name, seed)
         self.log = log_fn or print
+        self.stop_event = stop_event
         
         if data_dir is None:
             base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -39,6 +40,9 @@ class MalimgDataset(Dataset):
         self.log(f"[DATASET] Scanning Malimg benchmark repository at '{data_dir}'...")
 
         for class_idx, raw_family in enumerate(MALWARE_FAMILIES):
+            if self.stop_event and self.stop_event.is_set():
+                self.log("[HALT] Dataset scan interrupted by user stop request.")
+                break
             family = normalize_family_name(raw_family)
             fam_dir = os.path.join(data_dir, family)
             
@@ -78,16 +82,20 @@ class MalimgDataset(Dataset):
             self.log(f"[DATASET] Preloading {len(self.file_items)} tensors into memory (224x224 grayscale) for maximum throughput...")
             preload_interval = max(25, len(self.file_items) // 5)
             for idx, item in enumerate(self.file_items):
+                if self.stop_event and self.stop_event.is_set():
+                    self.log("[HALT] Dataset preloading aborted by user.")
+                    break
                 tensor, label = self._load_item(item)
                 self.cached_images.append(tensor)
                 self.cached_labels.append(label)
                 if (idx + 1) % preload_interval == 0 or idx == len(self.file_items) - 1:
                     pct = int(((idx + 1) / len(self.file_items)) * 100)
                     self.log(f"[PRELOAD] Ingested {idx + 1}/{len(self.file_items)} binary tensors ({pct}% complete)...")
-            self.cached_images = torch.stack(self.cached_images)
-            self.cached_labels = torch.tensor(self.cached_labels, dtype=torch.long)
-            self.preloaded = True
-            self.log(f"[DATASET] RAM caching complete. {len(self.cached_labels)} high-speed tensors ready for execution.")
+            if not (self.stop_event and self.stop_event.is_set()):
+                self.cached_images = torch.stack(self.cached_images)
+                self.cached_labels = torch.tensor(self.cached_labels, dtype=torch.long)
+                self.preloaded = True
+                self.log(f"[DATASET] RAM caching complete. {len(self.cached_labels)} high-speed tensors ready for execution.")
 
     def _load_item(self, item):
         filepath, class_idx, family, seed = item
@@ -178,7 +186,7 @@ class XMalViTModel(nn.Module):
 
 
 # ==================== TRAINING ENGINE ====================
-def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, device=None, checkpoint_dir="checkpoints", callback=None, log_fn=None):
+def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, device=None, checkpoint_dir="checkpoints", callback=None, log_fn=None, stop_event=None):
     log = log_fn or print
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -202,7 +210,11 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
     checkpoint_path = os.path.join(checkpoint_dir, "x_malvit_weights.pt")
 
     # Load dataset
-    dataset = MalimgDataset(num_samples_per_family=num_samples_per_family, log_fn=log)
+    dataset = MalimgDataset(num_samples_per_family=num_samples_per_family, log_fn=log, stop_event=stop_event)
+    if stop_event and stop_event.is_set():
+        log("[HALT] Dataset initialization aborted by user.")
+        return checkpoint_path, {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": [], "vram_mb": []}
+
     train_size = int(0.8 * len(dataset))
     val_size = len(dataset) - train_size
     train_set, val_set = torch.utils.data.random_split(dataset, [train_size, val_size])
@@ -224,6 +236,10 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
     history = {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": [], "vram_mb": []}
 
     for epoch in range(1, epochs + 1):
+        if stop_event and stop_event.is_set():
+            log(f"[HALT] User halt requested. Training loop exited before Epoch {epoch:02d}.")
+            break
+
         log(f"[EPOCH {epoch:02d}/{epochs:02d}] Forward/backward pass in progress across {len(train_loader)} batches...")
         model.train()
         running_loss = 0.0
@@ -235,6 +251,10 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
         batch_log_interval = max(1, len(train_loader) // 4)
 
         for batch_idx, (images, targets) in enumerate(train_loader):
+            if stop_event and stop_event.is_set():
+                log(f"[HALT] Training loop interrupted by user at Batch {batch_idx + 1}/{len(train_loader)} of Epoch {epoch:02d}.")
+                break
+
             images, targets = images.to(device, non_blocking=True), targets.to(device, non_blocking=True)
             optimizer.zero_grad()
 
@@ -256,6 +276,9 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
                 cur_acc = (correct / max(1, total)) * 100
                 log(f"[BATCH {batch_idx + 1:02d}/{len(train_loader):02d}] Epoch {epoch:02d} | Step Loss: {loss.item():.4f} | Running Loss: {cur_loss:.4f} | Batch Acc: {cur_acc:.1f}%")
 
+        if stop_event and stop_event.is_set():
+            break
+
         epoch_loss = running_loss / max(1, total)
         epoch_acc = correct / max(1, total)
 
@@ -267,6 +290,8 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
         val_total = 0
         with torch.no_grad():
             for images, targets in val_loader:
+                if stop_event and stop_event.is_set():
+                    break
                 images, targets = images.to(device, non_blocking=True), targets.to(device, non_blocking=True)
                 with torch.amp.autocast('cuda', enabled=is_cuda):
                     outputs = model(images)
@@ -275,6 +300,9 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
                 _, predicted = outputs.max(1)
                 val_total += targets.size(0)
                 val_correct += predicted.eq(targets).sum().item()
+
+        if stop_event and stop_event.is_set():
+            break
 
         val_loss = val_loss / max(1, val_total)
         val_acc = val_correct / max(1, val_total)
@@ -308,7 +336,10 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
             callback(epoch, epochs, epoch_loss, epoch_acc, val_loss, val_acc, vram_mb)
 
     total_time = time.time() - start_time
-    log(f"[COMPLETE] Real PyTorch training completed in {total_time:.2f} seconds. Peak Val Accuracy: {best_val_acc*100:.2f}%")
+    if stop_event and stop_event.is_set():
+        log(f"[HALT] PyTorch training pipeline halted gracefully after {total_time:.1f}s. Checkpoint preserved at {checkpoint_path}.")
+    else:
+        log(f"[COMPLETE] Real PyTorch training completed in {total_time:.2f} seconds. Peak Val Accuracy: {best_val_acc*100:.2f}%")
     return checkpoint_path, history
 
 

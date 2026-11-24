@@ -268,12 +268,15 @@ async def predict_upload(
 
 
 # ==================== 4. TRAINING LAB & REAL-TIME PROGRESS ====================
+ACTIVE_TRAINING_STOP_EVENT = threading.Event()
+
 @app.post("/api/train")
 def launch_training(req: TrainRequest):
     """
     Launches real PyTorch training and streams real-time epoch telemetry and console logs
     using Server-Sent Events (SSE).
     """
+    ACTIVE_TRAINING_STOP_EVENT.clear()
     event_queue = queue.Queue()
 
     def log_handler(msg: str):
@@ -327,20 +330,33 @@ def launch_training(req: TrainRequest):
                 num_samples_per_family=req.samples_per_family,
                 device=device,
                 callback=train_callback,
-                log_fn=log_handler
+                log_fn=log_handler,
+                stop_event=ACTIVE_TRAINING_STOP_EVENT
             )
             # Reload global engine with freshly trained weights
             global ENGINE
             ENGINE = XMalViTEngine()
-            event_queue.put({
-                "type": "complete",
-                "checkpoint_path": ckpt_path,
-                "best_accuracy": max(hist["val_acc"]),
-                "history": hist,
-                "device_used": device,
-                "fallback_applied": fallback_applied,
-                "timestamp": time.strftime("%H:%M:%S")
-            })
+
+            best_acc = max(hist["val_acc"]) if hist and hist.get("val_acc") and len(hist["val_acc"]) > 0 else 0.0
+            if ACTIVE_TRAINING_STOP_EVENT.is_set():
+                event_queue.put({
+                    "type": "stopped",
+                    "checkpoint_path": ckpt_path,
+                    "best_accuracy": best_acc,
+                    "device_used": device,
+                    "message": "PyTorch training halted gracefully by user.",
+                    "timestamp": time.strftime("%H:%M:%S")
+                })
+            else:
+                event_queue.put({
+                    "type": "complete",
+                    "checkpoint_path": ckpt_path,
+                    "best_accuracy": best_acc,
+                    "history": hist,
+                    "device_used": device,
+                    "fallback_applied": fallback_applied,
+                    "timestamp": time.strftime("%H:%M:%S")
+                })
         except Exception as e:
             log_handler(f"[ERROR] Exception during training: {str(e)}")
             event_queue.put({
@@ -368,7 +384,7 @@ def launch_training(req: TrainRequest):
             try:
                 item = event_queue.get(timeout=0.5)
                 yield f"data: {json.dumps(item)}\n\n"
-                if item.get("type") in ["complete", "error"]:
+                if item.get("type") in ["complete", "error", "stopped"]:
                     break
             except queue.Empty:
                 # Periodic heartbeat ensures proxies and fetch never timeout
@@ -384,6 +400,15 @@ def launch_training(req: TrainRequest):
             "Content-Type": "text/event-stream; charset=utf-8"
         }
     )
+
+@app.post("/api/train/stop")
+def stop_training():
+    """Signals any active PyTorch training thread to halt gracefully."""
+    ACTIVE_TRAINING_STOP_EVENT.set()
+    return {
+        "status": "stopping",
+        "message": "Stop signal delivered to PyTorch training worker."
+    }
 
 
 # ==================== 5. SOTA BENCHMARKS & CONFUSION MATRIX ====================
