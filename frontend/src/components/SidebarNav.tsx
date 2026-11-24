@@ -68,12 +68,12 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         {/* Brand Header */}
         <div className={cn(
           "flex items-center gap-3 px-1 mb-6 transition-all duration-200",
-          isCollapsed ? "justify-center" : "justify-between"
+          isCollapsed ? "justify-center" : "justify-start"
         )}>
           <div className="flex items-center gap-2.5 min-w-0">
             <div 
               onClick={onToggleCollapse}
-              title={isCollapsed ? "Expand Sidebar" : "X-MalViT Control"}
+              title={isCollapsed ? "Expand Sidebar (Ctrl+B)" : "X-MalViT Threat Intelligence"}
               className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 flex-shrink-0 cursor-pointer hover:scale-105 active:scale-95 transition-transform"
             >
               <ShieldCheck className="w-5 h-5" />
@@ -98,18 +98,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
               )}
             </AnimatePresence>
           </div>
-
-          {/* Quick Collapse Button inside Sidebar */}
-          {!isCollapsed && (
-            <button
-              type="button"
-              onClick={onToggleCollapse}
-              title="Collapse Sidebar"
-              className="w-6 h-6 rounded-lg bg-white/80 hover:bg-white border border-slate-200/60 flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors shadow-2xs"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-          )}
         </div>
 
         {/* Section 1: Command Center */}

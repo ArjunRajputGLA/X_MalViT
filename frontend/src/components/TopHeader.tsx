@@ -57,19 +57,21 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   return (
     <header className="h-16 flex-shrink-0 bg-transparent px-6 lg:px-8 flex items-center justify-between z-20">
       {/* Left: Collapse Icon Toggle + Dynamic Title */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3.5">
         <button
           type="button"
           onClick={onToggleCollapse}
           title={isCollapsed ? "Expand Sidebar (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
-          className="w-9 h-9 rounded-xl bg-white border border-slate-200/80 hover:bg-slate-50 flex items-center justify-center text-slate-600 hover:text-emerald-700 transition-all shadow-xs cursor-pointer active:scale-95"
+          className="w-8 h-8 rounded-lg bg-white border border-slate-200/80 hover:bg-emerald-50 text-slate-500 hover:text-emerald-700 shadow-2xs hover:shadow-xs flex items-center justify-center transition-all cursor-pointer active:scale-95 group"
         >
           {isCollapsed ? (
-            <PanelLeft className="w-4 h-4 text-emerald-600 transition-transform" />
+            <PanelLeft className="w-4 h-4 text-emerald-600 transition-transform group-hover:scale-110" />
           ) : (
-            <PanelLeftClose className="w-4 h-4 transition-transform" />
+            <PanelLeftClose className="w-4 h-4 transition-transform group-hover:scale-110" />
           )}
         </button>
+
+        <div className="h-5 w-px bg-slate-200/80" />
 
         <div>
           <h1 className="text-base lg:text-lg font-bold text-slate-900 tracking-tight">
