@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { CommandHeader } from "@/components/CommandHeader";
 import { SidebarNav, ModuleKey } from "@/components/SidebarNav";
+import { TopHeader } from "@/components/TopHeader";
 import { Module1Executive } from "@/components/modules/Module1Executive";
 import { Module2Dataset } from "@/components/modules/Module2Dataset";
 import { Module3Training } from "@/components/modules/Module3Training";
@@ -23,30 +23,34 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen p-3 sm:p-5 lg:p-6 max-w-[1700px] mx-auto bg-slate-50/60">
-      {/* Top Cyber Command Header */}
-      <CommandHeader systemStatus={systemStatus} />
+    <div className="min-h-screen flex bg-[#f8fafc]">
+      {/* Persistent Full-Height Left Sidebar */}
+      <SidebarNav
+        activeModule={activeModule}
+        onSelectModule={setActiveModule}
+        systemStatus={systemStatus}
+      />
 
-      {/* Main Two-Column Layout */}
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Left Interactive Sidebar */}
-        <SidebarNav
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Sticky Top Header */}
+        <TopHeader
           activeModule={activeModule}
-          onSelectModule={setActiveModule}
           systemStatus={systemStatus}
+          onNavigate={setActiveModule}
         />
 
-        {/* Right Active Module Viewport with Animated Transitions */}
-        <section className="flex-1 min-w-0">
+        {/* Dynamic Viewport Canvas */}
+        <main className="flex-1 p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeModule}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
             >
-              {activeModule === "briefing" && <Module1Executive />}
+              {activeModule === "briefing" && <Module1Executive onNavigate={setActiveModule} />}
               {activeModule === "dataset" && <Module2Dataset />}
               {activeModule === "training" && <Module3Training />}
               {activeModule === "benchmark" && <Module4Benchmark />}
@@ -54,8 +58,8 @@ export default function Home() {
               {activeModule === "viva" && <Module6Viva />}
             </motion.div>
           </AnimatePresence>
-        </section>
+        </main>
       </div>
-    </main>
+    </div>
   );
 }
