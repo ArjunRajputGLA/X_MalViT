@@ -3,7 +3,9 @@
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![PyTorch 2.5](https://img.shields.io/badge/PyTorch-2.5%20CUDA-ee4c2c.svg)](https://pytorch.org/)
 [![NVIDIA CUDA](https://img.shields.io/badge/NVIDIA-RTX%204050%20(FP16)-76b900.svg)](https://developer.nvidia.com/cuda-zone)
-[![Streamlit](https://img.shields.io/badge/Streamlit-Cyber%20SOC-FF4B4B.svg)](https://streamlit.io/)
+[![Next.js 15](https://img.shields.io/badge/Next.js-15%20App%20Router-black.svg)](https://nextjs.org/)
+[![shadcn/ui](https://img.shields.io/badge/UI-shadcn%2Fui%20%2B%20Tailwind-38bdf8.svg)](https://ui.shadcn.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-High%20Performance%20Async-009688.svg)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 An end-to-end Explainable AI (XAI) deep learning framework combining a lightweight **Vision Transformer (ViT-Tiny)** with **Gradient-weighted Class Activation Mapping (Grad-CAM)** for static Windows PE malware family classification on the **Malimg benchmark** (25 malware families, 9,339 binaries).
@@ -14,6 +16,15 @@ An end-to-end Explainable AI (XAI) deep learning framework combining a lightweig
 - **Keshav Agrawal** (`keshavagr595@gmail.com`)
 - **Arjun Singh Rajput** (`arjunrajput2k4@gmail.com`)  
 *Department of Computer Science & Engineering, GLA University, Mathura, Uttar Pradesh, India*
+
+---
+
+## 🏗️ Architecture & Technology Stack
+
+The project features a decoupled, high-performance architecture:
+- **Frontend Dashboard:** Modern **Next.js (App Router) + TypeScript + Tailwind CSS + shadcn/ui**, providing a cyberpunk glassmorphic Cyber Defense Command Center.
+- **Backend AI Engine:** **FastAPI + Uvicorn**, serving real-time PyTorch tensor inference, Grad-CAM attribution, SSE streaming training updates, and PE section disassembly.
+- **Neural Backbone:** **ViT-Tiny (~5.8M parameters)** tokenizing $224 \times 224$ grayscale opcode textures into $16 \times 16$ non-overlapping patches with multi-head self-attention.
 
 ---
 
@@ -41,62 +52,65 @@ Evaluated on the held-out test split of the Malimg benchmark:
 
 ---
 
-## 📁 Repository Structure
+## 🚀 Quickstart Guide
 
+### Option 1: One-Click Launch (Recommended)
+Double-click [`run_fullstack.bat`](file:///c:/Users/imsto/Desktop/Final%20Year%20Paper/X_MalVit/run_fullstack.bat) or run from PowerShell:
+```cmd
+run_fullstack.bat
 ```
-├── app.py                             # Futuristic Cyberpunk / Glassmorphism SOC Streamlit App
-├── train.py                           # Standalone PyTorch CUDA FP16 Training Engine
-├── model_engine.py                    # Inference Pipeline & Grad-CAM Heatmap Generator
-├── dataset_generator.py               # Synthetic PE Binary & Malimg Dataset Loader
-├── IEEE_Research_Paper_X_MalViT.pdf   # Camera-Ready 4-Page IEEE Conference Paper
-├── IEEE_Research_Paper_X_MalViT.md    # Complete IEEE Manuscript (Markdown Source)
-├── Malware_Research_Project_Guide.pdf # 2-Page Color Viva Defense & Project Guide
-├── run_streamlit_gpu.bat              # 1-Click Streamlit Dashboard Launcher (RTX 4050)
-├── run_training_gpu.bat               # 1-Click PyTorch GPU Training Launcher
-├── checkpoints/                       # Saved PyTorch Checkpoints (.pt weights)
-└── data/                              # Sample Malimg Byte Textures & Binaries
+This automatically launches both the **FastAPI backend (port 8000)** and the **Next.js frontend (port 3000)** and opens your browser.
+
+### Option 2: Manual Terminal Execution
+
+#### 1. Start FastAPI Backend:
+```bash
+python api_server.py
+# Backend running at http://127.0.0.1:8000
+# OpenAPI Swagger documentation available at http://127.0.0.1:8000/docs
+```
+
+#### 2. Start Next.js Frontend:
+```bash
+cd frontend
+npm run dev
+# Dashboard running at http://localhost:3000
 ```
 
 ---
 
-## 🚀 Quick Start Guide
+## 📂 Project Structure
 
-### 1. Requirements & Dependencies
-Ensure Python 3.10+ and PyTorch with CUDA are installed:
-```bash
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
-pip install streamlit matplotlib pandas scikit-learn pillow
 ```
-
-### 2. Launch Cyber SOC Web Dashboard
-Run the interactive Streamlit command center:
-```bash
-streamlit run app.py
+X_MalVit/
+├── api_server.py               # High-performance FastAPI REST & SSE Backend
+├── model_engine.py             # PyTorch Vision Transformer & Grad-CAM attribution engine
+├── dataset_generator.py        # Malimg 25-family dataset & synthetic PE texture generator
+├── train.py                    # Standalone PyTorch GPU/CPU training pipeline
+├── checkpoints/
+│   └── x_malvit_weights.pt     # Pre-trained ViT-Tiny weights (98.8% accuracy)
+├── frontend/                   # Modern Next.js 15 + TypeScript + Tailwind + shadcn/ui App
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── layout.tsx      # Cyberpunk theme root layout
+│   │   │   ├── page.tsx        # Main application controller
+│   │   │   └── globals.css     # Glassmorphism & cyber variables
+│   │   ├── components/
+│   │   │   ├── CommandHeader.tsx
+│   │   │   ├── SidebarNav.tsx
+│   │   │   ├── modules/
+│   │   │   │   ├── Module1Executive.tsx   # Executive Briefing & Architecture
+│   │   │   │   ├── Module2Dataset.tsx     # Malimg Dataset Explorer & Histograms
+│   │   │   │   ├── Module3Training.tsx    # RTX 4050 Training Lab
+│   │   │   │   ├── Module4Benchmark.tsx   # SOTA Benchmarks & Confusion Matrix
+│   │   │   │   ├── Module5Classifier.tsx  # Real-Time Grad-CAM Classifier & Disassembly
+│   │   │   │   └── Module6Viva.tsx        # IEEE Manuscript & Viva Defense Panel
+│   │   │   └── ui/             # Radix & shadcn reusable primitives
+│   │   └── lib/
+│   └── next.config.ts          # Transparent API proxy to FastAPI (port 8000)
+├── run_fullstack.bat           # 1-Click launcher for both Backend & Frontend
+├── run_backend.bat             # Backend launcher
+├── run_frontend.bat            # Frontend launcher
+├── IEEE_Research_Paper_X_MalViT.pdf
+└── Malware_Research_Project_Guide.pdf
 ```
-*(Or double-click `run_streamlit_gpu.bat` on Windows)*
-
-The dashboard provides:
-- **Dataset Explorer:** Explore 25 malware families, byte-to-grayscale conversion, and PE section anatomy.
-- **Model Training Lab:** Interactive hyperparameter controls, real-time loss/accuracy curves, and GPU telemetry.
-- **Forensic Classifier (XAI):** Upload or select samples for classification, multi-colormap Grad-CAM attention heatmaps, PE reverse mapping, and hex dumps.
-- **SOTA Benchmarking:** Side-by-side performance comparison and adversarial robustness analysis.
-- **IEEE Viva Panel:** Interactive transformer architecture breakdown and examiner Q&A.
-
-### 3. Standalone PyTorch GPU Training
-Train the model directly on your NVIDIA GPU:
-```bash
-python train.py --epochs 6 --batch-size 32 --samples 25 --device cuda
-```
-*(Or double-click `run_training_gpu.bat` on Windows)*
-
----
-
-## 📜 Research Paper
-The full camera-ready manuscript formatted according to official IEEE 2-column conference standards is available at:
-- **PDF Version:** [`IEEE_Research_Paper_X_MalViT.pdf`](IEEE_Research_Paper_X_MalViT.pdf)
-- **Executive Viva Guide:** [`Malware_Research_Project_Guide.pdf`](Malware_Research_Project_Guide.pdf)
-
----
-
-## 🛡️ License
-This project is licensed under the MIT License - see the LICENSE file for details.

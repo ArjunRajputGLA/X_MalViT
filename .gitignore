@@ -29,3 +29,9 @@ $RECYCLE.BIN/
 *.log
 temp_*.pdf
 test_*.pdf
+
+# Node & Next.js
+node_modules/
+.next/
+out/
+build/

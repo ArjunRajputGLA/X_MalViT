@@ -8,6 +8,7 @@ import os
 import numpy as np
 from PIL import Image
 import matplotlib.cm as cm
+import matplotlib.pyplot as plt
 
 import torch
 import torch.nn.functional as F
@@ -147,9 +148,9 @@ class XMalViTEngine:
         cam_resized = np.array(cam_pil, dtype=np.float32) / 255.0
 
         try:
-            colormap = cm.get_cmap(colormap_name)
+            colormap = plt.get_cmap(colormap_name)
         except Exception:
-            colormap = cm.get_cmap('jet')
+            colormap = plt.get_cmap('jet')
 
         heatmap_colored = colormap(cam_resized)[:, :, :3]
         heatmap_colored = (heatmap_colored * 255).astype(np.uint8)
