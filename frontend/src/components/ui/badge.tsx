@@ -11,13 +11,13 @@ export function Badge({ className, variant = "default", ...props }: BadgeProps) 
       className={cn(
         "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
         {
-          "border-transparent bg-sky-500/20 text-sky-400 border-sky-500/40": variant === "default",
-          "border-transparent bg-slate-800 text-slate-300": variant === "secondary",
-          "border-transparent bg-rose-500/20 text-rose-400 border-rose-500/40": variant === "destructive",
-          "border-transparent bg-emerald-500/20 text-emerald-400 border-emerald-500/40": variant === "success",
-          "border-transparent bg-amber-500/20 text-amber-400 border-amber-500/40": variant === "warning",
-          "border-transparent bg-gradient-to-r from-sky-500/30 to-indigo-500/30 text-sky-300 border-sky-400/50": variant === "cyber",
-          "border-slate-700 text-slate-300": variant === "outline",
+          "bg-blue-50 text-blue-700 border-blue-200": variant === "default",
+          "bg-slate-100 text-slate-700 border-slate-200": variant === "secondary",
+          "bg-rose-50 text-rose-700 border-rose-200": variant === "destructive",
+          "bg-emerald-50 text-emerald-700 border-emerald-200": variant === "success",
+          "bg-amber-50 text-amber-700 border-amber-200": variant === "warning",
+          "bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border-blue-200 font-bold": variant === "cyber",
+          "border-slate-200 text-slate-600 bg-white": variant === "outline",
         },
         className
       )}

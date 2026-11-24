@@ -5,18 +5,14 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Slider } from "@/components/ui/slider";
 import { 
   Cpu, 
   Play, 
   Settings2, 
   CheckCircle2, 
-  TrendingUp, 
-  HardDrive, 
-  Zap, 
-  Layers, 
   Activity 
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface EpochData {
   epoch: number;
@@ -128,26 +124,31 @@ export const Module3Training: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Hyperparameter Control Panel */}
-        <Card className="border-sky-500/20 bg-slate-900/60">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base text-sky-400 flex items-center gap-2">
-              <Settings2 className="w-5 h-5 text-sky-400" />
+        <Card className="border-slate-200/80 bg-white shadow-xs">
+          <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
+            <CardTitle className="text-base text-slate-800 flex items-center gap-2 font-bold">
+              <Settings2 className="w-5 h-5 text-blue-600" />
               Architecture & Hyperparameter Tuning
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="pt-4 space-y-4">
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+              <label className="text-xs font-semibold text-slate-700 block mb-1.5">
                 Target Neural Architecture
               </label>
               <select
                 value={architecture}
                 onChange={(e) => setArchitecture(e.target.value)}
                 disabled={isTraining}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500 transition-colors"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all font-medium"
               >
                 <option value="X-MalViT Tiny (Proposed - 5.8M Params)">
                   X-MalViT Tiny (Proposed - 5.8M Params)
@@ -163,9 +164,9 @@ export const Module3Training: React.FC = () => {
 
             {/* Epoch Slider */}
             <div>
-              <div className="flex justify-between text-xs font-semibold text-slate-300 mb-1.5">
+              <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1.5">
                 <span>Training Epochs:</span>
-                <span className="font-mono text-sky-400">{epochs}</span>
+                <span className="font-mono text-blue-700 font-bold">{epochs}</span>
               </div>
               <input
                 type="range"
@@ -175,9 +176,9 @@ export const Module3Training: React.FC = () => {
                 value={epochs}
                 disabled={isTraining}
                 onChange={(e) => setEpochs(Number(e.target.value))}
-                className="w-full accent-sky-500 cursor-pointer"
+                className="w-full accent-blue-600 cursor-pointer h-2 bg-slate-100 rounded-lg appearance-none"
               />
-              <div className="flex justify-between text-[10px] text-slate-500 font-mono mt-0.5">
+              <div className="flex justify-between text-[10px] text-slate-400 font-mono mt-1 font-semibold">
                 <span>2</span>
                 <span>4</span>
                 <span>6</span>
@@ -188,7 +189,7 @@ export const Module3Training: React.FC = () => {
 
             {/* Batch Size Selection */}
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+              <label className="text-xs font-semibold text-slate-700 block mb-1.5">
                 Batch Size (Tensor Cores)
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -198,10 +199,10 @@ export const Module3Training: React.FC = () => {
                     type="button"
                     disabled={isTraining}
                     onClick={() => setBatchSize(bs)}
-                    className={`py-1.5 px-3 rounded-lg text-xs font-mono font-semibold border transition-all ${
+                    className={`py-2 px-3 rounded-xl text-xs font-mono font-bold border transition-all ${
                       batchSize === bs
-                        ? "bg-sky-500/20 border-sky-400 text-sky-300"
-                        : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                        ? "bg-blue-50 border-blue-400 text-blue-700 shadow-xs"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-white"
                     }`}
                   >
                     {bs}
@@ -212,7 +213,7 @@ export const Module3Training: React.FC = () => {
 
             {/* Samples per family */}
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+              <label className="text-xs font-semibold text-slate-700 block mb-1.5">
                 Samples per Malware Family
               </label>
               <div className="grid grid-cols-4 gap-2">
@@ -222,10 +223,10 @@ export const Module3Training: React.FC = () => {
                     type="button"
                     disabled={isTraining}
                     onClick={() => setSamplesPerFam(s)}
-                    className={`py-1.5 px-2 rounded-lg text-xs font-mono font-semibold border transition-all ${
+                    className={`py-2 px-2 rounded-xl text-xs font-mono font-bold border transition-all ${
                       samplesPerFam === s
-                        ? "bg-indigo-500/20 border-indigo-400 text-indigo-300"
-                        : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                        ? "bg-indigo-50 border-indigo-400 text-indigo-700 shadow-xs"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-white"
                     }`}
                   >
                     {s}
@@ -236,7 +237,7 @@ export const Module3Training: React.FC = () => {
 
             {/* Learning rate */}
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+              <label className="text-xs font-semibold text-slate-700 block mb-1.5">
                 AdamW Learning Rate
               </label>
               <div className="grid grid-cols-4 gap-2">
@@ -246,10 +247,10 @@ export const Module3Training: React.FC = () => {
                     type="button"
                     disabled={isTraining}
                     onClick={() => setLearningRate(lr)}
-                    className={`py-1.5 px-1 rounded-lg text-[11px] font-mono font-semibold border transition-all ${
+                    className={`py-2 px-1 rounded-xl text-[11px] font-mono font-bold border transition-all ${
                       learningRate === lr
-                        ? "bg-purple-500/20 border-purple-400 text-purple-300"
-                        : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                        ? "bg-purple-50 border-purple-400 text-purple-700 shadow-xs"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-white"
                     }`}
                   >
                     {lr}
@@ -261,7 +262,7 @@ export const Module3Training: React.FC = () => {
             <Button
               onClick={handleStartTraining}
               disabled={isTraining}
-              className="w-full mt-2"
+              className="w-full mt-2 shadow-sm"
               variant="cyber"
               size="lg"
             >
@@ -273,38 +274,38 @@ export const Module3Training: React.FC = () => {
 
         {/* Right Hardware Telemetry & Real-Time Curves */}
         <div className="space-y-6">
-          <Card className="border-sky-500/20 bg-slate-900/60">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base text-sky-400 flex items-center gap-2">
-                <Cpu className="w-5 h-5 text-sky-400" />
+          <Card className="border-slate-200/80 bg-white shadow-xs">
+            <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
+              <CardTitle className="text-base text-slate-800 flex items-center gap-2 font-bold">
+                <Cpu className="w-5 h-5 text-blue-600" />
                 Local Hardware Profile & Telemetry
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 font-mono text-xs">
-              <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex justify-between items-center">
-                <span className="text-slate-400 font-sans">Active Accelerator:</span>
-                <span className="text-sky-400 font-semibold">{systemStatus?.device_name || "NVIDIA RTX 4050"} ({systemStatus?.total_vram || "6.00 GB"} VRAM)</span>
+            <CardContent className="pt-4 space-y-2.5 font-mono text-xs">
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex justify-between items-center">
+                <span className="text-slate-500 font-sans font-medium">Active Accelerator:</span>
+                <span className="text-blue-700 font-bold">{systemStatus?.device_name || "NVIDIA RTX 4050"} ({systemStatus?.total_vram || "6.00 GB"} VRAM)</span>
               </div>
-              <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex justify-between items-center">
-                <span className="text-slate-400 font-sans">Precision Standard:</span>
-                <span className="text-indigo-400 font-semibold">FP16 Mixed Precision (AMP)</span>
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex justify-between items-center">
+                <span className="text-slate-500 font-sans font-medium">Precision Standard:</span>
+                <span className="text-indigo-700 font-bold">FP16 Mixed Precision (AMP)</span>
               </div>
-              <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex justify-between items-center">
-                <span className="text-slate-400 font-sans">Checkpoint Target:</span>
-                <span className="text-emerald-400 font-semibold">{systemStatus?.checkpoint_path || "checkpoints/x_malvit_weights.pt"}</span>
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex justify-between items-center">
+                <span className="text-slate-500 font-sans font-medium">Checkpoint Target:</span>
+                <span className="text-emerald-700 font-bold">{systemStatus?.checkpoint_path || "checkpoints/x_malvit_weights.pt"}</span>
               </div>
-              <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex justify-between items-center">
-                <span className="text-slate-400 font-sans">Loss Regularization:</span>
-                <span className="text-purple-400 font-semibold">Label Smoothing (ε = 0.1)</span>
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex justify-between items-center">
+                <span className="text-slate-500 font-sans font-medium">Loss Regularization:</span>
+                <span className="text-purple-700 font-bold">Label Smoothing (ε = 0.1)</span>
               </div>
             </CardContent>
           </Card>
 
           {/* Progress & Live Telemetry Curve */}
-          <Card className="border-sky-500/20 bg-slate-900/60">
-            <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-bold text-sky-400 flex items-center gap-2">
-                <Activity className="w-4 h-4 text-sky-400" />
+          <Card className="border-slate-200/80 bg-white shadow-xs">
+            <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50 flex flex-row items-center justify-between">
+              <CardTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-blue-600" />
                 Live Training Convergence
               </CardTitle>
               {isTraining && (
@@ -313,26 +314,26 @@ export const Module3Training: React.FC = () => {
                 </Badge>
               )}
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="pt-4 space-y-4">
               <div>
-                <div className="flex justify-between text-xs font-mono text-slate-300 mb-1.5">
+                <div className="flex justify-between text-xs font-mono text-slate-700 mb-1.5 font-medium">
                   <span>Epoch Progress: {currentEpoch}/{epochs}</span>
-                  <span className="text-sky-400 font-bold">{progressVal.toFixed(0)}%</span>
+                  <span className="text-blue-700 font-bold">{progressVal.toFixed(0)}%</span>
                 </div>
                 <Progress value={progressVal} />
               </div>
 
               {epochHistory.length > 0 && (
                 <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-                  <div className="p-2 rounded bg-slate-950 border border-slate-800">
-                    <div className="text-slate-400">Current Loss:</div>
-                    <div className="text-base font-bold text-rose-400">
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200/80">
+                    <div className="text-rose-600 font-sans font-medium">Current Loss:</div>
+                    <div className="text-lg font-bold text-rose-700 mt-0.5">
                       {epochHistory[epochHistory.length - 1].train_loss.toFixed(4)}
                     </div>
                   </div>
-                  <div className="p-2 rounded bg-slate-950 border border-slate-800">
-                    <div className="text-slate-400">Val Accuracy:</div>
-                    <div className="text-base font-bold text-emerald-400">
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200/80">
+                    <div className="text-emerald-600 font-sans font-medium">Val Accuracy:</div>
+                    <div className="text-lg font-bold text-emerald-700 mt-0.5">
                       {epochHistory[epochHistory.length - 1].val_acc.toFixed(2)}%
                     </div>
                   </div>
@@ -340,15 +341,19 @@ export const Module3Training: React.FC = () => {
               )}
 
               {completionMessage && (
-                <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2.5 font-medium"
+                >
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
                   <span>{completionMessage}</span>
-                </div>
+                </motion.div>
               )}
             </CardContent>
           </Card>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };

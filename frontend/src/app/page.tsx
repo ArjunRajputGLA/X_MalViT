@@ -9,6 +9,7 @@ import { Module3Training } from "@/components/modules/Module3Training";
 import { Module4Benchmark } from "@/components/modules/Module4Benchmark";
 import { Module5Classifier } from "@/components/modules/Module5Classifier";
 import { Module6Viva } from "@/components/modules/Module6Viva";
+import { AnimatePresence, motion } from "framer-motion";
 
 export default function Home() {
   const [activeModule, setActiveModule] = useState<ModuleKey>("briefing");
@@ -22,7 +23,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen p-3 sm:p-5 lg:p-6 max-w-[1700px] mx-auto">
+    <main className="min-h-screen p-3 sm:p-5 lg:p-6 max-w-[1700px] mx-auto bg-slate-50/60">
       {/* Top Cyber Command Header */}
       <CommandHeader systemStatus={systemStatus} />
 
@@ -35,14 +36,24 @@ export default function Home() {
           systemStatus={systemStatus}
         />
 
-        {/* Right Active Module Viewport */}
+        {/* Right Active Module Viewport with Animated Transitions */}
         <section className="flex-1 min-w-0">
-          {activeModule === "briefing" && <Module1Executive />}
-          {activeModule === "dataset" && <Module2Dataset />}
-          {activeModule === "training" && <Module3Training />}
-          {activeModule === "benchmark" && <Module4Benchmark />}
-          {activeModule === "classifier" && <Module5Classifier />}
-          {activeModule === "viva" && <Module6Viva />}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeModule}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+            >
+              {activeModule === "briefing" && <Module1Executive />}
+              {activeModule === "dataset" && <Module2Dataset />}
+              {activeModule === "training" && <Module3Training />}
+              {activeModule === "benchmark" && <Module4Benchmark />}
+              {activeModule === "classifier" && <Module5Classifier />}
+              {activeModule === "viva" && <Module6Viva />}
+            </motion.div>
+          </AnimatePresence>
         </section>
       </div>
     </main>

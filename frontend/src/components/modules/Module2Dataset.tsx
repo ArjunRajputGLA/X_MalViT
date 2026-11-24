@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Search, Database, BarChart2, Shield, AlertTriangle } from "lucide-react";
+import { RefreshCw, Search, Database, BarChart2, Shield } from "lucide-react";
+import { motion } from "framer-motion";
 
 export const Module2Dataset: React.FC = () => {
   const [categories, setCategories] = useState<Record<string, string[]>>({});
@@ -85,25 +86,30 @@ export const Module2Dataset: React.FC = () => {
     : 1;
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Control Panel */}
-        <Card className="lg:col-span-1 border-sky-500/20 bg-slate-900/60">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-bold text-sky-400 flex items-center gap-2">
-              <Database className="w-4 h-4 text-sky-400" />
+        <Card className="lg:col-span-1 border-slate-200/80 bg-white shadow-xs">
+          <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
+            <CardTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <Database className="w-4 h-4 text-blue-600" />
               Threat Family Selector
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="pt-4 space-y-4">
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+              <label className="text-xs font-semibold text-slate-700 block mb-1.5">
                 Malware Threat Category
               </label>
               <select
                 value={selectedCategory}
                 onChange={(e) => handleCategoryChange(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500 transition-colors"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all font-medium"
               >
                 {Object.keys(categories).map((cat) => (
                   <option key={cat} value={cat}>
@@ -114,13 +120,13 @@ export const Module2Dataset: React.FC = () => {
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+              <label className="text-xs font-semibold text-slate-700 block mb-1.5">
                 Target Malware Family
               </label>
               <select
                 value={selectedFamily}
                 onChange={(e) => handleFamilyChange(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500 transition-colors"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all font-mono"
               >
                 {(categories[selectedCategory] || []).map((fam) => (
                   <option key={fam} value={fam}>
@@ -130,24 +136,28 @@ export const Module2Dataset: React.FC = () => {
               </select>
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800 text-xs space-y-1.5 text-slate-300">
-              <div>
-                <span className="text-slate-400">Classification:</span>{" "}
-                <code className="text-sky-400 font-mono">{selectedCategory}</code>
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs space-y-2 text-slate-600">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Classification:</span>
+                <span className="font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/50">
+                  {selectedCategory}
+                </span>
               </div>
-              <div>
-                <span className="text-slate-400">Family Variant:</span>{" "}
-                <code className="text-indigo-400 font-mono">{selectedFamily}</code>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Family Variant:</span>
+                <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200/50">
+                  {selectedFamily}
+                </span>
               </div>
-              <div>
-                <span className="text-slate-400">Typical Anatomy:</span> Repetitive unpacking loops, polymorphic shellcode, and high-entropy encrypted payloads.
+              <div className="pt-1 text-[11px] text-slate-500 border-t border-slate-200/60 leading-snug">
+                <span className="font-semibold text-slate-700">Typical Anatomy:</span> Repetitive unpacking loops, polymorphic shellcode, and high-entropy encrypted payloads.
               </div>
             </div>
 
             <Button
               onClick={handleSynthesizeNew}
               disabled={loadingSample}
-              className="w-full"
+              className="w-full shadow-xs"
               variant="cyber"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${loadingSample ? "animate-spin" : ""}`} />
@@ -157,48 +167,48 @@ export const Module2Dataset: React.FC = () => {
         </Card>
 
         {/* Right Preview & Histogram Panel */}
-        <Card className="lg:col-span-2 border-sky-500/20 bg-slate-900/60">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-bold text-sky-400 flex items-center gap-2">
-              <BarChart2 className="w-4 h-4 text-sky-400" />
+        <Card className="lg:col-span-2 border-slate-200/80 bg-white shadow-xs">
+          <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <BarChart2 className="w-4 h-4 text-blue-600" />
               Visual Texture Matrix & Byte Frequency Histogram
             </CardTitle>
             <Badge variant="cyber">{selectedFamily}</Badge>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+          <CardContent className="pt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
               {/* Visual Texture Image */}
               <div className="flex flex-col items-center">
-                <div className="text-xs text-slate-400 font-semibold mb-2">
+                <div className="text-xs text-slate-600 font-semibold mb-2">
                   224x224 Grayscale Byte Matrix
                 </div>
-                <div className="relative w-56 h-56 rounded-lg overflow-hidden border border-sky-500/30 bg-slate-950 shadow-inner flex items-center justify-center">
+                <div className="relative w-56 h-56 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shadow-inner flex items-center justify-center p-1">
                   {sampleData?.image_data_url ? (
                     <img
                       src={sampleData.image_data_url}
                       alt={selectedFamily}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover rounded-lg"
                     />
                   ) : (
-                    <div className="text-xs text-slate-500 font-mono">Loading texture...</div>
+                    <div className="text-xs text-slate-400 font-mono">Loading texture...</div>
                   )}
                 </div>
-                <div className="text-[11px] text-slate-400 mt-2 font-mono">
+                <div className="text-[11px] text-slate-500 mt-2 font-mono">
                   Opcode layout preserved in 2D grid
                 </div>
               </div>
 
               {/* Byte Frequency Histogram (SVG) */}
               <div className="flex flex-col">
-                <div className="flex items-center justify-between text-xs text-slate-400 font-semibold mb-2">
+                <div className="flex items-center justify-between text-xs text-slate-600 font-semibold mb-2">
                   <span>Byte Distribution (0-255)</span>
                   {sampleData?.histogram?.mean_entropy && (
-                    <span className="text-[11px] text-sky-400 font-mono">
+                    <span className="text-[11px] text-blue-700 font-mono font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-200/50">
                       Entropy: {sampleData.histogram.mean_entropy.toFixed(2)} bits
                     </span>
                   )}
                 </div>
-                <div className="h-56 w-full rounded-lg bg-slate-950 border border-slate-800 p-2 flex items-end justify-between gap-[2px]">
+                <div className="h-56 w-full rounded-xl bg-slate-50 border border-slate-200 p-2.5 flex items-end justify-between gap-[2px]">
                   {sampleData?.histogram?.counts ? (
                     sampleData.histogram.counts.map((count, idx) => {
                       const heightPercent = Math.max(4, (count / maxHistCount) * 100);
@@ -207,17 +217,17 @@ export const Module2Dataset: React.FC = () => {
                           key={idx}
                           title={`Bin ${idx * 4}-${(idx + 1) * 4}: ${count} bytes`}
                           style={{ height: `${heightPercent}%` }}
-                          className="flex-1 bg-sky-500/80 hover:bg-sky-400 transition-all rounded-t-sm"
+                          className="flex-1 bg-blue-500 hover:bg-blue-600 transition-all rounded-t-sm"
                         />
                       );
                     })
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs text-slate-500">
+                    <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">
                       Computing histogram...
                     </div>
                   )}
                 </div>
-                <div className="flex justify-between text-[10px] text-slate-500 font-mono mt-1 px-1">
+                <div className="flex justify-between text-[10px] text-slate-400 font-mono mt-1.5 px-1 font-semibold">
                   <span>0x00 (Null)</span>
                   <span>0x7F (Mid)</span>
                   <span>0xFF (High)</span>
@@ -229,27 +239,27 @@ export const Module2Dataset: React.FC = () => {
       </div>
 
       {/* Complete Malimg Ground-Truth Distribution Table */}
-      <Card className="border-sky-500/20 bg-slate-900/60">
-        <CardHeader className="pb-3 flex flex-row items-center justify-between">
-          <CardTitle className="text-base text-sky-400 flex items-center gap-2">
-            <Shield className="w-4 h-4 text-sky-400" />
+      <Card className="border-slate-200/80 bg-white shadow-xs">
+        <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <CardTitle className="text-base text-slate-800 flex items-center gap-2 font-bold">
+            <Shield className="w-4 h-4 text-blue-600" />
             Complete Malimg Ground-Truth Distribution (9,339 Binaries across 25 Families)
           </CardTitle>
-          <div className="relative w-64">
+          <div className="relative w-full sm:w-64">
             <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
             <input
               type="text"
               placeholder="Search family or type..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500"
+              className="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all"
             />
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-2">
           <div className="overflow-x-auto max-h-72 overflow-y-auto">
-            <table className="w-full text-xs text-left text-slate-300">
-              <thead className="text-[11px] uppercase bg-slate-950/80 text-slate-400 sticky top-0 border-b border-slate-800">
+            <table className="w-full text-xs text-left text-slate-700">
+              <thead className="text-[11px] uppercase bg-slate-50 text-slate-500 sticky top-0 border-b border-slate-200 font-semibold">
                 <tr>
                   <th className="py-2.5 px-3">Family Name</th>
                   <th className="py-2.5 px-3">Threat Type</th>
@@ -258,12 +268,12 @@ export const Module2Dataset: React.FC = () => {
                   <th className="py-2.5 px-3">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-100 font-medium">
                 {filteredDist.map((item) => (
-                  <tr key={item.family} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="py-2 px-3 font-mono text-sky-400 font-semibold">{item.family}</td>
-                    <td className="py-2 px-3">{item.category}</td>
-                    <td className="py-2 px-3 font-mono">{item.samples.toLocaleString()}</td>
+                  <tr key={item.family} className="hover:bg-blue-50/40 transition-colors">
+                    <td className="py-2 px-3 font-mono text-blue-700 font-bold">{item.family}</td>
+                    <td className="py-2 px-3 text-slate-600">{item.category}</td>
+                    <td className="py-2 px-3 font-mono text-slate-700">{item.samples.toLocaleString()}</td>
                     <td className="py-2 px-3">
                       <Badge variant={item.risk === "CRITICAL" ? "destructive" : "warning"}>
                         {item.risk}
@@ -276,7 +286,7 @@ export const Module2Dataset: React.FC = () => {
                           setSelectedFamily(item.family);
                           loadFamilySample(item.family);
                         }}
-                        className="text-[11px] text-sky-400 hover:text-sky-300 hover:underline"
+                        className="text-[11px] text-blue-600 hover:text-blue-800 hover:underline font-semibold"
                       >
                         Inspect Texture &rarr;
                       </button>
@@ -288,6 +298,6 @@ export const Module2Dataset: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 };
