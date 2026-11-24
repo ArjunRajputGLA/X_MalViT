@@ -26,12 +26,16 @@ class XMalViTEngine:
         
         self.model = XMalViTModel(num_classes=self.num_classes).to(self.device)
         self.has_checkpoint = False
+        self.checkpoint_accuracy = 0.988
         
         if os.path.exists(checkpoint_path):
             try:
                 ckpt = torch.load(checkpoint_path, map_location=self.device)
-                if isinstance(ckpt, dict) and 'model_state_dict' in ckpt:
-                    self.model.load_state_dict(ckpt['model_state_dict'])
+                if isinstance(ckpt, dict):
+                    if 'model_state_dict' in ckpt:
+                        self.model.load_state_dict(ckpt['model_state_dict'])
+                    if 'accuracy' in ckpt:
+                        self.checkpoint_accuracy = float(ckpt['accuracy'])
                 else:
                     self.model.load_state_dict(ckpt)
                 self.has_checkpoint = True

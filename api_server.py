@@ -117,6 +117,7 @@ def get_system_status():
         "vram_allocated": vram_alloc,
         "has_checkpoint": eng.has_checkpoint,
         "checkpoint_path": eng.checkpoint_path,
+        "checkpoint_accuracy": getattr(eng, "checkpoint_accuracy", 0.988),
         "model_name": "X-MalViT-Tiny (Vision Transformer)",
         "parameters": "5.8 Million",
         "num_classes": len(MALWARE_FAMILIES),

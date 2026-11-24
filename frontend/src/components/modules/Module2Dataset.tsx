@@ -161,7 +161,7 @@ export const Module2Dataset: React.FC = () => {
               variant="cyber"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${loadingSample ? "animate-spin" : ""}`} />
-              Synthesize Variant Texture
+              Load Next Benchmark Binary Sample
             </Button>
           </CardContent>
         </Card>
