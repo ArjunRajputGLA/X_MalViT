@@ -9,11 +9,9 @@ import {
   SearchCode, 
   GraduationCap, 
   FileText, 
-  ShieldCheck, 
-  ExternalLink
+  ShieldCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
 
 export type ModuleKey = 
   | "briefing"
@@ -54,10 +52,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   systemStatus
 }) => {
   return (
-    <aside className="w-64 flex-shrink-0 bg-white border-r border-slate-200/80 min-h-screen sticky top-0 flex flex-col justify-between py-5 px-4 z-40 select-none">
+    <aside className="w-64 flex-shrink-0 bg-transparent min-h-screen sticky top-0 flex flex-col justify-between py-6 px-4 z-20 select-none">
       <div>
-        {/* Brand Header */}
-        <div className="flex items-center gap-3 px-2 mb-6">
+        {/* Brand Header (In Base Shell Layer) */}
+        <div className="flex items-center gap-3 px-2 mb-7">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 flex-shrink-0">
             <ShieldCheck className="w-5 h-5" />
           </div>
@@ -65,7 +63,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             <div className="font-extrabold text-base tracking-tight text-slate-900 leading-tight">
               X-MalViT
             </div>
-            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+            <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
               Threat Intelligence
             </div>
           </div>
@@ -73,10 +71,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 
         {/* Section 1: Command Center */}
         <div className="mb-6">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 mb-2 font-mono">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 mb-2.5 font-mono">
             Command Center
           </div>
-          <nav className="space-y-1">
+          <nav className="space-y-1.5">
             {COMMAND_CENTER_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = activeModule === item.key;
@@ -85,20 +83,20 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                   key={item.key}
                   onClick={() => onSelectModule(item.key)}
                   className={cn(
-                    "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 text-left cursor-pointer",
+                    "w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 text-left cursor-pointer",
                     isActive
-                      ? "bg-[#e8f7f0] text-[#047857] font-bold shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                      ? "bg-white text-emerald-800 font-bold shadow-xs border border-slate-200/60"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                   )}
                 >
                   <div className="flex items-center gap-2.5 truncate">
-                    <Icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-[#059669]" : "text-slate-400")} />
+                    <Icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-emerald-600" : "text-slate-400")} />
                     <span className="truncate">{item.label}</span>
                   </div>
                   {item.tag && (
                     <span className={cn(
                       "text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold",
-                      isActive ? "bg-emerald-100/70 text-emerald-800" : "bg-slate-100 text-slate-500"
+                      isActive ? "bg-emerald-50 text-emerald-800 border border-emerald-200/50" : "bg-slate-200/60 text-slate-600"
                     )}>
                       {item.tag}
                     </span>
@@ -111,10 +109,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 
         {/* Section 2: Analytics & Explainability */}
         <div className="mb-6">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 mb-2 font-mono">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 mb-2.5 font-mono">
             Analytics & XAI
           </div>
-          <nav className="space-y-1">
+          <nav className="space-y-1.5">
             {ANALYTICS_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = activeModule === item.key;
@@ -123,20 +121,20 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                   key={item.key}
                   onClick={() => onSelectModule(item.key)}
                   className={cn(
-                    "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 text-left cursor-pointer",
+                    "w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 text-left cursor-pointer",
                     isActive
-                      ? "bg-[#e8f7f0] text-[#047857] font-bold shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                      ? "bg-white text-emerald-800 font-bold shadow-xs border border-slate-200/60"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                   )}
                 >
                   <div className="flex items-center gap-2.5 truncate">
-                    <Icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-[#059669]" : "text-slate-400")} />
+                    <Icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-emerald-600" : "text-slate-400")} />
                     <span className="truncate">{item.label}</span>
                   </div>
                   {item.tag && (
                     <span className={cn(
                       "text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold",
-                      isActive ? "bg-emerald-100/70 text-emerald-800" : "bg-slate-100 text-slate-500"
+                      isActive ? "bg-emerald-50 text-emerald-800 border border-emerald-200/50" : "bg-slate-200/60 text-slate-600"
                     )}>
                       {item.tag}
                     </span>
@@ -148,9 +146,9 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         </div>
       </div>
 
-      {/* Bottom Profile / Researcher Card (Matching Dasher style) */}
-      <div className="pt-4 border-t border-slate-100">
-        <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-3 flex items-center justify-between">
+      {/* Bottom Profile / Researcher Card */}
+      <div className="pt-4">
+        <div className="bg-white border border-slate-200/60 rounded-2xl p-3 flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-xs">
               KA
@@ -165,7 +163,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             title="Download IEEE Manuscript PDF"
-            className="w-7 h-7 rounded-lg bg-white border border-slate-200/80 hover:border-emerald-400 hover:text-emerald-600 text-slate-500 flex items-center justify-center transition-colors flex-shrink-0 shadow-xs"
+            className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-200/80 hover:border-emerald-400 hover:text-emerald-600 text-slate-500 flex items-center justify-center transition-colors flex-shrink-0"
           >
             <FileText className="w-3.5 h-3.5" />
           </a>

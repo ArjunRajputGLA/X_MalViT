@@ -23,25 +23,25 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen flex bg-[#f8fafc]">
-      {/* Persistent Full-Height Left Sidebar */}
+    <div className="min-h-screen flex bg-[#edf2ef] text-slate-900">
+      {/* Base Layer: Left Persistent Sidebar */}
       <SidebarNav
         activeModule={activeModule}
         onSelectModule={setActiveModule}
         systemStatus={systemStatus}
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Sticky Top Header */}
+      {/* Base Layer + Elevated Top Layer Layout */}
+      <div className="flex-1 flex flex-col min-w-0 bg-transparent">
+        {/* Base Layer: Top Header (Seamlessly continuous with Sidebar) */}
         <TopHeader
           activeModule={activeModule}
           systemStatus={systemStatus}
           onNavigate={setActiveModule}
         />
 
-        {/* Dynamic Viewport Canvas */}
-        <main className="flex-1 p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
+        {/* Elevated Top Layer: Main Dashboard with Rounded Top-Left Corner */}
+        <main className="flex-1 min-w-0 bg-white rounded-tl-[36px] p-6 lg:p-8 border-t border-l border-slate-200/70 shadow-[0_-4px_24px_rgba(0,0,0,0.02)] min-h-[calc(100vh-4rem)]">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeModule}
