@@ -421,26 +421,42 @@ export const Module3Training: React.FC = () => {
 
             {/* Samples per family */}
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1.5">
-                Samples per Malware Family
-              </label>
-              <div className="grid grid-cols-4 gap-2">
-                {[10, 20, 30, 50].map((s) => (
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold text-slate-700">
+                  Samples per Malware Family
+                </label>
+                <span className="text-[10px] font-mono font-bold text-slate-500">
+                  {samplesPerFam === 0 ? "All 9,339 Binaries" : `${samplesPerFam * 25} Total Images (${samplesPerFam}/fam)`}
+                </span>
+              </div>
+              <div className="grid grid-cols-5 gap-1.5">
+                {[
+                  { value: 10, label: "10" },
+                  { value: 20, label: "20" },
+                  { value: 30, label: "30" },
+                  { value: 50, label: "50" },
+                  { value: 0, label: "All (9.3k)" },
+                ].map((item) => (
                   <button
-                    key={s}
+                    key={item.value}
                     type="button"
                     disabled={isTraining}
-                    onClick={() => setSamplesPerFam(s)}
-                    className={`py-2 px-2 rounded-xl text-xs font-mono font-bold border transition-all ${
-                      samplesPerFam === s
+                    onClick={() => setSamplesPerFam(item.value)}
+                    className={`py-2 px-1 rounded-xl text-xs font-mono font-bold border transition-all text-center ${
+                      samplesPerFam === item.value
                         ? "bg-indigo-50 border-indigo-400 text-indigo-700 shadow-xs"
                         : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-white"
                     }`}
                   >
-                    {s}
+                    {item.label}
                   </button>
                 ))}
               </div>
+              {samplesPerFam === 0 && (
+                <p className="text-[10.5px] text-amber-700 mt-1.5 font-medium leading-tight">
+                  ⚡ Full 9,339 Malimg benchmark selected. Streamed directly from disk. (On CPU, full passes require more time per epoch).
+                </p>
+              )}
             </div>
 
             {/* Learning rate */}
