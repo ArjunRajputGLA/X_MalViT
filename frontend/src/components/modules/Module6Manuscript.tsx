@@ -277,3 +277,5 @@ export const Module6Manuscript: React.FC = () => {
     </motion.div>
   );
 };
+
+export default Module6Manuscript;
