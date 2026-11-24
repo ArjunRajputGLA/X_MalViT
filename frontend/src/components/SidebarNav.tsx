@@ -11,7 +11,9 @@ import {
   FileText, 
   ShieldCheck,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ExternalLink,
+  BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -198,35 +200,58 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         </div>
       </div>
 
-      {/* Bottom Profile / Researcher Card */}
-      <div className="pt-3">
+      {/* Bottom: Official IEEE Research Paper Reference Card */}
+      <div className="pt-2">
         {isCollapsed ? (
-          <div 
-            onClick={onToggleCollapse}
-            title="Researchers: Keshav & Arjun (GLA University)"
-            className="w-10 h-10 mx-auto rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold shadow-xs cursor-pointer hover:scale-105 active:scale-95 transition-transform"
-          >
-            KA
-          </div>
-        ) : (
-          <div className="bg-white border border-slate-200/60 rounded-2xl p-3 flex items-center justify-between shadow-xs">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-xs">
-                KA
-              </div>
-              <div className="truncate">
-                <div className="text-xs font-bold text-slate-800 truncate">Keshav & Arjun</div>
-                <div className="text-[10px] text-slate-500 font-medium truncate">GLA University</div>
-              </div>
-            </div>
+          <div className="flex flex-col items-center">
             <a
-              href="/api/documents/IEEE_Research_Paper_X_MalViT.pdf"
+              href="/api/documents/X-MalViT_IEEE_Conference.pdf"
               target="_blank"
               rel="noopener noreferrer"
-              title="Download IEEE Manuscript PDF"
-              className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-200/80 hover:border-emerald-400 hover:text-emerald-600 text-slate-500 flex items-center justify-center transition-colors flex-shrink-0"
+              title="X-MalViT: IEEE Conference Paper (Keshav Agrawal & Arjun S. Rajput - GLA University)"
+              className="w-10 h-10 rounded-xl bg-white hover:bg-emerald-600 text-slate-700 hover:text-white border border-slate-200/80 hover:border-emerald-600 flex flex-col items-center justify-center transition-all shadow-2xs group cursor-pointer"
             >
-              <FileText className="w-3.5 h-3.5" />
+              <FileText className="w-4 h-4 text-emerald-600 group-hover:text-white transition-colors" />
+              <span className="text-[7.5px] font-black uppercase tracking-tight text-slate-500 group-hover:text-white font-mono mt-0.5">
+                IEEE
+              </span>
+            </a>
+          </div>
+        ) : (
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-xs hover:border-emerald-300 transition-all">
+            {/* Top Row: IEEE Tag + Conference Status */}
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200/60 font-mono tracking-wide">
+                IEEE 2026
+              </span>
+              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/50">
+                Conference Paper
+              </span>
+            </div>
+
+            {/* Paper Title & Authors from X-MalViT_IEEE_Conference.pdf */}
+            <div className="mb-2.5">
+              <div className="text-xs font-bold text-slate-900 leading-snug line-clamp-1" title="X-MalViT: Explainable Vision Transformer">
+                X-MalViT Framework
+              </div>
+              <div className="text-[11px] text-slate-600 font-medium truncate mt-0.5">
+                Keshav Agrawal & Arjun S. Rajput
+              </div>
+              <div className="text-[10px] text-slate-400 font-sans truncate">
+                Dept of CSE, GLA University
+              </div>
+            </div>
+
+            {/* Direct Action to view X-MalViT_IEEE_Conference.pdf */}
+            <a
+              href="/api/documents/X-MalViT_IEEE_Conference.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl text-[11px] font-bold bg-slate-50 hover:bg-emerald-600 text-slate-700 hover:text-white border border-slate-200/80 hover:border-emerald-600 transition-all cursor-pointer group shadow-2xs"
+            >
+              <FileText className="w-3.5 h-3.5 text-emerald-600 group-hover:text-white transition-colors" />
+              <span>Read IEEE Paper (PDF)</span>
+              <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-white transition-colors ml-auto" />
             </a>
           </div>
         )}
