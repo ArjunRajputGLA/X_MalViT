@@ -52,7 +52,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   systemStatus
 }) => {
   return (
-    <aside className="w-64 flex-shrink-0 bg-transparent min-h-screen sticky top-0 flex flex-col justify-between py-6 px-4 z-20 select-none">
+    <aside className="w-64 flex-shrink-0 bg-transparent h-screen flex flex-col justify-between py-6 px-4 z-20 select-none overflow-y-auto">
       <div>
         {/* Brand Header (In Base Shell Layer) */}
         <div className="flex items-center gap-3 px-2 mb-7">

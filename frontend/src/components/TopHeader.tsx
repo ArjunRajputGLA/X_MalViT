@@ -49,7 +49,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   const currentMeta = MODULE_TITLES[activeModule] || MODULE_TITLES.briefing;
 
   return (
-    <header className="h-16 bg-transparent px-6 lg:px-8 flex items-center justify-between z-20">
+    <header className="h-16 flex-shrink-0 bg-transparent px-6 lg:px-8 flex items-center justify-between z-20">
       {/* Left: Collapse Icon Toggle + Dynamic Title */}
       <div className="flex items-center gap-3">
         <button

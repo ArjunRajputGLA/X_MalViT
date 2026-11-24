@@ -23,25 +23,25 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen flex bg-[#edf2ef] text-slate-900">
-      {/* Base Layer: Left Persistent Sidebar */}
+    <div className="h-screen w-screen overflow-hidden flex bg-[#edf2ef] text-slate-900">
+      {/* Base Layer: Left Persistent Sidebar (Stationary / Non-scrolling with Content) */}
       <SidebarNav
         activeModule={activeModule}
         onSelectModule={setActiveModule}
         systemStatus={systemStatus}
       />
 
-      {/* Base Layer + Elevated Top Layer Layout */}
-      <div className="flex-1 flex flex-col min-w-0 bg-transparent">
-        {/* Base Layer: Top Header (Seamlessly continuous with Sidebar) */}
+      {/* Right Shell: Fixed Header + Independently Scrollable Main Dashboard */}
+      <div className="flex-1 h-screen flex flex-col min-w-0 overflow-hidden bg-transparent">
+        {/* Base Layer: Top Header (Stationary / Fixed at top) */}
         <TopHeader
           activeModule={activeModule}
           systemStatus={systemStatus}
           onNavigate={setActiveModule}
         />
 
-        {/* Elevated Top Layer: Main Dashboard with Rounded Top-Left Corner */}
-        <main className="flex-1 min-w-0 bg-white rounded-tl-[36px] p-6 lg:p-8 border-t border-l border-slate-200/70 shadow-[0_-4px_24px_rgba(0,0,0,0.02)] min-h-[calc(100vh-4rem)]">
+        {/* Elevated Top Layer: Only the main content scrolls! */}
+        <main className="flex-1 min-w-0 bg-white rounded-tl-[36px] p-6 lg:p-8 border-t border-l border-slate-200/70 shadow-[0_-4px_24px_rgba(0,0,0,0.02)] overflow-y-auto">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeModule}
