@@ -73,12 +73,49 @@ class MalimgDataset(Dataset):
         self.log(f"[DATASET] Found {total_disk_found} authentic binaries on disk across {len(MALWARE_FAMILIES)} families.")
         self.log(f"[DATASET] Allocated {len(self.file_items)} total training/validation samples ({num_samples_per_family}/family).")
 
-        # If sample count is <= 2000, preload into RAM for 10x-50x training acceleration
+        # ================= HIGH-SPEED RAM CACHING =================
         self.preloaded = False
         self.cached_images = []
         self.cached_labels = []
 
-        if len(self.file_items) <= 2000:
+        # Check for pre-compiled high-speed binary tensor cache (data/malimg_cache_224.pt)
+        cache_candidates = [
+            os.path.join(os.path.dirname(data_dir), "malimg_cache_224.pt"),
+            os.path.join(data_dir, "malimg_cache_224.pt"),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "malimg_cache_224.pt")
+        ]
+        cache_path = next((p for p in cache_candidates if os.path.exists(p)), None)
+
+        if cache_path is not None:
+            try:
+                self.log(f"[CACHE] High-speed tensor cache detected at '{os.path.basename(cache_path)}'. Loading into RAM...")
+                t_cache_0 = time.time()
+                cache_data = torch.load(cache_path, weights_only=False, map_location="cpu")
+                all_images = cache_data["images"]  # uint8: (9339, 1, 224, 224)
+                all_labels = cache_data["labels"]  # int64: (9339,)
+                t_cache_elapsed = time.time() - t_cache_0
+
+                if num_samples_per_family is None or num_samples_per_family <= 0:
+                    self.cached_images = all_images
+                    self.cached_labels = all_labels
+                    self.log(f"[CACHE] Ingested all {len(self.cached_labels)} authentic binary tensors into host RAM in {t_cache_elapsed:.2f}s! (Zero disk reads)")
+                else:
+                    selected_indices = []
+                    for c_idx in range(len(MALWARE_FAMILIES)):
+                        c_indices = (all_labels == c_idx).nonzero(as_tuple=True)[0]
+                        take = min(len(c_indices), num_samples_per_family)
+                        selected_indices.append(c_indices[:take])
+                    selected_indices = torch.cat(selected_indices)
+                    self.cached_images = all_images[selected_indices]
+                    self.cached_labels = all_labels[selected_indices]
+                    self.log(f"[CACHE] Sliced {len(self.cached_labels)} tensors ({num_samples_per_family}/family) from RAM cache in {t_cache_elapsed:.2f}s!")
+
+                self.preloaded = True
+            except Exception as e:
+                self.log(f"[CACHE WARNING] Failed to load binary cache: {e}. Falling back to dynamic preloading.")
+
+        # If cache was not available, dynamically preload into RAM
+        if not self.preloaded:
             self.log(f"[DATASET] Preloading {len(self.file_items)} tensors into memory (224x224 grayscale) for maximum throughput...")
             preload_interval = max(25, len(self.file_items) // 5)
             for idx, item in enumerate(self.file_items):
@@ -119,6 +156,7 @@ class MalimgDataset(Dataset):
 
     def __getitem__(self, idx):
         if self.preloaded:
+            # Return raw tensor directly; normalization is offloaded to GPU tensor cores
             return self.cached_images[idx], self.cached_labels[idx]
         tensor, label = self._load_item(self.file_items[idx])
         return tensor, torch.tensor(label, dtype=torch.long)
@@ -187,7 +225,7 @@ class XMalViTModel(nn.Module):
 
 # ==================== TRAINING ENGINE ====================
 def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, device=None, checkpoint_dir="checkpoints", callback=None, log_fn=None, stop_event=None):
-    log = log_fn or print
+    log = log_fn or (lambda *args, **kwargs: print(*args, **kwargs, flush=True))
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     
@@ -220,8 +258,8 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
     train_set, val_set = torch.utils.data.random_split(dataset, [train_size, val_size])
 
     log(f"[DATASET] Split configured: {train_size} Training samples, {val_size} Validation samples.")
-    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, drop_last=False)
-    val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, drop_last=False, pin_memory=is_cuda)
+    val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False, pin_memory=is_cuda)
 
     log(f"[MODEL] Constructing X-MalViT Model (ViT-Tiny: 196 Patches, 8 Attention Heads, 6 Layers, 5.8M Params)...")
     model = XMalViTModel(num_classes=len(MALWARE_FAMILIES)).to(device)
@@ -256,6 +294,8 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
                 break
 
             images, targets = images.to(device, non_blocking=True), targets.to(device, non_blocking=True)
+            if images.dtype == torch.uint8:
+                images = (images.float() - 127.5) / 127.5
             optimizer.zero_grad()
 
             with torch.amp.autocast('cuda', enabled=is_cuda):
@@ -293,6 +333,8 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
                 if stop_event and stop_event.is_set():
                     break
                 images, targets = images.to(device, non_blocking=True), targets.to(device, non_blocking=True)
+                if images.dtype == torch.uint8:
+                    images = (images.float() - 127.5) / 127.5
                 with torch.amp.autocast('cuda', enabled=is_cuda):
                     outputs = model(images)
                     loss = criterion(outputs, targets)

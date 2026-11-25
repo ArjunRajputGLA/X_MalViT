@@ -1,8 +1,8 @@
 """
 Dataset Generator & Loader for Malimg Benchmark (25 Malware Families).
-Can generate high-fidelity synthetic malware byte images with realistic PE sections
+Generates high-fidelity synthetic malware byte images with realistic PE sections
 (PE Header, .text code texture, .data variables, encrypted payloads, and zero padding)
-to enable immediate real-time testing, training, and live demos without needing external downloads.
+with unique visual opcode and entropy signatures for each of the 25 Malimg families.
 """
 
 import os
@@ -59,72 +59,141 @@ def get_disk_sample_image(family_name: str, index: int = 0, sample_dir: str = No
 
     return generate_synthetic_malware_image(family, image_size=image_size, seed=index)
 
+
 def generate_synthetic_malware_image(family_name, image_size=(224, 224), seed=None):
     """
-    Generates a realistic 224x224 grayscale image simulating the byte structure
-    of a Windows PE executable for a specific malware family.
-    
-    Structure simulated:
-    - Top 10%: PE Header (semi-structured bytes with metadata patterns)
-    - Next 45%: .text section (Assembly instructions with vertical/horizontal code texture)
-    - Next 25%: Malicious Payload (Family-specific signature texture / high-entropy encryption)
-    - Next 10%: .data section (Strings and tables)
-    - Last 10%: Zero-padding / Alignment blocks (solid dark bands)
+    Generates a realistic 224x224 grayscale byte image preserving PE section anatomy
+    with distinct, family-specific structural visual signatures for all 25 Malimg families.
     """
+    family = normalize_family_name(family_name)
+    class_idx = MALWARE_FAMILIES.index(family) if family in MALWARE_FAMILIES else 0
+    
+    # Deterministic yet diverse seed: combination of class identity and sample variation
     if seed is not None:
-        np.random.seed(seed)
+        rng = np.random.RandomState((class_idx * 10007 + abs(seed) * 31 + 42) % (2**31 - 1))
     else:
-        np.random.seed(abs(hash(family_name)) % 100000)
+        rng = np.random.RandomState((class_idx * 10007 + 42) % (2**31 - 1))
 
     h, w = image_size
     img = np.zeros((h, w), dtype=np.uint8)
-    
-    # 1. PE Header Section (rows 0 to 22)
+
+    # 1. PE Header Section (rows 0 to 22) - Common PE structure with family signature bits
     header_h = int(h * 0.10)
-    # MZ header signature and DOS stub
-    img[0:header_h, :] = np.random.choice([0, 77, 90, 144, 255, 128, 64], size=(header_h, w), p=[0.25, 0.1, 0.1, 0.2, 0.15, 0.1, 0.1])
-    
-    # 2. .text Section (rows 22 to 125) - Assembly Instructions texture
+    base_header = rng.choice([0, 77, 90, 144, 255, 128, 64], size=(header_h, w), p=[0.25, 0.1, 0.1, 0.2, 0.15, 0.1, 0.1])
+    # Stamp PE magic bytes 'MZ' at top left
+    base_header[0, 0:2] = [77, 90]
+    # Family specific header identifier in optional header fields
+    base_header[8:12, :32] = (class_idx * 10) % 256
+    img[0:header_h, :] = base_header
+
+    # 2. .text Section (rows 22 to 125) - Assembly Opcode Texture
     text_end = int(h * 0.55)
     text_h = text_end - header_h
-    # Code typically has structured repetitive opcode frequencies (push, mov, call, jmp)
-    code_pattern = np.random.randint(60, 190, size=(text_h, w), dtype=np.uint8)
-    # Introduce assembly striping (cache lines / instruction alignment)
-    stripes = np.sin(np.linspace(0, 15 * np.pi, text_h)).reshape(-1, 1) * 30
+    code_base = 60 + (class_idx * 5) % 80
+    code_pattern = rng.randint(code_base, code_base + 80, size=(text_h, w), dtype=np.uint8)
+    # Instruction alignment striping
+    freq = 4.0 + (class_idx % 7) * 2.5
+    stripes = np.sin(np.linspace(0, freq * np.pi, text_h)).reshape(-1, 1) * 30
     code_pattern = np.clip(code_pattern + stripes, 0, 255).astype(np.uint8)
     img[header_h:text_end, :] = code_pattern
 
-    # 3. Payload Section (rows 125 to 180) - Unique to Malware Family
+    # 3. Payload Section (rows 125 to 180) - Highly Distinct Family-Specific Visual Signature
     payload_end = int(h * 0.80)
     payload_h = payload_end - text_end
-    
-    if "Allaple" in family_name:
-        # Dense polymorphic decryptor loop pattern (high contrast stripes)
-        payload = np.tile(np.linspace(20, 240, w, dtype=np.uint8), (payload_h, 1))
-        payload = (payload + np.random.randint(-20, 20, size=(payload_h, w))).clip(0, 255).astype(np.uint8)
-    elif "Fakerean" in family_name or "Dontovo" in family_name:
-        # High-entropy encrypted shellcode (looks like random white sand/noise)
-        payload = np.random.randint(0, 256, size=(payload_h, w), dtype=np.uint8)
-    elif "Yuner" in family_name or "Autorun" in family_name:
-        # Grid-like resource embedding
-        grid = (np.indices((payload_h, w))[0] // 8 + np.indices((payload_h, w))[1] // 8) % 2
-        payload = (grid * 180 + np.random.randint(20, 70, size=(payload_h, w))).clip(0, 255).astype(np.uint8)
+
+    if family in ["Allaple.A", "Allaple.L"]:
+        # Dense polymorphic decryptor loops (high contrast diagonal/horizontal wave stripes)
+        step = 4 if family == "Allaple.A" else 6
+        x_grid = np.arange(w)
+        y_grid = np.arange(payload_h).reshape(-1, 1)
+        wave = np.sin((x_grid + y_grid * step) * 0.15) * 110 + 128
+        payload = np.clip(wave + rng.randint(-15, 15, size=(payload_h, w)), 0, 255).astype(np.uint8)
+
+    elif family in ["Fakerean", "Dontovo.A"]:
+        # High-entropy encrypted shellcode (white-noise texture with high standard deviation)
+        high_val = 250 if family == "Fakerean" else 220
+        payload = rng.randint(10, high_val, size=(payload_h, w), dtype=np.uint8)
+
+    elif family in ["Yuner.A", "Autorun.K"]:
+        # Worm auto-spreading and resource table grids
+        block_size = 8 if family == "Yuner.A" else 12
+        grid = (np.indices((payload_h, w))[0] // block_size + np.indices((payload_h, w))[1] // block_size) % 2
+        payload = (grid * 190 + rng.randint(20, 60, size=(payload_h, w))).clip(0, 255).astype(np.uint8)
+
+    elif family.startswith("Lolyda"):
+        # Password stealer with structured repetitive table rows and constant offsets
+        variant_offset = {"Lolyda.AA1": 30, "Lolyda.AA2": 70, "Lolyda.AA3": 110, "Lolyda.AT": 150}.get(family, 50)
+        table = np.zeros((payload_h, w), dtype=np.uint8)
+        table[::4, :] = variant_offset + 80
+        table[1::4, :] = variant_offset
+        table[2::4, :] = rng.randint(100, 200, size=((payload_h + 1) // 4, w), dtype=np.uint8)
+        payload = table
+
+    elif family.startswith("Swizzor"):
+        # Obfuscator with alternating high-density chunks and zero-gap delimiters
+        stripe_width = 16 if family == "Swizzor.gen!E" else 24
+        chunks = (np.arange(w) // stripe_width) % 2
+        payload = np.outer(np.ones(payload_h, dtype=np.uint8), chunks * 210)
+        payload = np.clip(payload + rng.randint(0, 45, size=(payload_h, w)), 0, 255).astype(np.uint8)
+
+    elif family.startswith("C2LOP"):
+        # Corrupted PE overlay blocks with repeating 16-byte cryptographic keystreams
+        keystream = rng.randint(0, 256, size=(1, 16), dtype=np.uint8)
+        repeated_key = np.tile(keystream, (payload_h, (w // 16) + 1))[:, :w]
+        payload = repeated_key
+
+    elif family == "Alueron.gen!J":
+        # Rootkit with dense kernel-level bytecode and zeroed descriptor tables
+        payload = rng.choice([0, 15, 144, 233, 255], size=(payload_h, w), p=[0.45, 0.15, 0.2, 0.1, 0.1]).astype(np.uint8)
+
+    elif family == "VB.AT":
+        # Visual Basic 6 p-code structures and event-handler jumps
+        vb_stripes = (np.indices((payload_h, w))[1] % 6 == 0) * 180 + rng.randint(40, 90, size=(payload_h, w))
+        payload = np.clip(vb_stripes, 0, 255).astype(np.uint8)
+
+    elif family == "Malex.gen!J":
+        # Exploit dropper with long NOP sleds (0x90 = 144) followed by compact shellcode
+        payload = np.full((payload_h, w), 144, dtype=np.uint8)
+        payload[-12:, :] = rng.randint(0, 256, size=(12, w), dtype=np.uint8)
+
+    elif family == "Skintrim.N":
+        # Heavily compressed LZMA packer payload (solid high-density continuous spectrum)
+        payload = (np.sin(np.linspace(0, 30, payload_h)).reshape(-1, 1) * 60 + 170).astype(np.uint8)
+        payload = np.clip(payload + rng.randint(-10, 10, size=(payload_h, w)), 0, 255).astype(np.uint8)
+
+    elif family in ["Dialplatform.B", "Instantaccess", "Adialer.C"]:
+        # Dialers with embedded ASCII configuration strings
+        dialer_val = {"Dialplatform.B": 85, "Instantaccess": 140, "Adialer.C": 195}.get(family, 100)
+        payload = rng.choice([dialer_val - 30, dialer_val, dialer_val + 30, 0], size=(payload_h, w), p=[0.35, 0.35, 0.2, 0.1]).astype(np.uint8)
+
+    elif family == "Rbot!gen":
+        # IRC bot command-dispatch jump tables with hex signature spacing
+        table = (np.arange(w) % 8 == 0) * 220 + (np.arange(payload_h).reshape(-1, 1) % 4 == 0) * 180
+        payload = np.clip(table + rng.randint(10, 40, size=(payload_h, w)), 0, 255).astype(np.uint8)
+
+    elif family in ["Agent.FYI", "Wintrim.BX", "Obfuscator.AD"]:
+        # Trojan downloaders with Base64 encoded payload blocks
+        base_tone = 110 if family == "Agent.FYI" else (160 if family == "Wintrim.BX" else 205)
+        payload = rng.randint(base_tone - 35, base_tone + 35, size=(payload_h, w), dtype=np.uint8)
+
     else:
-        # General trojan / backdoor byte blocks
-        payload = np.random.choice([30, 80, 160, 220], size=(payload_h, w), p=[0.3, 0.3, 0.2, 0.2]).astype(np.uint8)
-        
+        # Fallback distinct modular hash tone
+        mod_tone = (class_idx * 19 + 50) % 220
+        payload = rng.randint(mod_tone, mod_tone + 35, size=(payload_h, w), dtype=np.uint8)
+
     img[text_end:payload_end, :] = payload
 
     # 4. .data Section (rows 180 to 202) - Semi-sparse string tables
     data_end = int(h * 0.90)
     data_h = data_end - payload_end
-    data_pattern = np.random.choice([0, 32, 65, 97, 122, 255], size=(data_h, w), p=[0.4, 0.2, 0.1, 0.1, 0.1, 0.1]).astype(np.uint8)
+    data_pattern = rng.choice([0, 32, 65, 97, 122, 255], size=(data_h, w), p=[0.4, 0.2, 0.1, 0.1, 0.1, 0.1]).astype(np.uint8)
     img[payload_end:data_end, :] = data_pattern
 
     # 5. Zero-padding / Alignment at end (rows 202 to 224) - Solid dark blocks
-    img[data_end:h, :] = np.random.choice([0, 15], size=(h - data_end, w), p=[0.85, 0.15]).astype(np.uint8)
+    img[data_end:h, :] = rng.choice([0, 15], size=(h - data_end, w), p=[0.85, 0.15]).astype(np.uint8)
 
     return Image.fromarray(img, mode='L')
+
 
 def ensure_sample_dataset(samples_dir="data/samples"):
     """
