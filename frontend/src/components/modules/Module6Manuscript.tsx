@@ -11,13 +11,9 @@ import {
   BookOpen, 
   Layers, 
   Sparkles, 
-  ExternalLink,
-  ShieldCheck,
-  Cpu,
-  TrendingUp,
   FileCode
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 
 export const Module6Manuscript: React.FC = () => {
   const [data, setData] = useState<any>(null);
@@ -71,12 +67,7 @@ export const Module6Manuscript: React.FC = () => {
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
-    >
+    <div className="space-y-6">
       {/* 1. Research Paper Identity & Publication Banner */}
       <Card className="overflow-hidden">
         <div className="bg-accent p-6 text-white relative">
@@ -114,15 +105,21 @@ export const Module6Manuscript: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-white/15">
             <div className="bg-white/10 rounded-tile p-3.5 border border-white/15">
               <div className="text-[12px] text-white/80 font-medium">Classification acc</div>
-              <div className="text-[24px] leading-[1.2] font-semibold text-white mt-1 tabular-nums">98.8%</div>
+              <div className="text-[24px] leading-[1.2] font-semibold text-white mt-1 tabular-nums">
+                <AnimatedNumber value="98.8%" />
+              </div>
             </div>
             <div className="bg-white/10 rounded-tile p-3.5 border border-white/15">
               <div className="text-[12px] text-white/80 font-medium">Model footprint</div>
-              <div className="text-[24px] leading-[1.2] font-semibold text-white mt-1 tabular-nums">5.8 M</div>
+              <div className="text-[24px] leading-[1.2] font-semibold text-white mt-1 tabular-nums">
+                <AnimatedNumber value="5.8 M" />
+              </div>
             </div>
             <div className="bg-white/10 rounded-tile p-3.5 border border-white/15">
               <div className="text-[12px] text-white/80 font-medium">Edge inference</div>
-              <div className="text-[24px] leading-[1.2] font-semibold text-white mt-1 tabular-nums">23.4 ms</div>
+              <div className="text-[24px] leading-[1.2] font-semibold text-white mt-1 tabular-nums">
+                <AnimatedNumber value="23.4 ms" />
+              </div>
             </div>
             <div className="bg-white/10 rounded-tile p-3.5 border border-white/15">
               <div className="text-[12px] text-white/80 font-medium">Hardware target</div>
@@ -151,10 +148,9 @@ export const Module6Manuscript: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {manuscripts.map((doc: any, idx: number) => (
-            <motion.div
+            <div
               key={idx}
-              whileHover={{ y: -3, transition: { duration: 0.2 } }}
-              className="bg-surface p-6 rounded-panel border border-line shadow-panel hover:border-accent/40 transition-colors flex flex-col justify-between"
+              className="bg-surface p-6 rounded-panel border border-line shadow-panel flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
@@ -186,7 +182,7 @@ export const Module6Manuscript: React.FC = () => {
                 <Download className="w-4 h-4" />
                 Download / View PDF
               </a>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
@@ -274,7 +270,7 @@ export const Module6Manuscript: React.FC = () => {
           </pre>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 };
 

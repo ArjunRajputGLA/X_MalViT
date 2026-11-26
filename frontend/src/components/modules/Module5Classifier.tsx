@@ -4,17 +4,17 @@ import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { 
   SearchCode, 
   Flame, 
   Terminal, 
   Layers, 
   Zap,
-  CheckCircle2,
-  FileUp
+  Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { AnimatedBar } from "@/components/ui/AnimatedBar";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 export const Module5Classifier: React.FC = () => {
   const [families, setFamilies] = useState<string[]>([]);
@@ -87,12 +87,7 @@ export const Module5Classifier: React.FC = () => {
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
-    >
+    <div className="space-y-6">
       {/* Control Configuration Panel */}
       <Card className="overflow-hidden">
         <CardHeader className="pb-4 border-b border-line bg-surface-2">
@@ -191,11 +186,53 @@ export const Module5Classifier: React.FC = () => {
             variant="cyber"
             size="lg"
           >
-            <Zap className={`w-4 h-4 mr-2 ${isInferring ? "animate-spin" : ""}`} />
+            {isInferring ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Zap className="w-4 h-4 mr-2" />
+            )}
             {isInferring ? "Computing Gradient Activation Attribution..." : "Run X-MalViT Diagnostic Inference"}
           </Button>
         </CardContent>
       </Card>
+
+      {/* Loading Skeletons while Inference Runs */}
+      {isInferring && !predictionResult && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="p-6 space-y-4">
+              <div className="flex justify-between">
+                <Skeleton className="h-5 w-28 rounded-chip" />
+                <Skeleton className="h-5 w-32 rounded-chip" />
+              </div>
+              <Skeleton className="h-8 w-44 rounded-chip" />
+              <Skeleton className="h-2.5 w-full rounded-chip" />
+              <div className="space-y-2 pt-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-8 w-full rounded-chip" />
+                ))}
+              </div>
+            </Card>
+            <Card className="p-6 space-y-4">
+              <Skeleton className="h-5 w-48 rounded-chip" />
+              <div className="grid grid-cols-3 gap-3">
+                <Skeleton className="aspect-square w-full rounded-tile" />
+                <Skeleton className="aspect-square w-full rounded-tile" />
+                <Skeleton className="aspect-square w-full rounded-tile" />
+              </div>
+            </Card>
+          </div>
+          <Card className="p-6 space-y-4">
+            <Skeleton className="h-5 w-60 rounded-chip" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Skeleton className="h-20 w-full rounded-tile" />
+              <Skeleton className="h-20 w-full rounded-tile" />
+              <Skeleton className="h-20 w-full rounded-tile" />
+            </div>
+            <Skeleton className="h-32 w-full rounded-tile" />
+          </Card>
+        </div>
+      )}
 
       {/* Inference Diagnostic Results */}
       <AnimatePresence>
@@ -235,7 +272,7 @@ export const Module5Classifier: React.FC = () => {
                         {(predictionResult.confidence * 100).toFixed(2)}%
                       </span>
                     </div>
-                    <Progress value={predictionResult.confidence * 100} />
+                    <AnimatedBar percentage={predictionResult.confidence * 100} className="h-2.5" />
                   </div>
 
                   <div>
@@ -253,7 +290,7 @@ export const Module5Classifier: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-line text-ink font-normal">
                           {predictionResult.top_5.map((item: any, idx: number) => (
-                            <tr key={idx} className={idx === 0 ? "bg-accent-soft/60 text-ink font-semibold" : "hover:bg-surface-2"}>
+                            <tr key={idx} className={idx === 0 ? "bg-accent-soft/60 text-ink font-semibold" : ""}>
                               <td className="py-2 px-3 font-mono">{item.family}</td>
                               <td className="py-2 px-3 tabular-nums">{(item.confidence * 100).toFixed(2)}%</td>
                               <td className="py-2 px-3 text-muted">{item.category}</td>
@@ -368,6 +405,6 @@ export const Module5Classifier: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 };

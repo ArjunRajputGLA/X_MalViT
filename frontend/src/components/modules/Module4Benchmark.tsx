@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Grid, ShieldCheck, Trophy } from "lucide-react";
-import { motion } from "framer-motion";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 export const Module4Benchmark: React.FC = () => {
   const [benchmarkModels, setBenchmarkModels] = useState<any[]>([]);
@@ -21,12 +21,7 @@ export const Module4Benchmark: React.FC = () => {
   }, []);
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
-    >
+    <div className="space-y-6">
       {/* SOTA Comparative Benchmark Table */}
       <Card className="overflow-hidden">
         <CardHeader className="pb-4 border-b border-line bg-surface-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -51,30 +46,44 @@ export const Module4Benchmark: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
-                {benchmarkModels.map((row) => {
-                  const isOurs = row.model.includes("X-MalViT");
-                  return (
-                    <tr
-                      key={row.model}
-                      className={
-                        isOurs
-                          ? "bg-accent-soft/60 border-l-4 border-accent font-semibold"
-                          : "hover:bg-surface-2 transition-colors"
-                      }
-                    >
-                      <td className="py-3 px-3 font-semibold flex items-center gap-1.5">
-                        {isOurs && <ShieldCheck className="w-4 h-4 text-accent flex-shrink-0" />}
-                        <span className="text-ink">{row.model}</span>
-                      </td>
-                      <td className="py-3 px-3 text-muted">{row.input_format}</td>
-                      <td className="py-3 px-3 text-ink tabular-nums">{row.parameters}</td>
-                      <td className="py-3 px-3 text-ok font-semibold tabular-nums">{row.accuracy}%</td>
-                      <td className="py-3 px-3 text-ink tabular-nums">{row.precision}%</td>
-                      <td className="py-3 px-3 text-accent font-semibold tabular-nums">{row.f1_score}%</td>
-                      <td className="py-3 px-3 text-ink font-medium tabular-nums">{row.latency}</td>
+                {benchmarkModels.length === 0 ? (
+                  Array.from({ length: 5 }).map((_, idx) => (
+                    <tr key={idx}>
+                      <td className="py-3 px-3"><Skeleton className="h-4 w-40 rounded-chip" /></td>
+                      <td className="py-3 px-3"><Skeleton className="h-4 w-28 rounded-chip" /></td>
+                      <td className="py-3 px-3"><Skeleton className="h-4 w-16 rounded-chip" /></td>
+                      <td className="py-3 px-3"><Skeleton className="h-4 w-14 rounded-chip" /></td>
+                      <td className="py-3 px-3"><Skeleton className="h-4 w-14 rounded-chip" /></td>
+                      <td className="py-3 px-3"><Skeleton className="h-4 w-14 rounded-chip" /></td>
+                      <td className="py-3 px-3"><Skeleton className="h-4 w-16 rounded-chip" /></td>
                     </tr>
-                  );
-                })}
+                  ))
+                ) : (
+                  benchmarkModels.map((row) => {
+                    const isOurs = row.model.includes("X-MalViT");
+                    return (
+                      <tr
+                        key={row.model}
+                        className={
+                          isOurs
+                            ? "bg-accent-soft/60 border-l-4 border-accent font-semibold"
+                            : ""
+                        }
+                      >
+                        <td className="py-3 px-3 font-semibold flex items-center gap-1.5">
+                          {isOurs && <ShieldCheck className="w-4 h-4 text-accent flex-shrink-0" />}
+                          <span className="text-ink">{row.model}</span>
+                        </td>
+                        <td className="py-3 px-3 text-muted">{row.input_format}</td>
+                        <td className="py-3 px-3 text-ink tabular-nums">{row.parameters}</td>
+                        <td className="py-3 px-3 text-ok font-semibold tabular-nums">{row.accuracy}%</td>
+                        <td className="py-3 px-3 text-ink tabular-nums">{row.precision}%</td>
+                        <td className="py-3 px-3 text-accent font-semibold tabular-nums">{row.f1_score}%</td>
+                        <td className="py-3 px-3 text-ink font-medium tabular-nums">{row.latency}</td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -125,7 +134,7 @@ export const Module4Benchmark: React.FC = () => {
                             <div
                               key={cIdx}
                               title={`True: ${famName} | Predicted: ${confusionMatrix.families[cIdx]} | Value: ${val}%`}
-                              className={`w-14 h-9 rounded-chip flex items-center justify-center text-[12px] font-semibold tabular-nums transition-transform hover:scale-105 cursor-pointer ${
+                              className={`w-14 h-9 rounded-chip flex items-center justify-center text-[12px] font-semibold tabular-nums ${
                                 isHigh
                                   ? "bg-accent text-white"
                                   : isZero
@@ -146,6 +155,6 @@ export const Module4Benchmark: React.FC = () => {
           </CardContent>
         </Card>
       )}
-    </motion.div>
+    </div>
   );
 };

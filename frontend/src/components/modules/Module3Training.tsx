@@ -16,9 +16,11 @@ import {
   AlertTriangle,
   Trash2,
   FolderCheck,
-  Square
+  Square,
+  Loader2
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface EpochData {
   epoch: number;
@@ -296,12 +298,7 @@ export const Module3Training: React.FC = () => {
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
-    >
+    <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Hyperparameter Control Panel */}
         <Card className="overflow-hidden">
@@ -530,7 +527,7 @@ export const Module3Training: React.FC = () => {
             {isTraining ? (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
                 <div className="sm:col-span-2 flex items-center justify-center gap-2 py-2.5 px-3 rounded-chip text-[13px] font-medium bg-surface-2 border border-line text-ink select-none tabular-nums">
-                  <Play className="w-4 h-4 animate-spin text-accent flex-shrink-0" />
+                  <Loader2 className="w-4 h-4 animate-spin text-accent flex-shrink-0" />
                   <span className="truncate">
                     {currentEpoch > 0 ? `Epoch ${currentEpoch}/${epochs} on ${deviceMode.toUpperCase()}...` : `Preloading ViT Dataset...`}
                   </span>
@@ -543,7 +540,11 @@ export const Module3Training: React.FC = () => {
                   className="w-full font-semibold"
                   size="lg"
                 >
-                  <Square className="w-3.5 h-3.5 mr-1.5 fill-current" />
+                  {isStopping ? (
+                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  ) : (
+                    <Square className="w-3.5 h-3.5 mr-1.5 fill-current" />
+                  )}
                   {isStopping ? "Halting..." : "Stop"}
                 </Button>
               </div>
@@ -625,7 +626,18 @@ export const Module3Training: React.FC = () => {
                 <Progress value={progressVal} />
               </div>
 
-              {epochHistory.length > 0 && (
+              {isTraining && epochHistory.length === 0 ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3.5 rounded-tile bg-surface-2 border border-line space-y-2">
+                    <Skeleton className="h-3.5 w-20 rounded-chip" />
+                    <Skeleton className="h-6 w-24 rounded-chip" />
+                  </div>
+                  <div className="p-3.5 rounded-tile bg-surface-2 border border-line space-y-2">
+                    <Skeleton className="h-3.5 w-20 rounded-chip" />
+                    <Skeleton className="h-6 w-24 rounded-chip" />
+                  </div>
+                </div>
+              ) : epochHistory.length > 0 && (
                 <div className="grid grid-cols-2 gap-3 tabular-nums">
                   <div className="p-3.5 rounded-tile bg-surface-2 border border-line">
                     <div className="text-muted text-[13px] font-medium">Current Loss:</div>
@@ -796,6 +808,6 @@ export const Module3Training: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 };

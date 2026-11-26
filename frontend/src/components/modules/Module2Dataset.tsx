@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Search, Database, BarChart2, Shield, ChevronRight } from "lucide-react";
-import { motion } from "framer-motion";
+import { RefreshCw, Loader2, Search, Database, BarChart2, Shield, ChevronRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 export const Module2Dataset: React.FC = () => {
   const [categories, setCategories] = useState<Record<string, string[]>>({});
@@ -86,12 +86,7 @@ export const Module2Dataset: React.FC = () => {
     : 1;
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
-    >
+    <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Control Panel */}
         <Card className="lg:col-span-1 overflow-hidden">
@@ -160,7 +155,11 @@ export const Module2Dataset: React.FC = () => {
               className="w-full"
               variant="cyber"
             >
-              <RefreshCw className={`w-4 h-4 mr-2 ${loadingSample ? "animate-spin" : ""}`} />
+              {loadingSample ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
               Load Next Benchmark Binary Sample
             </Button>
           </CardContent>
@@ -183,14 +182,14 @@ export const Module2Dataset: React.FC = () => {
                   224x224 Grayscale Byte Matrix
                 </div>
                 <div className="relative w-56 h-56 rounded-tile overflow-hidden border border-line bg-surface-2 flex items-center justify-center p-1">
-                  {sampleData?.image_data_url ? (
+                  {loadingSample || !sampleData?.image_data_url ? (
+                    <Skeleton className="w-full h-full rounded-chip" />
+                  ) : (
                     <img
                       src={sampleData.image_data_url}
                       alt={selectedFamily}
                       className="w-full h-full object-cover rounded-chip"
                     />
-                  ) : (
-                    <div className="text-[13px] text-muted">Loading texture...</div>
                   )}
                 </div>
                 <div className="text-[12px] text-muted mt-2">
@@ -202,14 +201,22 @@ export const Module2Dataset: React.FC = () => {
               <div className="flex flex-col">
                 <div className="flex items-center justify-between text-[13px] text-ink font-medium mb-2">
                   <span>Byte Distribution (0-255)</span>
-                  {sampleData?.histogram?.mean_entropy && (
+                  {sampleData?.histogram?.mean_entropy && !loadingSample && (
                     <span className="text-[12px] text-accent font-semibold bg-accent-soft px-2 py-0.5 rounded-chip border border-accent/20 tabular-nums">
                       Entropy: {sampleData.histogram.mean_entropy.toFixed(2)} bits
                     </span>
                   )}
                 </div>
                 <div className="h-56 w-full rounded-tile bg-surface-2 border border-line p-3 flex items-end justify-between gap-[2px]">
-                  {sampleData?.histogram?.counts ? (
+                  {loadingSample || !sampleData?.histogram?.counts ? (
+                    Array.from({ length: 24 }).map((_, idx) => (
+                      <Skeleton
+                        key={idx}
+                        style={{ height: `${25 + ((idx * 19) % 65)}%` }}
+                        className="flex-1 rounded-t-[2px] rounded-b-none border-0"
+                      />
+                    ))
+                  ) : (
                     sampleData.histogram.counts.map((count, idx) => {
                       const heightPercent = Math.max(4, (count / maxHistCount) * 100);
                       return (
@@ -221,10 +228,6 @@ export const Module2Dataset: React.FC = () => {
                         />
                       );
                     })
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[13px] text-muted">
-                      Computing histogram...
-                    </div>
                   )}
                 </div>
                 <div className="flex justify-between text-[12px] text-muted font-mono mt-1.5 px-1">
@@ -269,36 +272,48 @@ export const Module2Dataset: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-line font-normal">
-                {filteredDist.map((item) => (
-                  <tr key={item.family} className="hover:bg-surface-2 transition-colors">
-                    <td className="py-2.5 px-3 font-mono text-accent font-medium">{item.family}</td>
-                    <td className="py-2.5 px-3 text-muted">{item.category}</td>
-                    <td className="py-2.5 px-3 text-ink font-medium tabular-nums">{item.samples.toLocaleString()}</td>
-                    <td className="py-2.5 px-3">
-                      <Badge variant={item.risk === "CRITICAL" ? "destructive" : "warning"} className="lowercase first-letter:uppercase">
-                        {item.risk}
-                      </Badge>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <button
-                        onClick={() => {
-                          setSelectedCategory(item.category);
-                          setSelectedFamily(item.family);
-                          loadFamilySample(item.family);
-                        }}
-                        className="inline-flex items-center gap-1 text-[13px] text-accent hover:underline font-medium cursor-pointer group"
-                      >
-                        <span>Inspect Texture</span>
-                        <ChevronRight className="w-3.5 h-3.5 transition-transform duration-150 group-hover:translate-x-[2px]" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {distribution.length === 0 ? (
+                  Array.from({ length: 6 }).map((_, idx) => (
+                    <tr key={idx}>
+                      <td className="py-2.5 px-3"><Skeleton className="h-4 w-24 rounded-chip" /></td>
+                      <td className="py-2.5 px-3"><Skeleton className="h-4 w-16 rounded-chip" /></td>
+                      <td className="py-2.5 px-3"><Skeleton className="h-4 w-14 rounded-chip" /></td>
+                      <td className="py-2.5 px-3"><Skeleton className="h-5 w-16 rounded-chip" /></td>
+                      <td className="py-2.5 px-3"><Skeleton className="h-4 w-24 rounded-chip" /></td>
+                    </tr>
+                  ))
+                ) : (
+                  filteredDist.map((item) => (
+                    <tr key={item.family}>
+                      <td className="py-2.5 px-3 font-mono text-accent font-medium">{item.family}</td>
+                      <td className="py-2.5 px-3 text-muted">{item.category}</td>
+                      <td className="py-2.5 px-3 text-ink font-medium tabular-nums">{item.samples.toLocaleString()}</td>
+                      <td className="py-2.5 px-3">
+                        <Badge variant={item.risk === "CRITICAL" ? "destructive" : "warning"} className="lowercase first-letter:uppercase">
+                          {item.risk}
+                        </Badge>
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <button
+                          onClick={() => {
+                            setSelectedCategory(item.category);
+                            setSelectedFamily(item.family);
+                            loadFamilySample(item.family);
+                          }}
+                          className="inline-flex items-center gap-1 text-[13px] text-accent hover:underline font-medium cursor-pointer group"
+                        >
+                          <span>Inspect Texture</span>
+                          <ChevronRight className="w-3.5 h-3.5 transition-transform duration-150 group-hover:translate-x-[2px]" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 };

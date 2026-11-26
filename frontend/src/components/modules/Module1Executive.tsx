@@ -17,8 +17,10 @@ import {
   Server,
   Activity
 } from "lucide-react";
-import { motion } from "framer-motion";
 import { ModuleKey } from "@/components/SidebarNav";
+import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
+import { AnimatedBar } from "@/components/ui/AnimatedBar";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface Module1ExecutiveProps {
   onNavigate?: (module: ModuleKey) => void;
@@ -63,7 +65,9 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">{accuracyFormatted}</div>
+            <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">
+              <AnimatedNumber value={accuracyFormatted} />
+            </div>
             <div className="text-[12px] font-medium text-ok mt-1.5 flex items-center gap-1 tabular-nums">
               <span className="font-semibold">+2.4%</span> over ResNet-18 baseline
             </div>
@@ -79,9 +83,11 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">{overview?.total_families || 25}</div>
+            <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">
+              <AnimatedNumber value={overview?.total_families || 25} />
+            </div>
             <div className="text-[12px] font-medium text-accent mt-1.5 tabular-nums">
-              {totalSamples.toLocaleString()} authenticated binaries
+              <AnimatedNumber value={totalSamples} useGrouping /> authenticated binaries
             </div>
           </div>
         </div>
@@ -95,7 +101,9 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">23.4 ms</div>
+            <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">
+              <AnimatedNumber value="23.4 ms" />
+            </div>
             <div className="text-[12px] font-medium text-high mt-1.5 tabular-nums">
               Real-time static triage (&lt;25ms)
             </div>
@@ -111,7 +119,9 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">5.8 M</div>
+            <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">
+              <AnimatedNumber value="5.8 M" />
+            </div>
             <div className="text-[12px] font-medium text-muted mt-1.5 tabular-nums">
               ViT-Tiny (14x14 Patch Tokens)
             </div>
@@ -140,7 +150,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-              <div className="p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/40 transition-colors">
+              <div className="p-4 rounded-tile bg-surface-2 border border-line">
                 <div className="w-7 h-7 rounded-chip bg-accent-soft text-accent flex items-center justify-center font-semibold text-[12px] tabular-nums mb-2">
                   1
                 </div>
@@ -150,7 +160,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
                 </div>
               </div>
 
-              <div className="p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/40 transition-colors">
+              <div className="p-4 rounded-tile bg-surface-2 border border-line">
                 <div className="w-7 h-7 rounded-chip bg-accent-soft text-accent flex items-center justify-center font-semibold text-[12px] tabular-nums mb-2">
                   2
                 </div>
@@ -160,7 +170,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
                 </div>
               </div>
 
-              <div className="p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/40 transition-colors">
+              <div className="p-4 rounded-tile bg-surface-2 border border-line">
                 <div className="w-7 h-7 rounded-chip bg-accent-soft text-accent flex items-center justify-center font-semibold text-[12px] tabular-nums mb-2">
                   3
                 </div>
@@ -170,7 +180,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
                 </div>
               </div>
 
-              <div className="p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/40 transition-colors">
+              <div className="p-4 rounded-tile bg-surface-2 border border-line">
                 <div className="w-7 h-7 rounded-chip bg-accent-soft text-accent flex items-center justify-center font-semibold text-[12px] tabular-nums mb-2">
                   4
                 </div>
@@ -180,7 +190,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
                 </div>
               </div>
 
-              <div className="p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/40 transition-colors">
+              <div className="p-4 rounded-tile bg-surface-2 border border-line">
                 <div className="w-7 h-7 rounded-chip bg-accent-soft text-accent flex items-center justify-center font-semibold text-[12px] tabular-nums mb-2">
                   5
                 </div>
@@ -224,38 +234,48 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line font-normal text-ink">
-                  {topFamilies.map((item: any) => {
-                    const sharePct = ((item.samples / Math.max(1, totalSamples)) * 100).toFixed(1);
-                    return (
-                      <tr key={item.family} className="hover:bg-surface-2 transition-colors">
-                        <td className="py-3 px-3 font-mono font-medium text-ink">{item.family}</td>
-                        <td className="py-3 px-3 text-muted">{item.category}</td>
-                        <td className="py-3 px-3 font-medium text-ink tabular-nums">
-                          {item.samples.toLocaleString()} binaries
-                        </td>
-                        <td className="py-3 px-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-20 bg-surface-2 border border-line rounded-chip h-1.5 overflow-hidden">
-                              <div 
-                                className="bg-accent h-1.5 rounded-chip" 
-                                style={{ width: `${Math.min(100, Math.max(6, parseFloat(sharePct)))}%` }} 
-                              />
-                            </div>
-                            <span className="text-[13px] font-medium text-ink tabular-nums">{sharePct}%</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className={`inline-block lowercase first-letter:uppercase px-2 py-0.5 rounded-chip text-[12px] font-medium border ${
-                            item.risk === "CRITICAL"
-                              ? "bg-critical-soft text-critical border-critical/20"
-                              : "bg-high-soft text-high border-high/20"
-                          }`}>
-                            {item.risk}
-                          </span>
-                        </td>
+                  {!overview ? (
+                    Array.from({ length: 5 }).map((_, idx) => (
+                      <tr key={idx}>
+                        <td className="py-3 px-3"><Skeleton className="h-4 w-24 rounded-chip" /></td>
+                        <td className="py-3 px-3"><Skeleton className="h-4 w-16 rounded-chip" /></td>
+                        <td className="py-3 px-3"><Skeleton className="h-4 w-24 rounded-chip" /></td>
+                        <td className="py-3 px-3"><Skeleton className="h-4 w-28 rounded-chip" /></td>
+                        <td className="py-3 px-3"><Skeleton className="h-5 w-16 rounded-chip" /></td>
                       </tr>
-                    );
-                  })}
+                    ))
+                  ) : (
+                    topFamilies.map((item: any) => {
+                      const sharePct = ((item.samples / Math.max(1, totalSamples)) * 100).toFixed(1);
+                      return (
+                        <tr key={item.family}>
+                          <td className="py-3 px-3 font-mono font-medium text-ink">{item.family}</td>
+                          <td className="py-3 px-3 text-muted">{item.category}</td>
+                          <td className="py-3 px-3 font-medium text-ink tabular-nums">
+                            {item.samples.toLocaleString()} binaries
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-2">
+                              <AnimatedBar
+                                percentage={Math.min(100, Math.max(6, parseFloat(sharePct)))}
+                                className="w-20 h-1.5"
+                              />
+                              <span className="text-[13px] font-medium text-ink tabular-nums">{sharePct}%</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className={`inline-block lowercase first-letter:uppercase px-2 py-0.5 rounded-chip text-[12px] font-medium border ${
+                              item.risk === "CRITICAL"
+                                ? "bg-critical-soft text-critical border-critical/20"
+                                : "bg-high-soft text-high border-high/20"
+                            }`}>
+                              {item.risk}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -293,25 +313,29 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
               Model Diagnostic Performance
             </div>
             <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">
-              {accuracyFormatted}
+              <AnimatedNumber value={accuracyFormatted} />
             </div>
             
-            <div className="w-full bg-surface-2 border border-line rounded-chip h-2 mt-3 mb-4 overflow-hidden flex">
-              <div className="bg-accent h-2" style={{ width: accuracyFormatted }} />
-            </div>
+            <AnimatedBar percentage={accuracyFormatted} className="mt-3 mb-4" />
 
             {/* 3 Telemetry Pills */}
             <div className="grid grid-cols-3 gap-3 text-center pt-3 border-t border-line">
               <div className="p-3 rounded-tile bg-surface-2 border border-line">
-                <div className="text-ink font-semibold text-[16px] leading-[1.2] tabular-nums">98.7%</div>
+                <div className="text-ink font-semibold text-[16px] leading-[1.2] tabular-nums">
+                  <AnimatedNumber value="98.7%" />
+                </div>
                 <div className="text-[12px] text-muted font-medium mt-1">F1-Score</div>
               </div>
               <div className="p-3 rounded-tile bg-surface-2 border border-line">
-                <div className="text-ink font-semibold text-[16px] leading-[1.2] tabular-nums">{overview?.total_families || 25}</div>
+                <div className="text-ink font-semibold text-[16px] leading-[1.2] tabular-nums">
+                  <AnimatedNumber value={overview?.total_families || 25} />
+                </div>
                 <div className="text-[12px] text-muted font-medium mt-1">Families</div>
               </div>
               <div className="p-3 rounded-tile bg-surface-2 border border-line">
-                <div className="text-ink font-semibold text-[16px] leading-[1.2] tabular-nums">5.8M</div>
+                <div className="text-ink font-semibold text-[16px] leading-[1.2] tabular-nums">
+                  <AnimatedNumber value="5.8M" />
+                </div>
                 <div className="text-[12px] text-muted font-medium mt-1">Weights</div>
               </div>
             </div>
