@@ -210,7 +210,7 @@ export const Module2Dataset: React.FC = () => {
                 <div className="text-[13px] text-ink font-medium mb-2 tabular-nums">
                   224x224 Grayscale Byte Matrix
                 </div>
-                <div className="relative w-56 h-56 rounded-tile overflow-hidden border border-line bg-surface-2 flex items-center justify-center p-1">
+                <div className="relative w-56 h-56 rounded-tile overflow-hidden border border-line hover:border-accent/40 bg-surface-2 flex items-center justify-center p-1 transition-colors group">
                   {loadingSample || !sampleData?.image_data_url ? (
                     <Skeleton className="w-full h-full rounded-chip" />
                   ) : (
@@ -224,7 +224,7 @@ export const Module2Dataset: React.FC = () => {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2, ease: "easeOut" }}
                         style={{ imageRendering: "pixelated" }}
-                        className="w-full h-full object-cover rounded-chip"
+                        className="w-full h-full object-cover rounded-chip transition-transform duration-300 ease-out group-hover:scale-[1.04]"
                       />
                     </AnimatePresence>
                   )}

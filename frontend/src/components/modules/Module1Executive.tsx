@@ -21,6 +21,7 @@ import { ModuleKey } from "@/components/SidebarNav";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { AnimatedBar } from "@/components/ui/AnimatedBar";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { Card } from "@/components/ui/card";
 
 interface Module1ExecutiveProps {
   onNavigate?: (module: ModuleKey) => void;
@@ -91,10 +92,10 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
       {/* 4 KPI Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         {/* Card 1: Accuracy */}
-        <div className="bg-surface p-6 rounded-panel border border-line shadow-panel flex flex-col justify-between">
+        <Card className="group p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between text-muted text-[13px] font-medium">
             <span>Overall Accuracy</span>
-            <TrendingUp className="w-4 h-4 text-muted flex-shrink-0" />
+            <TrendingUp className="w-4 h-4 text-muted group-hover:text-accent transition-colors flex-shrink-0" />
           </div>
           <div className="mt-3">
             <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">
@@ -104,13 +105,13 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
               <span className="font-semibold">+2.4%</span> over ResNet-18 baseline
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Card 2: Threat Families */}
-        <div className="bg-surface p-6 rounded-panel border border-line shadow-panel flex flex-col justify-between">
+        <Card className="group p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between text-muted text-[13px] font-medium">
             <span>Threat Families</span>
-            <Database className="w-4 h-4 text-muted flex-shrink-0" />
+            <Database className="w-4 h-4 text-muted group-hover:text-accent transition-colors flex-shrink-0" />
           </div>
           <div className="mt-3">
             <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">
@@ -120,13 +121,13 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
               <AnimatedNumber value={totalSamples} useGrouping /> authenticated binaries
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Card 3: Inference Latency */}
-        <div className="bg-surface p-6 rounded-panel border border-line shadow-panel flex flex-col justify-between">
+        <Card className="group p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between text-muted text-[13px] font-medium">
             <span>Inference Latency</span>
-            <Zap className="w-4 h-4 text-muted flex-shrink-0" />
+            <Zap className="w-4 h-4 text-muted group-hover:text-accent transition-colors flex-shrink-0" />
           </div>
           <div className="mt-3">
             <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">
@@ -136,13 +137,13 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
               Real-time static triage (&lt;25ms)
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Card 4: Parameters */}
-        <div className="bg-surface p-6 rounded-panel border border-line shadow-panel flex flex-col justify-between">
+        <Card className="group p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between text-muted text-[13px] font-medium">
             <span>Model Footprint</span>
-            <Cpu className="w-4 h-4 text-muted flex-shrink-0" />
+            <Cpu className="w-4 h-4 text-muted group-hover:text-accent transition-colors flex-shrink-0" />
           </div>
           <div className="mt-3">
             <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">
@@ -152,7 +153,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
               ViT-Tiny (14x14 Patch Tokens)
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Main Two-Column Layout */}
@@ -160,7 +161,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
         {/* Left Column (2 Cols) */}
         <div className="xl:col-span-2 min-w-0 space-y-6">
           {/* Autonomous Threat Pipeline */}
-          <div className="bg-surface p-6 rounded-panel border border-line shadow-panel">
+          <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-[16px] leading-[1.2] font-semibold text-ink">
@@ -203,7 +204,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
                   return (
                     <div
                       key={stage.step}
-                      className="flex sm:flex-col items-start sm:items-center sm:text-center gap-3.5 sm:gap-2.5"
+                      className="group flex sm:flex-col items-start sm:items-center sm:text-center gap-3.5 sm:gap-2.5"
                     >
                       <motion.div
                         initial={{
@@ -217,14 +218,14 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
                           borderColor: "var(--accent)",
                         }}
                         transition={{ delay: idx * 0.12, duration: 0.18 }}
-                        className="w-8 h-8 rounded-full border-2 flex items-center justify-center font-semibold text-[12px] tabular-nums flex-shrink-0 bg-surface"
+                        className="w-8 h-8 rounded-full border-2 flex items-center justify-center font-semibold text-[12px] tabular-nums flex-shrink-0 bg-surface transition-transform duration-200 group-hover:scale-110"
                       >
                         {stage.step}
                       </motion.div>
 
                       <div className="flex-1 sm:flex-initial min-w-0">
                         <div className="inline-flex items-center sm:justify-center gap-1.5 font-semibold text-[14px] text-ink">
-                          <Icon className="w-3.5 h-3.5 text-muted flex-shrink-0" />
+                          <Icon className="w-3.5 h-3.5 text-muted group-hover:text-accent transition-colors flex-shrink-0" />
                           <span>{stage.title}</span>
                         </div>
                         <div className="text-[12px] text-muted mt-1 leading-[1.5]">
@@ -239,10 +240,10 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
                 })}
               </div>
             </div>
-          </div>
+          </Card>
 
           {/* Real Malimg Benchmark Signatures Table (Live Data from Disk) */}
-          <div className="bg-surface p-6 rounded-panel border border-line shadow-panel">
+          <Card className="p-6">
             <div className="flex items-center justify-between mb-4 gap-3">
               <div>
                 <h3 className="text-[16px] leading-[1.2] font-semibold text-ink">
@@ -319,10 +320,10 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
 
           {/* Research Abstract Card */}
-          <div className="bg-surface p-6 rounded-panel border border-line shadow-panel">
+          <Card className="p-6">
             <div className="flex items-center justify-between mb-4 border-b border-line pb-3">
               <div className="flex items-center gap-2">
                 <FileCheck className="w-4 h-4 text-accent" />
@@ -342,13 +343,13 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
                 Executable binaries from the benchmark Malimg dataset (9,339 samples across 25 families) are converted into two-dimensional grayscale byte matrices, tokenized into non-overlapping patches, and analyzed with multi-head self-attention. Unlike black-box models, X-MalViT projects activation heatmaps back to discrete PE file sections (<code className="text-ink bg-surface-2 px-1.5 py-0.5 rounded-chip border border-line font-mono text-[13px]">.text</code>, <code className="text-ink bg-surface-2 px-1.5 py-0.5 rounded-chip border border-line font-mono text-[13px]">.rsrc</code>, shellcode jump offsets). Trained locally using FP16 mixed precision on an NVIDIA RTX 4050 GPU, X-MalViT converges in under 4 minutes with <strong className="text-ink font-semibold tabular-nums">98.8% accuracy</strong> and an inference latency of <strong className="text-ink font-semibold tabular-nums">23.4 ms per binary</strong>.
               </p>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Right Column */}
         <div className="space-y-6">
           {/* Classification Performance Widget */}
-          <div className="bg-surface p-6 rounded-panel border border-line shadow-panel">
+          <Card className="p-6">
             <div className="text-[13px] font-medium text-muted mb-1">
               Model Diagnostic Performance
             </div>
@@ -379,10 +380,10 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
                 <div className="text-[12px] text-muted font-medium mt-1">Weights</div>
               </div>
             </div>
-          </div>
+          </Card>
 
           {/* Live Engine & Accelerator Telemetry Card */}
-          <div className="bg-surface p-6 rounded-panel border border-line shadow-panel space-y-4">
+          <Card className="p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Server className="w-4 h-4 text-accent" />
@@ -422,16 +423,16 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
 
             <button
               onClick={() => onNavigate && onNavigate("classifier")}
-              className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-chip bg-accent hover:bg-accent/90 text-on-accent text-[13px] font-medium transition-all cursor-pointer active:scale-[0.98] group outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-chip bg-accent hover:bg-accent/90 hover:shadow-[0_2px_12px_color-mix(in_srgb,var(--accent)_35%,transparent)] text-on-accent text-[13px] font-medium transition-all cursor-pointer active:scale-[0.98] group outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Launch Grad-CAM Classifier</span>
               <ChevronRight className="w-3.5 h-3.5 transition-transform duration-150 group-hover:translate-x-[2px]" />
             </button>
-          </div>
+          </Card>
 
           {/* Model Architecture Geometric Specifications */}
-          <div className="bg-surface p-6 rounded-panel border border-line shadow-panel space-y-4">
+          <Card className="p-6 space-y-4">
             <div className="text-[16px] leading-[1.2] font-semibold text-ink">
               ViT Geometric Specifications
             </div>
@@ -453,7 +454,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
                 <dd className="font-mono text-ink font-medium text-right tabular-nums">224 × 224 Grayscale Byte Tensor</dd>
               </div>
             </dl>
-          </div>
+          </Card>
         </div>
       </div>
     </div>

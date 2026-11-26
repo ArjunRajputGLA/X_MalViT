@@ -212,13 +212,13 @@ export const Module6Manuscript: React.FC = () => {
           {manuscripts.map((doc: any, idx: number) => {
             const isPrimary = idx === 0;
             return (
-              <div
+              <Card
                 key={idx}
-                className="bg-surface p-6 rounded-panel border border-line shadow-panel flex flex-col justify-between"
+                className="group p-6 flex flex-col justify-between hover:-translate-y-0.5 hover:border-accent/35"
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 rounded-tile bg-surface-2 flex items-center justify-center text-accent border border-line">
+                    <div className="w-10 h-10 rounded-tile bg-surface-2 flex items-center justify-center text-accent border border-line group-hover:border-accent/30 group-hover:bg-accent-soft transition-colors">
                       <FileText className="w-5 h-5" />
                     </div>
                     <span className="text-[12px] px-2 py-0.5 rounded-chip bg-surface-2 border border-line text-muted font-mono font-medium tabular-nums">
@@ -241,16 +241,16 @@ export const Module6Manuscript: React.FC = () => {
                   href={doc.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`inline-flex items-center justify-center gap-2 w-full mt-5 h-10 px-4 rounded-chip text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
+                  className={`group/btn inline-flex items-center justify-center gap-2 w-full mt-5 h-10 px-4 rounded-chip text-[13px] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
                     isPrimary
-                      ? "bg-accent hover:bg-accent/90 text-on-accent"
+                      ? "bg-accent hover:bg-accent/90 hover:shadow-[0_2px_12px_color-mix(in_srgb,var(--accent)_35%,transparent)] text-on-accent"
                       : "bg-surface border border-line text-ink hover:bg-surface-2 hover:border-accent/40"
                   }`}
                 >
-                  <Download className="w-4 h-4" />
+                  <Download className="w-4 h-4 transition-transform duration-150 group-hover/btn:translate-y-[1px]" />
                   Download / View PDF
                 </a>
-              </div>
+              </Card>
             );
           })}
         </div>
@@ -266,8 +266,8 @@ export const Module6Manuscript: React.FC = () => {
         </CardHeader>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <div className="p-4 rounded-tile bg-surface-2 border border-line">
-              <div className="w-8 h-8 rounded-chip bg-accent-soft text-accent flex items-center justify-center mb-2.5">
+            <div className="group p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/35 hover:bg-surface transition-all duration-200">
+              <div className="w-8 h-8 rounded-chip bg-accent-soft text-accent group-hover:bg-accent group-hover:text-on-accent group-hover:scale-105 transition-all duration-200 flex items-center justify-center mb-2.5">
                 <LayoutGrid className="w-4 h-4" />
               </div>
               <div className="font-semibold text-[14px] text-ink">2D Visual Tokenization</div>
@@ -276,8 +276,8 @@ export const Module6Manuscript: React.FC = () => {
               </p>
             </div>
 
-            <div className="p-4 rounded-tile bg-surface-2 border border-line">
-              <div className="w-8 h-8 rounded-chip bg-accent-soft text-accent flex items-center justify-center mb-2.5">
+            <div className="group p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/35 hover:bg-surface transition-all duration-200">
+              <div className="w-8 h-8 rounded-chip bg-accent-soft text-accent group-hover:bg-accent group-hover:text-on-accent group-hover:scale-105 transition-all duration-200 flex items-center justify-center mb-2.5">
                 <Network className="w-4 h-4" />
               </div>
               <div className="font-semibold text-[14px] text-ink">Multi-Head Self-Attention</div>
@@ -286,8 +286,8 @@ export const Module6Manuscript: React.FC = () => {
               </p>
             </div>
 
-            <div className="p-4 rounded-tile bg-surface-2 border border-line">
-              <div className="w-8 h-8 rounded-chip bg-accent-soft text-accent flex items-center justify-center mb-2.5">
+            <div className="group p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/35 hover:bg-surface transition-all duration-200">
+              <div className="w-8 h-8 rounded-chip bg-accent-soft text-accent group-hover:bg-accent group-hover:text-on-accent group-hover:scale-105 transition-all duration-200 flex items-center justify-center mb-2.5">
                 <Flame className="w-4 h-4" />
               </div>
               <div className="font-semibold text-[14px] text-ink">Grad-CAM Attribution</div>
@@ -296,8 +296,8 @@ export const Module6Manuscript: React.FC = () => {
               </p>
             </div>
 
-            <div className="p-4 rounded-tile bg-surface-2 border border-line">
-              <div className="w-8 h-8 rounded-chip bg-accent-soft text-accent flex items-center justify-center mb-2.5">
+            <div className="group p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/35 hover:bg-surface transition-all duration-200">
+              <div className="w-8 h-8 rounded-chip bg-accent-soft text-accent group-hover:bg-accent group-hover:text-on-accent group-hover:scale-105 transition-all duration-200 flex items-center justify-center mb-2.5">
                 <Cpu className="w-4 h-4" />
               </div>
               <div className="font-semibold text-[14px] text-ink">Edge Hardware Feasibility</div>

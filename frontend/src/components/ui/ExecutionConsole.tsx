@@ -82,7 +82,12 @@ export const ExecutionConsole: React.FC<ExecutionConsoleProps> = ({
       };
 
   return (
-    <Card className="dark border-line bg-canvas text-ink overflow-hidden">
+    <Card className="dark border-line bg-canvas text-ink overflow-hidden relative">
+      {isTraining && (
+        <div aria-hidden="true" className="h-[2px] w-full bg-surface overflow-hidden">
+          <div className="indeterminate-bar h-full w-1/3 bg-accent" />
+        </div>
+      )}
       <CardHeader className="py-3 px-6 bg-surface border-b border-line flex flex-row items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 flex-wrap">
           <Terminal className="w-4 h-4 text-accent flex-shrink-0" />

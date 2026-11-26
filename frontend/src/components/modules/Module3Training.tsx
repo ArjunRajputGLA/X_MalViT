@@ -94,20 +94,33 @@ function ConvergenceMiniChart({
             />
           );
         })}
-        {points.map((pt) => (
-          <motion.circle
-            key={`pt-${pt.epoch}`}
-            cx={pt.x}
-            cy={pt.y}
-            r="3.5"
-            fill="var(--surface)"
-            stroke="var(--ok)"
-            strokeWidth="2"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.2 }}
-          />
-        ))}
+        {points.map((pt, idx) => {
+          const isLatest = idx === points.length - 1;
+          return (
+            <g key={`pt-${pt.epoch}`}>
+              {isLatest && (
+                <circle
+                  cx={pt.x}
+                  cy={pt.y}
+                  r="6"
+                  fill="var(--ok)"
+                  opacity="0.2"
+                />
+              )}
+              <motion.circle
+                cx={pt.x}
+                cy={pt.y}
+                r={isLatest ? "4" : "3.5"}
+                fill="var(--surface)"
+                stroke="var(--ok)"
+                strokeWidth="2"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.2 }}
+              />
+            </g>
+          );
+        })}
       </svg>
     </div>
   );

@@ -614,9 +614,9 @@ export const Module5Classifier: React.FC = () => {
                             ) : (
                               <div
                                 key={idx}
-                                className="grid grid-cols-[88px_minmax(320px,1fr)_160px] gap-4 items-center px-2.5 py-0.5 rounded-chip hover:bg-surface transition-colors"
+                                className="group grid grid-cols-[88px_minmax(320px,1fr)_160px] gap-4 items-center px-2.5 py-0.5 rounded-chip hover:bg-surface transition-colors"
                               >
-                                <span className="text-muted select-none">{row.offset}</span>
+                                <span className="text-muted group-hover:text-accent transition-colors select-none">{row.offset}</span>
                                 <span className="text-ink whitespace-pre">{row.bytes}</span>
                                 <span className="text-accent text-right whitespace-pre">
                                   {row.ascii}

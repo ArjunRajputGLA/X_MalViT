@@ -189,6 +189,49 @@ h4 {
   animation: indeterminate-slide 1.15s ease-in-out infinite;
 }
 
+/* Tactile card spotlight & interactive elevation */
+.card-spotlight {
+  position: relative;
+  transition: border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 250ms ease;
+  background: radial-gradient(
+    420px circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%),
+    color-mix(in srgb, var(--accent) 6%, transparent),
+    transparent 65%
+  );
+  z-index: 0;
+}
+
+.card-spotlight:hover::before {
+  opacity: 1;
+}
+
+.card-spotlight > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-spotlight,
+  .card-spotlight::before {
+    transition: none;
+  }
+  .card-spotlight:hover::before {
+    opacity: 0;
+  }
+}
+
 /* Custom 18px range slider thumb & focus ring */
 .epoch-range {
   -webkit-appearance: none;

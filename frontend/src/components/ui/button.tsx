@@ -12,11 +12,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center whitespace-nowrap rounded-chip text-[14px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99] cursor-pointer",
+          "inline-flex items-center justify-center whitespace-nowrap rounded-chip text-[14px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] cursor-pointer",
           {
-            "bg-accent text-on-accent hover:bg-accent/90": variant === "default" || variant === "cyber",
-            "bg-critical text-white hover:bg-critical/90": variant === "destructive",
-            "border border-line bg-surface text-ink hover:bg-surface-2": variant === "outline",
+            "bg-accent text-on-accent hover:bg-accent/90 hover:shadow-[0_2px_12px_color-mix(in_srgb,var(--accent)_35%,transparent)]": variant === "default" || variant === "cyber",
+            "bg-critical text-white hover:bg-critical/90 hover:shadow-[0_2px_10px_color-mix(in_srgb,var(--critical)_30%,transparent)]": variant === "destructive",
+            "border border-line bg-surface text-ink hover:bg-surface-2 hover:border-accent/40": variant === "outline",
             "bg-surface-2 text-ink border border-line hover:bg-line/50": variant === "secondary",
             "hover:bg-surface-2 text-muted hover:text-ink": variant === "ghost",
           },

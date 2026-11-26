@@ -163,9 +163,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
         <button
           type="button"
           onClick={() => onNavigate("classifier")}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-chip text-[13px] font-medium bg-accent hover:bg-accent/90 text-on-accent transition-all cursor-pointer active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-chip text-[13px] font-medium bg-accent hover:bg-accent/90 hover:shadow-[0_2px_12px_color-mix(in_srgb,var(--accent)_35%,transparent)] text-on-accent transition-all cursor-pointer active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface group"
         >
-          <Sparkles className="w-3.5 h-3.5" />
+          <Sparkles className="w-3.5 h-3.5 transition-transform duration-200 group-hover:rotate-12" />
           <span className="hidden sm:inline">Run Threat Triage</span>
           <span className="sm:hidden">Scan</span>
         </button>

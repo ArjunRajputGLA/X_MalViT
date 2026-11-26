@@ -1,14 +1,29 @@
+"use client";
+
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn("rounded-panel border border-line bg-surface shadow-panel text-ink", className)}
-      {...props}
-    />
-  )
+  ({ className, onMouseMove, ...props }, ref) => {
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      e.currentTarget.style.setProperty("--spotlight-x", `${e.clientX - rect.left}px`);
+      e.currentTarget.style.setProperty("--spotlight-y", `${e.clientY - rect.top}px`);
+      onMouseMove?.(e);
+    };
+
+    return (
+      <div
+        ref={ref}
+        onMouseMove={handleMouseMove}
+        className={cn(
+          "card-spotlight rounded-panel border border-line bg-surface shadow-panel text-ink hover:border-accent/25",
+          className
+        )}
+        {...props}
+      />
+    );
+  }
 );
 Card.displayName = "Card";
 
