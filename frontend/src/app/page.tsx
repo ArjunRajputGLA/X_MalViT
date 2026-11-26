@@ -47,9 +47,9 @@ export default function Home() {
           onCloseMobile={() => setIsMobileDrawerOpen(false)}
         />
 
-        {/* Right Shell: Scrollable Container with Sticky Header + Main Dashboard */}
-        <div className="flex-1 h-screen flex flex-col min-w-0 overflow-y-auto overflow-x-hidden bg-transparent relative">
-          {/* Sticky Top Header */}
+        {/* Right Shell: Fixed Header + Container-Confined Scrollable Main Dashboard */}
+        <div className="flex-1 h-screen flex flex-col min-w-0 overflow-hidden bg-transparent relative">
+          {/* Top Header (sits cleanly on canvas above the main container) */}
           <TopHeader
             activeModule={activeModule}
             systemStatus={systemStatus}
@@ -60,8 +60,8 @@ export default function Home() {
             onOpenMobileMenu={() => setIsMobileDrawerOpen(true)}
           />
 
-          {/* Elevated Top Layer: Stretches automatically to fill all available width */}
-          <main className="flex-1 min-w-0 bg-surface lg:rounded-l-panel p-4 sm:p-6 border-t lg:border-y lg:border-l border-line shadow-panel">
+          {/* Elevated Top Layer: Content scrolls strictly inside this rounded container */}
+          <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden bg-surface lg:rounded-l-panel p-4 sm:p-6 border-t lg:border-y lg:border-l border-line shadow-panel">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeModule}
