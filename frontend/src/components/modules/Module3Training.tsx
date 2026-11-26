@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,15 +12,16 @@ import {
   CheckCircle2, 
   Activity,
   Zap,
-  Terminal,
   AlertTriangle,
-  Trash2,
-  FolderCheck,
   Square,
-  Loader2
+  Loader2,
+  ChevronDown,
+  LineChart
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { ExecutionConsole, ConsoleLogEntry } from "@/components/ui/ExecutionConsole";
 
 interface EpochData {
   epoch: number;
@@ -33,11 +34,78 @@ interface EpochData {
   device?: string;
 }
 
-interface TrainingLog {
-  id: string;
-  timestamp: string;
-  message: string;
-  type?: "system" | "dataset" | "model" | "epoch" | "checkpoint" | "error" | "info";
+type TrainingLog = ConsoleLogEntry;
+
+function ConvergenceMiniChart({
+  epochHistory,
+  totalEpochs,
+}: {
+  epochHistory: EpochData[];
+  totalEpochs: number;
+}) {
+  const maxX = Math.max(totalEpochs, epochHistory.length, 2);
+  const points = epochHistory.map((d) => {
+    const x = ((d.epoch - 1) / (maxX - 1)) * 376 + 12;
+    const y = 96 - (Math.min(100, Math.max(0, d.val_acc)) / 100) * 80;
+    return { x, y, epoch: d.epoch, val_acc: d.val_acc };
+  });
+
+  return (
+    <div className="rounded-tile border border-line bg-surface-2 p-3">
+      <div className="flex items-center justify-between text-[12px] text-muted mb-2 tabular-nums">
+        <span>Validation Accuracy Curve</span>
+        <span className="font-mono text-ok font-medium">
+          Peak: {Math.max(...epochHistory.map((d) => d.val_acc)).toFixed(2)}%
+        </span>
+      </div>
+      <svg viewBox="0 0 400 108" className="w-full h-28 overflow-visible" aria-hidden="true">
+        {[20, 48, 76].map((gridY) => (
+          <line
+            key={gridY}
+            x1="8"
+            x2="392"
+            y1={gridY}
+            y2={gridY}
+            stroke="var(--line)"
+            strokeDasharray="3 3"
+            strokeWidth="1"
+          />
+        ))}
+        {points.slice(1).map((pt, idx) => {
+          const prev = points[idx];
+          return (
+            <motion.line
+              key={`seg-${prev.epoch}-${pt.epoch}`}
+              x1={prev.x}
+              y1={prev.y}
+              x2={pt.x}
+              y2={pt.y}
+              stroke="var(--ok)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            />
+          );
+        })}
+        {points.map((pt) => (
+          <motion.circle
+            key={`pt-${pt.epoch}`}
+            cx={pt.x}
+            cy={pt.y}
+            r="3.5"
+            fill="var(--surface)"
+            stroke="var(--ok)"
+            strokeWidth="2"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.2 }}
+          />
+        ))}
+      </svg>
+    </div>
+  );
 }
 
 export const Module3Training: React.FC = () => {
@@ -56,17 +124,10 @@ export const Module3Training: React.FC = () => {
   const [epochHistory, setEpochHistory] = useState<EpochData[]>([]);
   const [completionMessage, setCompletionMessage] = useState<string | null>(null);
   const [logs, setLogs] = useState<TrainingLog[]>([]);
-  const terminalEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchStatus();
   }, []);
-
-  useEffect(() => {
-    if (terminalEndRef.current) {
-      terminalEndRef.current.scrollTop = terminalEndRef.current.scrollHeight;
-    }
-  }, [logs]);
 
   const clearLogs = () => {
     setLogs([]);
@@ -297,6 +358,8 @@ export const Module3Training: React.FC = () => {
     }
   };
 
+  const epochPct = ((epochs - 2) / (10 - 2)) * 100;
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -308,28 +371,31 @@ export const Module3Training: React.FC = () => {
               Architecture &amp; Hyperparameter Tuning
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-6 space-y-4">
+          <CardContent className="pt-6 space-y-5">
             {/* Target Neural Architecture */}
             <div>
               <label className="text-[13px] font-medium text-ink block mb-1.5">
                 Target Neural Architecture
               </label>
-              <select
-                value={architecture}
-                onChange={(e) => setArchitecture(e.target.value)}
-                disabled={isTraining}
-                className="w-full bg-surface-2 border border-line rounded-chip px-3 py-2 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors font-medium"
-              >
-                <option value="X-MalViT Tiny (Proposed - 5.8M Params)">
-                  X-MalViT Tiny (Proposed - 5.8M Params)
-                </option>
-                <option value="ResNet-18 (CNN Baseline - 11.2M Params)">
-                  ResNet-18 (CNN Baseline - 11.2M Params)
-                </option>
-                <option value="MobileNetV2 (Edge Baseline - 3.4M Params)">
-                  MobileNetV2 (Edge Baseline - 3.4M Params)
-                </option>
-              </select>
+              <div className="relative">
+                <select
+                  value={architecture}
+                  onChange={(e) => setArchitecture(e.target.value)}
+                  disabled={isTraining}
+                  className="appearance-none h-10 w-full bg-surface-2 border border-line rounded-chip pl-3 pr-9 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-colors font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="X-MalViT Tiny (Proposed - 5.8M Params)">
+                    X-MalViT Tiny (Proposed - 5.8M Params)
+                  </option>
+                  <option value="ResNet-18 (CNN Baseline - 11.2M Params)">
+                    ResNet-18 (CNN Baseline - 11.2M Params)
+                  </option>
+                  <option value="MobileNetV2 (Edge Baseline - 3.4M Params)">
+                    MobileNetV2 (Edge Baseline - 3.4M Params)
+                  </option>
+                </select>
+                <ChevronDown className="w-4 h-4 text-muted pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
+              </div>
             </div>
 
             {/* Compute Accelerator Toggle (GPU vs CPU) */}
@@ -340,58 +406,70 @@ export const Module3Training: React.FC = () => {
                   Compute Accelerator (Hardware Device)
                 </label>
                 <span className="text-[12px] font-medium text-muted">
-                  {deviceMode === "cuda" 
-                    ? (systemStatus?.cuda_available ? "Hardware acceleration" : "GPU selected (CPU fallback)")
+                  {deviceMode === "cuda"
+                    ? systemStatus?.cuda_available
+                      ? "Hardware acceleration"
+                      : "GPU selected (CPU fallback)"
                     : "Host CPU execution"}
                 </span>
               </div>
-              
-              <div className="grid grid-cols-2 gap-2 p-1 bg-surface-2 border border-line rounded-tile">
-                <button
-                  type="button"
-                  disabled={isTraining}
-                  onClick={() => setDeviceMode("cuda")}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-chip text-[13px] font-medium transition-colors relative cursor-pointer ${
-                    deviceMode === "cuda"
-                      ? "bg-surface text-accent border border-line font-semibold"
-                      : "text-muted hover:text-ink border border-transparent"
-                  }`}
-                >
-                  <Zap className={`w-3.5 h-3.5 ${deviceMode === "cuda" ? "text-accent" : "text-muted"}`} />
-                  <span>NVIDIA GPU (CUDA)</span>
-                  {deviceMode === "cuda" && (
-                    <span className={`w-1.5 h-1.5 rounded-full ${systemStatus?.cuda_available ? "bg-ok animate-pulse" : "bg-high"}`} />
-                  )}
-                </button>
 
-                <button
-                  type="button"
-                  disabled={isTraining}
-                  onClick={() => setDeviceMode("cpu")}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-chip text-[13px] font-medium transition-colors relative cursor-pointer ${
-                    deviceMode === "cpu"
-                      ? "bg-surface text-accent border border-line font-semibold"
-                      : "text-muted hover:text-ink border border-transparent"
-                  }`}
-                >
-                  <Cpu className={`w-3.5 h-3.5 ${deviceMode === "cpu" ? "text-accent" : "text-muted"}`} />
-                  <span>CPU Host Cores</span>
-                  {deviceMode === "cpu" && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                  )}
-                </button>
-              </div>
+              <SegmentedControl
+                ariaLabel="Compute Accelerator"
+                layoutId="seg-accelerator"
+                value={deviceMode}
+                onChange={setDeviceMode}
+                disabled={isTraining}
+                options={[
+                  {
+                    value: "cuda" as const,
+                    label: "NVIDIA GPU (CUDA)",
+                    icon: (
+                      <Zap
+                        className={`w-3.5 h-3.5 ${
+                          deviceMode === "cuda" ? "text-accent" : "text-muted"
+                        }`}
+                      />
+                    ),
+                    indicator:
+                      deviceMode === "cuda" ? (
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            systemStatus?.cuda_available ? "bg-ok animate-pulse" : "bg-high"
+                          }`}
+                        />
+                      ) : undefined,
+                  },
+                  {
+                    value: "cpu" as const,
+                    label: "CPU Host Cores",
+                    icon: (
+                      <Cpu
+                        className={`w-3.5 h-3.5 ${
+                          deviceMode === "cpu" ? "text-accent" : "text-muted"
+                        }`}
+                      />
+                    ),
+                    indicator:
+                      deviceMode === "cpu" ? (
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                      ) : undefined,
+                  },
+                ]}
+              />
 
               {/* Hardware Availability Alert when CUDA selected without hardware */}
               {deviceMode === "cuda" && !systemStatus?.cuda_available && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="mt-2.5 p-3 rounded-tile bg-high-soft border border-high/20 text-ink flex items-start gap-2.5 text-[13px]"
                 >
                   <AlertTriangle className="w-4 h-4 text-high flex-shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-semibold text-[13px] block text-high">Notice: No NVIDIA CUDA GPU Detected on Host</span>
+                    <span className="font-semibold text-[13px] block text-high">
+                      Notice: No NVIDIA CUDA GPU Detected on Host
+                    </span>
                     <p className="text-[12px] text-muted leading-[1.5] mt-0.5">
                       You have selected GPU mode on a CPU-only host. The PyTorch training engine will catch this, route execution to CPU Host Cores, and stream clear diagnostic warnings in the terminal console.
                     </p>
@@ -401,38 +479,69 @@ export const Module3Training: React.FC = () => {
 
               <div className="mt-1.5 px-1 flex items-center justify-between text-[12px] text-muted">
                 <span>
-                  {deviceMode === "cuda" 
-                    ? (systemStatus?.cuda_available ? "Tensor Cores active • FP16 Mixed Precision (AMP)" : "CUDA unavailable • Automatic FP32 CPU Host fallback")
+                  {deviceMode === "cuda"
+                    ? systemStatus?.cuda_available
+                      ? "Tensor Cores active • FP16 Mixed Precision (AMP)"
+                      : "CUDA unavailable • Automatic FP32 CPU Host fallback"
                     : "Standard multi-threaded host cores • FP32 Precision"}
                 </span>
-                {deviceMode === "cuda" && systemStatus?.cuda_available && systemStatus?.total_vram && (
-                  <span className="text-accent font-semibold tabular-nums">{systemStatus.total_vram} VRAM</span>
-                )}
+                {deviceMode === "cuda" &&
+                  systemStatus?.cuda_available &&
+                  systemStatus?.total_vram && (
+                    <span className="text-accent font-semibold tabular-nums">
+                      {systemStatus.total_vram} VRAM
+                    </span>
+                  )}
               </div>
             </div>
 
             {/* Epoch Slider */}
             <div>
-              <div className="flex justify-between text-[13px] font-medium text-ink mb-1.5">
+              <div className="flex justify-between text-[13px] font-medium text-ink mb-2">
                 <span>Training Epochs:</span>
                 <span className="text-accent font-semibold tabular-nums">{epochs}</span>
               </div>
-              <input
-                type="range"
-                min="2"
-                max="10"
-                step="1"
-                value={epochs}
-                disabled={isTraining}
-                onChange={(e) => setEpochs(Number(e.target.value))}
-                className="w-full accent-accent cursor-pointer h-2 bg-surface-2 rounded-chip appearance-none border border-line"
-              />
-              <div className="flex justify-between text-[12px] text-muted mt-1 font-medium tabular-nums">
-                <span>2</span>
-                <span>4</span>
-                <span>6</span>
-                <span>8</span>
-                <span>10</span>
+              <div className="relative pt-1">
+                <div className="relative flex items-center h-6">
+                  <div className="pointer-events-none absolute inset-x-[9px] h-2 rounded-full bg-surface-2 border border-line overflow-hidden">
+                    <div
+                      className="h-full bg-accent transition-[width] duration-75"
+                      style={{ width: `${epochPct}%` }}
+                    />
+                  </div>
+                  <input
+                    type="range"
+                    min="2"
+                    max="10"
+                    step="1"
+                    value={epochs}
+                    disabled={isTraining}
+                    onChange={(e) => setEpochs(Number(e.target.value))}
+                    className="peer epoch-range relative z-10 w-full cursor-pointer disabled:cursor-not-allowed"
+                  />
+                  <div
+                    aria-hidden="true"
+                    style={{ left: `calc(${epochPct}% + ${9 - epochPct * 0.18}px)` }}
+                    className="pointer-events-none opacity-0 peer-active:opacity-100 peer-focus-visible:opacity-100 transition-opacity duration-100 -translate-x-1/2 absolute -top-7 z-20 px-2 py-0.5 rounded-chip bg-ink text-surface text-[11px] font-mono font-medium shadow-panel tabular-nums"
+                  >
+                    {epochs}
+                  </div>
+                </div>
+                <div className="relative h-5 mx-[9px] mt-0.5 text-[12px] text-muted font-medium tabular-nums select-none">
+                  {[2, 4, 6, 8, 10].map((tick) => {
+                    const tickPct = ((tick - 2) / 8) * 100;
+                    return (
+                      <span
+                        key={tick}
+                        style={{ left: `${tickPct}%` }}
+                        className="absolute -translate-x-1/2 flex flex-col items-center"
+                      >
+                        <span className="w-px h-1 bg-line mb-0.5" aria-hidden="true" />
+                        <span>{tick}</span>
+                      </span>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
@@ -441,23 +550,18 @@ export const Module3Training: React.FC = () => {
               <label className="text-[13px] font-medium text-ink block mb-1.5">
                 Batch Size ({deviceMode === "cuda" ? "Tensor Cores" : "CPU Threads"})
               </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[16, 32, 64].map((bs) => (
-                  <button
-                    key={bs}
-                    type="button"
-                    disabled={isTraining}
-                    onClick={() => setBatchSize(bs)}
-                    className={`py-2 px-3 rounded-chip text-[13px] font-semibold border transition-colors tabular-nums cursor-pointer ${
-                      batchSize === bs
-                        ? "bg-accent-soft border-accent text-accent"
-                        : "bg-surface-2 border-line text-muted hover:text-ink hover:bg-surface"
-                    }`}
-                  >
-                    {bs}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                ariaLabel="Batch Size"
+                layoutId="seg-batch-size"
+                value={batchSize}
+                onChange={setBatchSize}
+                disabled={isTraining}
+                className="tabular-nums"
+                options={[16, 32, 64].map((bs) => ({
+                  value: bs,
+                  label: bs,
+                }))}
+              />
             </div>
 
             {/* Samples per family */}
@@ -467,32 +571,26 @@ export const Module3Training: React.FC = () => {
                   Samples per Malware Family
                 </label>
                 <span className="text-[12px] font-medium text-muted tabular-nums">
-                  {samplesPerFam === 0 ? "All 9,339 Binaries" : `${samplesPerFam * 25} Total Images (${samplesPerFam}/fam)`}
+                  {samplesPerFam === 0
+                    ? "All 9,339 Binaries"
+                    : `${samplesPerFam * 25} Total Images (${samplesPerFam}/fam)`}
                 </span>
               </div>
-              <div className="grid grid-cols-5 gap-1.5">
-                {[
+              <SegmentedControl
+                ariaLabel="Samples per Malware Family"
+                layoutId="seg-samples"
+                value={samplesPerFam}
+                onChange={setSamplesPerFam}
+                disabled={isTraining}
+                className="tabular-nums"
+                options={[
                   { value: 10, label: "10" },
                   { value: 20, label: "20" },
                   { value: 30, label: "30" },
                   { value: 50, label: "50" },
                   { value: 0, label: "All (9.3k)" },
-                ].map((item) => (
-                  <button
-                    key={item.value}
-                    type="button"
-                    disabled={isTraining}
-                    onClick={() => setSamplesPerFam(item.value)}
-                    className={`py-2 px-1 rounded-chip text-[13px] font-semibold border transition-colors text-center tabular-nums cursor-pointer ${
-                      samplesPerFam === item.value
-                        ? "bg-accent-soft border-accent text-accent"
-                        : "bg-surface-2 border-line text-muted hover:text-ink hover:bg-surface"
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
+                ]}
+              />
               {samplesPerFam === 0 && (
                 <p className="text-[12px] text-high mt-1.5 font-medium leading-[1.5]">
                   ⚡ Full 9,339 Malimg benchmark selected. Streamed directly from disk. (On CPU, full passes require more time per epoch).
@@ -505,40 +603,55 @@ export const Module3Training: React.FC = () => {
               <label className="text-[13px] font-medium text-ink block mb-1.5">
                 AdamW Learning Rate
               </label>
-              <div className="grid grid-cols-4 gap-2">
-                {[0.0001, 0.0003, 0.0005, 0.001].map((lr) => (
-                  <button
-                    key={lr}
-                    type="button"
-                    disabled={isTraining}
-                    onClick={() => setLearningRate(lr)}
-                    className={`py-2 px-1 rounded-chip text-[13px] font-semibold border transition-colors tabular-nums cursor-pointer ${
-                      learningRate === lr
-                        ? "bg-accent-soft border-accent text-accent"
-                        : "bg-surface-2 border-line text-muted hover:text-ink hover:bg-surface"
-                    }`}
-                  >
-                    {lr}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                ariaLabel="AdamW Learning Rate"
+                layoutId="seg-lr"
+                value={learningRate}
+                onChange={setLearningRate}
+                disabled={isTraining}
+                className="tabular-nums"
+                options={[0.0001, 0.0003, 0.0005, 0.001].map((lr) => ({
+                  value: lr,
+                  label: lr,
+                }))}
+              />
             </div>
 
-            {isTraining ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-                <div className="sm:col-span-2 flex items-center justify-center gap-2 py-2.5 px-3 rounded-chip text-[13px] font-medium bg-surface-2 border border-line text-ink select-none tabular-nums">
-                  <Loader2 className="w-4 h-4 animate-spin text-accent flex-shrink-0" />
-                  <span className="truncate">
-                    {currentEpoch > 0 ? `Epoch ${currentEpoch}/${epochs} on ${deviceMode.toUpperCase()}...` : `Preloading ViT Dataset...`}
-                  </span>
-                </div>
+            <div className="space-y-2 pt-1">
+              <Button
+                onClick={handleStartTraining}
+                disabled={isTraining}
+                className="w-full"
+                variant="cyber"
+                size="lg"
+              >
+                {isTraining ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {currentEpoch > 0
+                      ? `Epoch ${currentEpoch}/${epochs} on ${deviceMode.toUpperCase()}...`
+                      : "Preloading ViT Dataset..."}
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 mr-2" />
+                    {deviceMode === "cuda" && !systemStatus?.cuda_available
+                      ? "Launch PyTorch Training (GPU Selected • CPU Fallback)"
+                      : `Launch Real PyTorch Training on ${
+                          deviceMode === "cuda" ? "GPU (CUDA)" : "CPU"
+                        }`}
+                  </>
+                )}
+              </Button>
+
+              {isTraining && (
                 <Button
                   type="button"
                   onClick={handleStopTraining}
                   disabled={isStopping}
                   variant="destructive"
                   className="w-full font-semibold"
-                  size="lg"
+                  size="default"
                 >
                   {isStopping ? (
                     <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
@@ -547,21 +660,8 @@ export const Module3Training: React.FC = () => {
                   )}
                   {isStopping ? "Halting..." : "Stop"}
                 </Button>
-              </div>
-            ) : (
-              <Button
-                onClick={handleStartTraining}
-                disabled={isTraining}
-                className="w-full mt-2"
-                variant={deviceMode === "cuda" && !systemStatus?.cuda_available ? "outline" : "cyber"}
-                size="lg"
-              >
-                <Play className="w-4 h-4 mr-2" />
-                {deviceMode === "cuda" && !systemStatus?.cuda_available
-                  ? "Launch PyTorch Training (GPU Selected • CPU Fallback)"
-                  : `Launch Real PyTorch Training on ${deviceMode === "cuda" ? "GPU (CUDA)" : "CPU"}`}
-              </Button>
-            )}
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -574,33 +674,47 @@ export const Module3Training: React.FC = () => {
                 Local Hardware Profile &amp; Telemetry
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-6 space-y-2.5 text-[13px]">
-              <div className="p-3 rounded-tile bg-surface-2 border border-line flex justify-between items-center gap-2">
-                <span className="text-muted font-medium">Selected Device:</span>
-                <span className={`font-semibold tabular-nums text-right ${deviceMode === "cuda" && !systemStatus?.cuda_available ? "text-high" : "text-ink"}`}>
-                  {deviceMode === "cuda"
-                    ? systemStatus?.cuda_available
-                      ? `${systemStatus?.device_name || "NVIDIA GPU"} (${systemStatus?.total_vram || "6.00 GB"} VRAM)`
-                      : "CUDA Requested (Host: CPU Fallback)"
-                    : "CPU Host (x86_64 Multi-Core)"}
-                </span>
-              </div>
-              <div className="p-3 rounded-tile bg-surface-2 border border-line flex justify-between items-center gap-2">
-                <span className="text-muted font-medium">Precision Standard:</span>
-                <span className="text-ink font-semibold text-right">
-                  {deviceMode === "cuda" && systemStatus?.cuda_available
-                    ? "FP16 Mixed Precision (AMP)"
-                    : "FP32 Single Precision"}
-                </span>
-              </div>
-              <div className="p-3 rounded-tile bg-surface-2 border border-line flex justify-between items-center gap-2">
-                <span className="text-muted font-medium">Checkpoint Target:</span>
-                <span className="font-mono text-accent font-medium text-right truncate">{systemStatus?.checkpoint_path || "checkpoints/x_malvit_weights.pt"}</span>
-              </div>
-              <div className="p-3 rounded-tile bg-surface-2 border border-line flex justify-between items-center gap-2">
-                <span className="text-muted font-medium">Loss Regularization:</span>
-                <span className="text-ink font-semibold tabular-nums text-right">Label Smoothing (ε = 0.1)</span>
-              </div>
+            <CardContent className="pt-6">
+              <dl className="divide-y divide-line text-[13px]">
+                <div className="py-2.5 first:pt-0 flex items-center justify-between gap-3">
+                  <dt className="text-muted">Selected Device</dt>
+                  <dd
+                    className={`font-mono font-medium tabular-nums text-right ${
+                      deviceMode === "cuda" && !systemStatus?.cuda_available
+                        ? "text-high"
+                        : "text-ink"
+                    }`}
+                  >
+                    {deviceMode === "cuda"
+                      ? systemStatus?.cuda_available
+                        ? `${systemStatus?.device_name || "NVIDIA GPU"} (${
+                            systemStatus?.total_vram || "6.00 GB"
+                          } VRAM)`
+                        : "CUDA Requested (Host: CPU Fallback)"
+                      : "CPU Host (x86_64 Multi-Core)"}
+                  </dd>
+                </div>
+                <div className="py-2.5 flex items-center justify-between gap-3">
+                  <dt className="text-muted">Precision Standard</dt>
+                  <dd className="font-mono text-ink font-medium text-right">
+                    {deviceMode === "cuda" && systemStatus?.cuda_available
+                      ? "FP16 Mixed Precision (AMP)"
+                      : "FP32 Single Precision"}
+                  </dd>
+                </div>
+                <div className="py-2.5 flex items-center justify-between gap-3">
+                  <dt className="text-muted">Checkpoint Target</dt>
+                  <dd className="font-mono text-accent font-medium text-right truncate">
+                    {systemStatus?.checkpoint_path || "checkpoints/x_malvit_weights.pt"}
+                  </dd>
+                </div>
+                <div className="py-2.5 last:pb-0 flex items-center justify-between gap-3">
+                  <dt className="text-muted">Loss Regularization</dt>
+                  <dd className="font-mono text-ink font-medium tabular-nums text-right">
+                    Label Smoothing (ε = 0.1)
+                  </dd>
+                </div>
+              </dl>
             </CardContent>
           </Card>
 
@@ -620,51 +734,79 @@ export const Module3Training: React.FC = () => {
             <CardContent className="pt-6 space-y-4">
               <div>
                 <div className="flex justify-between text-[13px] text-ink mb-1.5 font-medium tabular-nums">
-                  <span>Epoch Progress: {currentEpoch}/{epochs}</span>
-                  <span className="text-accent font-semibold">{progressVal.toFixed(0)}%</span>
+                  <span>
+                    Epoch Progress: {currentEpoch}/{epochs}
+                  </span>
+                  <span className="text-accent font-semibold">
+                    {progressVal.toFixed(0)}%
+                  </span>
                 </div>
                 <Progress value={progressVal} />
               </div>
 
               {isTraining && epochHistory.length === 0 ? (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3.5 rounded-tile bg-surface-2 border border-line space-y-2">
-                    <Skeleton className="h-3.5 w-20 rounded-chip" />
-                    <Skeleton className="h-6 w-24 rounded-chip" />
-                  </div>
-                  <div className="p-3.5 rounded-tile bg-surface-2 border border-line space-y-2">
-                    <Skeleton className="h-3.5 w-20 rounded-chip" />
-                    <Skeleton className="h-6 w-24 rounded-chip" />
-                  </div>
-                </div>
-              ) : epochHistory.length > 0 && (
-                <div className="grid grid-cols-2 gap-3 tabular-nums">
-                  <div className="p-3.5 rounded-tile bg-surface-2 border border-line">
-                    <div className="text-muted text-[13px] font-medium">Current Loss:</div>
-                    <div className="text-[20px] leading-[1.2] font-semibold text-critical mt-1">
-                      {epochHistory[epochHistory.length - 1].train_loss.toFixed(4)}
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3.5 rounded-tile bg-surface-2 border border-line space-y-2">
+                      <Skeleton className="h-3.5 w-20 rounded-chip" />
+                      <Skeleton className="h-6 w-24 rounded-chip" />
+                    </div>
+                    <div className="p-3.5 rounded-tile bg-surface-2 border border-line space-y-2">
+                      <Skeleton className="h-3.5 w-20 rounded-chip" />
+                      <Skeleton className="h-6 w-24 rounded-chip" />
                     </div>
                   </div>
-                  <div className="p-3.5 rounded-tile bg-surface-2 border border-line">
-                    <div className="text-muted text-[13px] font-medium">Val Accuracy:</div>
-                    <div className="text-[20px] leading-[1.2] font-semibold text-ok mt-1">
-                      {epochHistory[epochHistory.length - 1].val_acc.toFixed(2)}%
+                  <Skeleton className="h-32 w-full rounded-tile" />
+                </div>
+              ) : epochHistory.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3 tabular-nums">
+                    <div className="p-3.5 rounded-tile bg-surface-2 border border-line">
+                      <div className="text-muted text-[13px] font-medium">
+                        Current Loss:
+                      </div>
+                      <div className="text-[20px] leading-[1.2] font-semibold text-critical mt-1">
+                        {epochHistory[epochHistory.length - 1].train_loss.toFixed(4)}
+                      </div>
+                    </div>
+                    <div className="p-3.5 rounded-tile bg-surface-2 border border-line">
+                      <div className="text-muted text-[13px] font-medium">
+                        Val Accuracy:
+                      </div>
+                      <div className="text-[20px] leading-[1.2] font-semibold text-ok mt-1">
+                        {epochHistory[epochHistory.length - 1].val_acc.toFixed(2)}%
+                      </div>
                     </div>
                   </div>
+                  <ConvergenceMiniChart
+                    epochHistory={epochHistory}
+                    totalEpochs={epochs}
+                  />
                 </div>
+              ) : (
+                !completionMessage && (
+                  <div className="min-h-[168px] flex flex-col items-center justify-center text-center rounded-tile border border-dashed border-line bg-surface-2/60 px-6 py-8">
+                    <LineChart className="w-6 h-6 text-muted mb-2" />
+                    <p className="text-[13px] text-muted">
+                      Start a training run to see progress for each epoch
+                    </p>
+                  </div>
+                )
               )}
 
               {completionMessage && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   className={`p-3.5 rounded-tile border text-[13px] leading-[1.5] flex items-center gap-2.5 font-medium ${
-                    completionMessage.toLowerCase().includes("error") || completionMessage.toLowerCase().includes("failed")
+                    completionMessage.toLowerCase().includes("error") ||
+                    completionMessage.toLowerCase().includes("failed")
                       ? "bg-critical-soft border-critical/20 text-critical"
                       : "bg-ok-soft border-ok/20 text-ok"
                   }`}
                 >
-                  {completionMessage.toLowerCase().includes("error") || completionMessage.toLowerCase().includes("failed") ? (
+                  {completionMessage.toLowerCase().includes("error") ||
+                  completionMessage.toLowerCase().includes("failed") ? (
                     <AlertTriangle className="w-5 h-5 text-critical flex-shrink-0" />
                   ) : (
                     <CheckCircle2 className="w-5 h-5 text-ok flex-shrink-0" />
@@ -678,136 +820,14 @@ export const Module3Training: React.FC = () => {
       </div>
 
       {/* Live PyTorch Console Stream (Uses Dark Token Scope) */}
-      <Card className="dark border-line bg-canvas text-ink overflow-hidden">
-        <CardHeader className="py-3 px-6 bg-surface border-b border-line flex flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5">
-            <Terminal className="w-4 h-4 text-accent" />
-            <CardTitle className="text-[13px] font-medium text-muted">
-              PyTorch execution stream &amp; training telemetry
-            </CardTitle>
-            {isTraining ? (
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-chip text-[12px] bg-ok-soft text-ok border border-ok/20 font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-ok animate-ping" />
-                  Live stream
-                </span>
-                <button
-                  type="button"
-                  onClick={handleStopTraining}
-                  disabled={isStopping}
-                  title="Halt active training execution"
-                  className="flex items-center gap-1 px-2.5 py-0.5 rounded-chip text-[12px] bg-critical-soft text-critical border border-critical/30 hover:bg-critical/20 transition-colors cursor-pointer font-medium"
-                >
-                  <Square className="w-2.5 h-2.5 fill-current text-critical" />
-                  <span>{isStopping ? "Halting..." : "Stop"}</span>
-                </button>
-              </div>
-            ) : (
-              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-chip text-[12px] bg-surface-2 text-muted border border-line font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-muted" />
-                Idle
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-[12px] text-muted hidden sm:flex items-center gap-1.5 tabular-nums">
-              <FolderCheck className="w-3.5 h-3.5 text-ok" />
-              <span>Dataset:</span>
-              <span className="font-mono text-accent font-medium">X_MalVit\data\sample</span>
-              <span>(9,339 binaries &bull; 25 classes)</span>
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearLogs}
-              title="Clear terminal log"
-              className="h-7 px-2 text-[12px] text-muted hover:text-ink hover:bg-surface-2"
-            >
-              <Trash2 className="w-3.5 h-3.5 mr-1" />
-              Clear
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4 bg-canvas">
-          <div 
-            ref={terminalEndRef}
-            className="h-64 overflow-y-auto space-y-1.5 font-mono text-[12px] leading-[1.5] pr-2 select-text tabular-nums"
-          >
-            {logs.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center text-muted py-10 font-sans">
-                <Terminal className="w-8 h-8 mb-2 opacity-40 text-muted" />
-                <p className="text-[13px] text-ink font-medium">Console Idle &bull; Ready for Execution</p>
-                <p className="text-[12px] text-muted mt-1 max-w-md">
-                  Click <span className="text-ink font-medium">Launch Real PyTorch Training</span> above to stream live dataset ingestion from <code className="font-mono text-accent">X_MalVit\data\sample</code>, tensor preloading, and Vision Transformer forward/backward passes.
-                </p>
-              </div>
-            ) : (
-              logs.map((log) => {
-                const isDivider = log.message.startsWith("=");
-                if (isDivider) {
-                  return (
-                    <div key={log.id} className="text-line select-none py-0.5 overflow-hidden">
-                      {log.message}
-                    </div>
-                  );
-                }
-
-                let badgeClass = "text-accent bg-accent-soft border-accent/30";
-                let badgeLabel = "";
-                let bodyText = log.message;
-
-                const matchTag = log.message.match(/^(\[[A-Z0-9_\-/\s!.]+\])(.*)/);
-                if (matchTag) {
-                  badgeLabel = matchTag[1];
-                  bodyText = matchTag[2];
-
-                  if (badgeLabel.includes("WARNING")) {
-                    badgeClass = "text-high bg-high-soft border-high/30";
-                  } else if (badgeLabel.includes("FALLBACK")) {
-                    badgeClass = "text-high bg-high-soft border-high/30";
-                  } else if (badgeLabel.includes("HALT")) {
-                    badgeClass = "text-critical bg-critical-soft border-critical/30";
-                  } else if (badgeLabel.includes("DATASET") || badgeLabel.includes("PRELOAD") || badgeLabel.includes("CHECKPOINT") || badgeLabel.includes("COMPLETE")) {
-                    badgeClass = "text-ok bg-ok-soft border-ok/30";
-                  } else if (badgeLabel.includes("ERROR")) {
-                    badgeClass = "text-critical bg-critical-soft border-critical/30";
-                  } else if (badgeLabel.includes("EPOCH")) {
-                    badgeClass = "text-high bg-high-soft border-high/30";
-                  } else {
-                    badgeClass = "text-accent bg-accent-soft border-accent/30";
-                  }
-                }
-
-                return (
-                  <div key={log.id} className="flex items-start gap-2 hover:bg-surface px-1.5 py-0.5 rounded-chip transition-colors">
-                    <span className="text-[12px] text-muted select-none flex-shrink-0">
-                      {log.timestamp}
-                    </span>
-                    {badgeLabel ? (
-                      <span className={`text-[11px] font-medium px-1.5 py-0 rounded-chip border flex-shrink-0 ${badgeClass}`}>
-                        {badgeLabel}
-                      </span>
-                    ) : null}
-                    <span className={`flex-1 break-all ${
-                      log.type === "error" || badgeLabel.includes("ERROR") || badgeLabel.includes("HALT")
-                        ? "text-critical font-medium" 
-                        : badgeLabel.includes("WARNING") || badgeLabel.includes("FALLBACK")
-                        ? "text-high font-medium"
-                        : badgeLabel.includes("CHECKPOINT") || badgeLabel.includes("COMPLETE")
-                        ? "text-ok font-medium"
-                        : badgeLabel.includes("BATCH") || badgeLabel.includes("EVAL") || badgeLabel.includes("ENGINE")
-                        ? "text-accent"
-                        : "text-ink"
-                    }`}>
-                      {bodyText}
-                    </span>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <ExecutionConsole
+        logs={logs}
+        isTraining={isTraining}
+        isStopping={isStopping}
+        completionMessage={completionMessage}
+        onStopTraining={handleStopTraining}
+        onClearLogs={clearLogs}
+      />
     </div>
   );
 };

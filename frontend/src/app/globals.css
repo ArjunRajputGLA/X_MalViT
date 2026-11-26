@@ -141,4 +141,84 @@ h4 {
     animation: none;
     background: var(--surface-2);
   }
+  .caret-blink {
+    animation: none;
+  }
+}
+
+/* Custom 18px range slider thumb & focus ring */
+.epoch-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  margin: 0;
+}
+
+.epoch-range:focus {
+  outline: none;
+}
+
+.epoch-range::-webkit-slider-runnable-track {
+  height: 18px;
+  background: transparent;
+}
+
+.epoch-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  box-shadow: 0 1px 3px rgba(18, 26, 43, 0.14);
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.epoch-range:hover:not(:disabled)::-webkit-slider-thumb {
+  transform: scale(1.06);
+}
+
+.epoch-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.epoch-range:disabled::-webkit-slider-thumb {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.epoch-range::-moz-range-track {
+  height: 18px;
+  background: transparent;
+}
+
+.epoch-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  box-shadow: 0 1px 3px rgba(18, 26, 43, 0.14);
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.epoch-range:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+/* Terminal blinking caret */
+@keyframes caret-blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+
+.caret-blink {
+  animation: caret-blink 1s steps(2, start) infinite;
 }
