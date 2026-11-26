@@ -11,15 +11,15 @@ import { Skeleton } from "@/components/ui/Skeleton";
 function getCategoryChipClass(category: string): string {
   switch (category) {
     case "Worm":
-      return "bg-critical-soft text-critical";
+      return "bg-critical-soft text-critical-ink";
     case "Backdoor":
-      return "bg-high-soft text-high";
+      return "bg-high-soft text-high-ink";
     case "Trojan":
-      return "bg-high-soft text-high";
+      return "bg-high-soft text-high-ink";
     case "Downloader":
       return "bg-accent-soft text-accent";
     case "Rogue":
-      return "bg-ok-soft text-ok";
+      return "bg-ok-soft text-ok-ink";
     default:
       return "bg-surface-2 text-muted";
   }
@@ -60,7 +60,7 @@ export const Module2Dataset: React.FC = () => {
   const loadFamilySample = async (family: string, seed?: number) => {
     setLoadingSample(true);
     try {
-      const url = seed !== undefined 
+      const url = seed !== undefined
         ? `/api/dataset/sample?family=${encodeURIComponent(family)}&seed=${seed}`
         : `/api/dataset/sample?family=${encodeURIComponent(family)}`;
       const res = await fetch(url);
@@ -93,23 +93,23 @@ export const Module2Dataset: React.FC = () => {
     loadFamilySample(selectedFamily, Date.now());
   };
 
-  const filteredDist = distribution.filter(d => 
+  const filteredDist = distribution.filter(d =>
     d.family.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Maximum histogram count for SVG scaling
-  const maxHistCount = sampleData?.histogram?.counts 
-    ? Math.max(...sampleData.histogram.counts, 1) 
+  const maxHistCount = sampleData?.histogram?.counts
+    ? Math.max(...sampleData.histogram.counts, 1)
     : 1;
 
   const categoryChipClass = getCategoryChipClass(selectedCategory);
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Left Control Panel */}
-        <Card className="lg:col-span-1 overflow-hidden">
+        <Card className="xl:col-span-1 min-w-0 overflow-hidden">
           <CardHeader className="pb-4 border-b border-line bg-surface-2">
             <CardTitle className="flex items-center gap-2">
               <Database className="w-4 h-4 text-accent" />
@@ -195,7 +195,7 @@ export const Module2Dataset: React.FC = () => {
         </Card>
 
         {/* Right Preview & Histogram Panel */}
-        <Card className="lg:col-span-2 overflow-hidden">
+        <Card className="xl:col-span-2 min-w-0 overflow-hidden">
           <CardHeader className="pb-4 border-b border-line bg-surface-2 flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <BarChart2 className="w-4 h-4 text-accent" />
@@ -244,7 +244,18 @@ export const Module2Dataset: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <div className="relative h-56 w-full rounded-tile bg-surface-2 border border-line p-3">
+                <div
+                  role="img"
+                  aria-label={`Byte frequency histogram for ${selectedFamily}${
+                    sampleData?.histogram?.mean_entropy
+                      ? `, entropy ${sampleData.histogram.mean_entropy.toFixed(2)} bits`
+                      : ""
+                  }`}
+                  className="relative h-56 w-full rounded-tile bg-surface-2 border border-line p-3"
+                >
+                  <span className="sr-only">
+                    Histogram of 8-bit byte frequencies from 0x00 to 0xFF for {selectedFamily}.
+                  </span>
                   {/* Faint horizontal gridlines */}
                   <div
                     aria-hidden="true"
@@ -282,8 +293,8 @@ export const Module2Dataset: React.FC = () => {
                           idx < 6
                             ? "left-0"
                             : idx > totalBins - 7
-                            ? "right-0"
-                            : "left-1/2 -translate-x-1/2";
+                              ? "right-0"
+                              : "left-1/2 -translate-x-1/2";
 
                         return (
                           <div
@@ -368,11 +379,10 @@ export const Module2Dataset: React.FC = () => {
                       <td className="py-2.5 px-3 text-right text-ink font-medium tabular-nums">{item.samples.toLocaleString()}</td>
                       <td className="py-2.5 px-3">
                         <span
-                          className={`inline-block lowercase first-letter:uppercase px-2.5 py-0.5 rounded-chip text-[12px] font-medium ${
-                            item.risk === "CRITICAL"
-                              ? "bg-critical-soft text-critical"
-                              : "bg-high-soft text-high"
-                          }`}
+                          className={`inline-block lowercase first-letter:uppercase px-2.5 py-0.5 rounded-chip text-[12px] font-medium ${item.risk === "CRITICAL"
+                            ? "bg-critical-soft text-critical-ink"
+                            : "bg-high-soft text-high-ink"
+                            }`}
                         >
                           {item.risk}
                         </span>

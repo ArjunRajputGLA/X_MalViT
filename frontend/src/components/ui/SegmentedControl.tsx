@@ -55,7 +55,7 @@ export function SegmentedControl<T extends string | number>({
             disabled={isDisabled}
             onClick={() => onChange(opt.value)}
             className={cn(
-              "relative flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-chip text-[13px] transition-colors select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1",
+              "relative flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-chip text-[13px] transition-colors select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-2",
               isDisabled
                 ? "cursor-not-allowed opacity-50"
                 : "cursor-pointer",

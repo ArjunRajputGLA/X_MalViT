@@ -1,26 +1,45 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
 
+const THEME_EVENT = "xmalvit-theme-change";
+
+function subscribeTheme(callback: () => void) {
+  window.addEventListener(THEME_EVENT, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(THEME_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
+function getThemeSnapshot(): boolean {
+  const stored = window.localStorage.getItem("theme");
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  return stored ? stored === "dark" : prefersDark;
+}
+
+function getServerSnapshot(): boolean {
+  return false;
+}
+
 export const ThemeToggle: React.FC = () => {
-  const [isDark, setIsDark] = useState<boolean>(false);
-  const [mounted, setMounted] = useState<boolean>(false);
+  const isDark = useSyncExternalStore(
+    subscribeTheme,
+    getThemeSnapshot,
+    getServerSnapshot
+  );
 
   useEffect(() => {
-    const stored = window.localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const initialDark = stored ? stored === "dark" : prefersDark;
-    setIsDark(initialDark);
-    document.documentElement.classList.toggle("dark", initialDark);
-    setMounted(true);
-  }, []);
+    document.documentElement.classList.toggle("dark", isDark);
+  }, [isDark]);
 
   const handleToggle = () => {
     const nextDark = !isDark;
-    setIsDark(nextDark);
-    document.documentElement.classList.toggle("dark", nextDark);
     window.localStorage.setItem("theme", nextDark ? "dark" : "light");
+    document.documentElement.classList.toggle("dark", nextDark);
+    window.dispatchEvent(new Event(THEME_EVENT));
   };
 
   return (
@@ -29,13 +48,9 @@ export const ThemeToggle: React.FC = () => {
       onClick={handleToggle}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      className="w-8 h-8 rounded-chip bg-surface border border-line hover:bg-surface-2 text-muted hover:text-ink flex items-center justify-center transition-colors cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+      className="w-8 h-8 rounded-chip bg-surface border border-line hover:bg-surface-2 text-muted hover:text-ink flex items-center justify-center transition-colors cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
     >
-      {mounted && isDark ? (
-        <Sun className="w-4 h-4" />
-      ) : (
-        <Moon className="w-4 h-4" />
-      )}
+      {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
     </button>
   );
 };

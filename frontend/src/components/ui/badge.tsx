@@ -13,9 +13,9 @@ export function Badge({ className, variant = "default", ...props }: BadgeProps) 
         {
           "bg-accent-soft text-accent border-accent/20": variant === "default" || variant === "cyber",
           "bg-surface-2 text-muted border-line": variant === "secondary",
-          "bg-critical-soft text-critical border-critical/20": variant === "destructive",
-          "bg-ok-soft text-ok border-ok/20": variant === "success",
-          "bg-high-soft text-high border-high/20": variant === "warning",
+          "bg-critical-soft text-critical-ink border-critical/20": variant === "destructive",
+          "bg-ok-soft text-ok-ink border-ok/20": variant === "success",
+          "bg-high-soft text-high-ink border-high/20": variant === "warning",
           "border-line text-muted bg-surface": variant === "outline",
         },
         className

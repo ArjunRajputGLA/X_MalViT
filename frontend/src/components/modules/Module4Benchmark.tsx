@@ -40,8 +40,24 @@ function ConfusionMatrixHeatmap({
   const prefersReducedMotion = useReducedMotion();
   const maxDiag = Math.max(1, (families.length - 1) * 2);
 
+  const diagMin =
+    matrix.length > 0
+      ? Math.min(...matrix.map((row, idx) => row[idx] ?? 0))
+      : 0;
+  const diagMax =
+    matrix.length > 0
+      ? Math.max(...matrix.map((row, idx) => row[idx] ?? 0))
+      : 0;
+
   return (
-    <div className="overflow-x-auto py-3">
+    <div
+      role="region"
+      aria-label={`Normalized confusion matrix across ${families.length} malware families`}
+      className="overflow-x-auto py-3"
+    >
+      <p className="sr-only">
+        Confusion matrix across {families.join(", ")}. Diagonal accuracy ranges from {diagMin}% to {diagMax}%.
+      </p>
       <div className="min-w-fit mx-auto flex flex-col lg:flex-row items-center lg:items-end justify-center gap-8 px-4">
         <div className="inline-flex flex-col items-center">
           {/* Predicted column axis title */}
@@ -141,7 +157,7 @@ function ConfusionMatrixHeatmap({
                               val === 0
                                 ? "border border-line/70 text-muted font-normal"
                                 : val > 50
-                                ? "text-white font-semibold"
+                                ? "text-on-accent font-semibold"
                                 : "text-ink font-medium border border-accent/15"
                             } ${
                               isHovered

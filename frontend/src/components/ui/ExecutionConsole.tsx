@@ -66,13 +66,13 @@ export const ExecutionConsole: React.FC<ExecutionConsoleProps> = ({
     : hasErrorStatus
     ? {
         label: "Error",
-        chipClass: "bg-critical-soft text-critical border border-critical/30",
+        chipClass: "bg-critical-soft text-critical-ink border border-critical/30",
         dotClass: "bg-critical",
       }
     : completionMessage
     ? {
         label: "Done",
-        chipClass: "bg-ok-soft text-ok border border-ok/30",
+        chipClass: "bg-ok-soft text-ok-ink border border-ok/30",
         dotClass: "bg-ok",
       }
     : {
@@ -174,9 +174,9 @@ export const ExecutionConsole: React.FC<ExecutionConsoleProps> = ({
                 const upper = prefixLabel.toUpperCase();
 
                 if (upper.includes("ERROR") || upper.includes("HALT")) {
-                  prefixClass = "text-critical bg-critical-soft border-critical/30";
+                  prefixClass = "text-critical-ink bg-critical-soft border-critical/30";
                 } else if (upper.includes("WARN") || upper.includes("FALLBACK")) {
-                  prefixClass = "text-high bg-high-soft border-high/30";
+                  prefixClass = "text-high-ink bg-high-soft border-high/30";
                 } else if (
                   upper.includes("EPOCH") ||
                   upper.includes("BATCH") ||
@@ -189,7 +189,7 @@ export const ExecutionConsole: React.FC<ExecutionConsoleProps> = ({
                   upper.includes("CHECKPOINT") ||
                   upper.includes("COMPLETE")
                 ) {
-                  prefixClass = "text-ok bg-ok-soft border-ok/30";
+                  prefixClass = "text-ok-ink bg-ok-soft border-ok/30";
                 } else {
                   prefixClass = "text-muted bg-surface-2 border-line";
                 }
@@ -205,11 +205,11 @@ export const ExecutionConsole: React.FC<ExecutionConsoleProps> = ({
                 log.type === "error" ||
                 upperPrefix.includes("ERROR") ||
                 upperPrefix.includes("HALT")
-                  ? "text-critical font-medium"
+                  ? "text-critical-ink font-medium"
                   : upperPrefix.includes("WARN") || upperPrefix.includes("FALLBACK")
-                  ? "text-high font-medium"
+                  ? "text-high-ink font-medium"
                   : upperPrefix.includes("CHECKPOINT") || upperPrefix.includes("COMPLETE")
-                  ? "text-ok font-medium"
+                  ? "text-ok-ink font-medium"
                   : isEpochLine
                   ? "text-accent"
                   : "text-ink";

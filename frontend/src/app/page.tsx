@@ -15,6 +15,7 @@ export default function Home() {
   const [activeModule, setActiveModule] = useState<ModuleKey>("briefing");
   const [systemStatus, setSystemStatus] = useState<any>(null);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
 
   useEffect(() => {
     fetch("/api/status")
@@ -35,13 +36,15 @@ export default function Home() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="h-screen w-screen overflow-hidden flex bg-canvas text-ink">
-        {/* Base Layer: Left Collapsible Sidebar with Animated Spring Width */}
+        {/* Base Layer: Desktop Sidebar + Mobile Slide-in Drawer (<1024px) */}
         <SidebarNav
           activeModule={activeModule}
           onSelectModule={setActiveModule}
           systemStatus={systemStatus}
           isCollapsed={isCollapsed}
           onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+          isMobileOpen={isMobileDrawerOpen}
+          onCloseMobile={() => setIsMobileDrawerOpen(false)}
         />
 
         {/* Right Shell: Scrollable Container with Sticky Header + Main Dashboard */}
@@ -53,10 +56,12 @@ export default function Home() {
             onNavigate={setActiveModule}
             isCollapsed={isCollapsed}
             onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+            isMobileMenuOpen={isMobileDrawerOpen}
+            onOpenMobileMenu={() => setIsMobileDrawerOpen(true)}
           />
 
           {/* Elevated Top Layer: Stretches automatically to fill all available width */}
-          <main className="flex-1 min-w-0 bg-surface rounded-l-panel p-6 border-y border-l border-line shadow-panel">
+          <main className="flex-1 min-w-0 bg-surface lg:rounded-l-panel p-4 sm:p-6 border-t lg:border-y lg:border-l border-line shadow-panel">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeModule}

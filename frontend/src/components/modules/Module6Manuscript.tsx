@@ -208,7 +208,7 @@ export const Module6Manuscript: React.FC = () => {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {manuscripts.map((doc: any, idx: number) => {
             const isPrimary = idx === 0;
             return (
@@ -241,9 +241,9 @@ export const Module6Manuscript: React.FC = () => {
                   href={doc.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`inline-flex items-center justify-center gap-2 w-full mt-5 h-10 px-4 rounded-chip text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
+                  className={`inline-flex items-center justify-center gap-2 w-full mt-5 h-10 px-4 rounded-chip text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
                     isPrimary
-                      ? "bg-accent hover:bg-accent/90 text-white"
+                      ? "bg-accent hover:bg-accent/90 text-on-accent"
                       : "bg-surface border border-line text-ink hover:bg-surface-2 hover:border-accent/40"
                   }`}
                 >
@@ -265,7 +265,7 @@ export const Module6Manuscript: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <div className="p-4 rounded-tile bg-surface-2 border border-line">
               <div className="w-8 h-8 rounded-chip bg-accent-soft text-accent flex items-center justify-center mb-2.5">
                 <LayoutGrid className="w-4 h-4" />
@@ -322,8 +322,8 @@ export const Module6Manuscript: React.FC = () => {
           >
             {copiedBibtex ? (
               <>
-                <Check className="w-3.5 h-3.5 text-ok" />
-                <span className="text-ok">Copied</span>
+                <Check className="w-3.5 h-3.5 text-ok-ink" />
+                <span className="text-ok-ink">Copied</span>
               </>
             ) : (
               <>

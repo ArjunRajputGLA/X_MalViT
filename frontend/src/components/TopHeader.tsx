@@ -4,7 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { 
   Sparkles,
   PanelLeft,
-  PanelLeftClose
+  PanelLeftClose,
+  Menu
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ModuleKey } from "@/components/SidebarNav";
@@ -17,6 +18,8 @@ interface TopHeaderProps {
   onNavigate: (module: ModuleKey) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  isMobileMenuOpen?: boolean;
+  onOpenMobileMenu?: () => void;
 }
 
 const MODULE_TITLES: Record<ModuleKey, { title: string; subtitle: string }> = {
@@ -55,7 +58,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   systemStatus,
   onNavigate,
   isCollapsed,
-  onToggleCollapse
+  onToggleCollapse,
+  isMobileMenuOpen = false,
+  onOpenMobileMenu
 }) => {
   const currentMeta = MODULE_TITLES[activeModule] || MODULE_TITLES.briefing;
   const headerRef = useRef<HTMLElement>(null);
@@ -84,19 +89,32 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
     <header
       ref={headerRef}
       className={cn(
-        "sticky top-0 min-h-16 py-3 flex-shrink-0 px-6 flex items-center justify-between gap-4 z-30 transition-all duration-200 border-b",
+        "sticky top-0 min-h-16 py-3 flex-shrink-0 px-4 sm:px-6 flex items-center justify-between gap-3 sm:gap-4 z-30 transition-all duration-200 border-b",
         isScrolled
           ? "bg-surface/85 backdrop-blur-md border-line"
           : "bg-transparent border-transparent"
       )}
     >
-      {/* Left: Collapse Icon Toggle + Dynamic Title */}
-      <div className="flex items-center gap-3.5 min-w-0">
+      {/* Left: Mobile Menu Button (<1024px) / Collapse Toggle (>=1024px) + Dynamic Title */}
+      <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
+        {onOpenMobileMenu && (
+          <button
+            type="button"
+            onClick={onOpenMobileMenu}
+            aria-label="Open navigation menu"
+            aria-expanded={isMobileMenuOpen}
+            className="lg:hidden w-8 h-8 rounded-chip bg-surface border border-line hover:bg-accent-soft text-muted hover:text-accent flex items-center justify-center transition-colors cursor-pointer active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface flex-shrink-0"
+          >
+            <Menu className="w-4 h-4" />
+          </button>
+        )}
+
         <button
           type="button"
           onClick={onToggleCollapse}
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={isCollapsed ? "Expand Sidebar (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
-          className="w-8 h-8 rounded-chip bg-surface border border-line hover:bg-accent-soft text-muted hover:text-accent flex items-center justify-center transition-colors cursor-pointer active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 group flex-shrink-0"
+          className="hidden lg:flex w-8 h-8 rounded-chip bg-surface border border-line hover:bg-accent-soft text-muted hover:text-accent items-center justify-center transition-colors cursor-pointer active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface group flex-shrink-0"
         >
           {isCollapsed ? (
             <PanelLeft className="w-4 h-4 text-accent transition-transform group-hover:scale-110" />
@@ -129,12 +147,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
       </div>
 
       {/* Right Controls: Live Hardware Status + Theme Toggle + Quick Action CTA */}
-      <div className="flex items-center gap-2.5 flex-shrink-0">
+      <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
         {systemStatus && (
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-chip bg-surface border border-line text-[13px] font-medium tabular-nums">
             <span className={cn("w-2 h-2 rounded-full", statusDotClass)} />
             <span className="font-medium text-ink">{systemStatus.cuda_available ? "CUDA GPU" : "CPU Host"}</span>
-            <span className="text-line">•</span>
+            <span className="text-line">&bull;</span>
             <span className="text-muted">{systemStatus.has_checkpoint ? "Checkpoint Ready" : "Awaiting Weights"}</span>
           </div>
         )}
@@ -145,7 +163,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
         <button
           type="button"
           onClick={() => onNavigate("classifier")}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-chip text-[13px] font-medium bg-accent hover:bg-accent/90 text-white transition-all cursor-pointer active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-chip text-[13px] font-medium bg-accent hover:bg-accent/90 text-on-accent transition-all cursor-pointer active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
         >
           <Sparkles className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Run Threat Triage</span>

@@ -12,10 +12,14 @@
 
   --critical: #D92D20;
   --critical-soft: rgba(217, 45, 32, 0.10);
+  --critical-ink: #B42318;
   --high: #DC6803;
   --high-soft: rgba(220, 104, 3, 0.10);
+  --high-ink: #B54708;
   --ok: #079455;
   --ok-soft: rgba(7, 148, 85, 0.10);
+  --ok-ink: #067647;
+  --on-accent: #FFFFFF;
 }
 
 .dark,
@@ -31,10 +35,14 @@
 
   --critical: #D92D20;
   --critical-soft: rgba(217, 45, 32, 0.16);
+  --critical-ink: #FDA29B;
   --high: #DC6803;
   --high-soft: rgba(220, 104, 3, 0.16);
+  --high-ink: #FEC84B;
   --ok: #079455;
   --ok-soft: rgba(7, 148, 85, 0.16);
+  --ok-ink: #6CE9A6;
+  --on-accent: #0D1321;
 }
 
 @theme inline {
@@ -46,13 +54,17 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
 
   --color-critical: var(--critical);
   --color-critical-soft: var(--critical-soft);
+  --color-critical-ink: var(--critical-ink);
   --color-high: var(--high);
   --color-high-soft: var(--high-soft);
+  --color-high-ink: var(--high-ink);
   --color-ok: var(--ok);
   --color-ok-soft: var(--ok-soft);
+  --color-ok-ink: var(--ok-ink);
 
   --font-sans: var(--font-ibm-plex-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -61,6 +73,18 @@
   --radius-panel: 16px;
   --radius-tile: 10px;
   --radius-chip: 6px;
+}
+
+@layer base {
+  a:focus-visible,
+  button:focus-visible,
+  input:not(.epoch-range):focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 }
 
 body {

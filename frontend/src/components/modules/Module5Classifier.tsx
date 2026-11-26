@@ -22,15 +22,15 @@ import { BinaryDropzone } from "@/components/ui/BinaryDropzone";
 function getCategoryChipClass(category?: string): string {
   switch (category) {
     case "Worm":
-      return "bg-critical-soft text-critical";
+      return "bg-critical-soft text-critical-ink";
     case "Backdoor":
-      return "bg-high-soft text-high";
+      return "bg-high-soft text-high-ink";
     case "Trojan":
-      return "bg-high-soft text-high";
+      return "bg-high-soft text-high-ink";
     case "Downloader":
       return "bg-accent-soft text-accent";
     case "Rogue":
-      return "bg-ok-soft text-ok";
+      return "bg-ok-soft text-ok-ink";
     default:
       return "bg-accent-soft text-accent";
   }
@@ -259,7 +259,7 @@ export const Module5Classifier: React.FC = () => {
       {/* Loading Skeletons while Inference Runs */}
       {isInferring && !predictionResult && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <Card className="p-6 space-y-4">
               <div className="flex justify-between">
                 <Skeleton className="h-5 w-28 rounded-chip" />
@@ -298,13 +298,13 @@ export const Module5Classifier: React.FC = () => {
       <AnimatePresence mode="wait">
         {predictionResult && (
           <div key={resultAnimKey} className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch">
               {/* Step 1: Verdict Card fades in + Confidence AnimatedBar fills */}
               <motion.div
                 initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: prefersReducedMotion ? 0 : 0.25, ease: "easeOut" }}
-                className="h-full"
+                className="h-full min-w-0"
               >
                 <Card className="overflow-hidden flex flex-col h-full">
                   <CardHeader className="pb-4 border-b border-line bg-surface-2">
@@ -312,7 +312,7 @@ export const Module5Classifier: React.FC = () => {
                       <Badge variant="destructive" className="border-0 text-[12px] font-medium">
                         Threat detected
                       </Badge>
-                      <span className="text-[12px] text-ok bg-ok-soft px-2.5 py-0.5 rounded-chip font-mono font-medium inline-flex items-center gap-1 tabular-nums">
+                      <span className="text-[12px] text-ok-ink bg-ok-soft px-2.5 py-0.5 rounded-chip font-mono font-medium inline-flex items-center gap-1 tabular-nums">
                         <Zap className="w-3.5 h-3.5 text-ok" />
                         {predictionResult.latency_ms.toFixed(1)} ms (
                         {predictionResult.device_name ||
@@ -405,7 +405,14 @@ export const Module5Classifier: React.FC = () => {
               </motion.div>
 
               {/* Visual Attribution 3-Panel Card (Matches height to Verdict card) */}
-              <Card className="overflow-hidden flex flex-col h-full">
+              <Card
+                role="region"
+                aria-label={`Grad-CAM visual attribution for ${predictionResult.top_family} using ${colormap} colormap`}
+                className="overflow-hidden flex flex-col h-full min-w-0"
+              >
+                <p className="sr-only">
+                  Three side-by-side matrices: raw binary image, Grad-CAM activation map using the {colormap} scale, and forensic overlay highlighting the {predictionResult.pe_analysis?.section || "PE"} hotspot.
+                </p>
                 <CardHeader className="pb-4 border-b border-line bg-surface-2">
                   <CardTitle className="flex items-center gap-2">
                     <Flame className="w-5 h-5 text-critical" />
@@ -571,7 +578,7 @@ export const Module5Classifier: React.FC = () => {
                       <div className="text-[12px] text-muted font-medium">
                         Attention peak weight
                       </div>
-                      <div className="text-[20px] leading-[1.2] font-semibold text-ok mt-1.5 font-mono tabular-nums">
+                      <div className="text-[20px] leading-[1.2] font-semibold text-ok-ink mt-1.5 font-mono tabular-nums">
                         {predictionResult.pe_analysis?.attention_weight.toFixed(4)}
                       </div>
                     </div>

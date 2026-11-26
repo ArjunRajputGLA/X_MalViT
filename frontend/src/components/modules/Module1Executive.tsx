@@ -89,7 +89,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
   return (
     <div className="space-y-6">
       {/* 4 KPI Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         {/* Card 1: Accuracy */}
         <div className="bg-surface p-6 rounded-panel border border-line shadow-panel flex flex-col justify-between">
           <div className="flex items-center justify-between text-muted text-[13px] font-medium">
@@ -100,7 +100,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
             <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">
               <AnimatedNumber value={accuracyFormatted} />
             </div>
-            <div className="text-[13px] font-medium text-ok mt-1.5 flex items-center gap-1 tabular-nums">
+            <div className="text-[13px] font-medium text-ok-ink mt-1.5 flex items-center gap-1 tabular-nums">
               <span className="font-semibold">+2.4%</span> over ResNet-18 baseline
             </div>
           </div>
@@ -156,9 +156,9 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
       </div>
 
       {/* Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Left Column (2 Cols) */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="xl:col-span-2 min-w-0 space-y-6">
           {/* Autonomous Threat Pipeline */}
           <div className="bg-surface p-6 rounded-panel border border-line shadow-panel">
             <div className="flex items-center justify-between mb-6">
@@ -306,8 +306,8 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
                           <td className="py-3 px-3">
                             <span className={`inline-block lowercase first-letter:uppercase px-2.5 py-0.5 rounded-chip text-[12px] font-medium ${
                               item.risk === "CRITICAL"
-                                ? "bg-critical-soft text-critical"
-                                : "bg-high-soft text-high"
+                                ? "bg-critical-soft text-critical-ink"
+                                : "bg-high-soft text-high-ink"
                             }`}>
                               {item.risk}
                             </span>
@@ -422,7 +422,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
 
             <button
               onClick={() => onNavigate && onNavigate("classifier")}
-              className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-chip bg-accent hover:bg-accent/90 text-white text-[13px] font-medium transition-all cursor-pointer active:scale-[0.98] group outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-chip bg-accent hover:bg-accent/90 text-on-accent text-[13px] font-medium transition-all cursor-pointer active:scale-[0.98] group outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Launch Grad-CAM Classifier</span>

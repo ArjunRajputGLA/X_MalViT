@@ -14,7 +14,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(
           "inline-flex items-center justify-center whitespace-nowrap rounded-chip text-[14px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99] cursor-pointer",
           {
-            "bg-accent text-white hover:bg-accent/90": variant === "default" || variant === "cyber",
+            "bg-accent text-on-accent hover:bg-accent/90": variant === "default" || variant === "cyber",
             "bg-critical text-white hover:bg-critical/90": variant === "destructive",
             "border border-line bg-surface text-ink hover:bg-surface-2": variant === "outline",
             "bg-surface-2 text-ink border border-line hover:bg-line/50": variant === "secondary",

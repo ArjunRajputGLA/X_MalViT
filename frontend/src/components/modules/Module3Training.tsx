@@ -58,7 +58,12 @@ function ConvergenceMiniChart({
           Peak: {Math.max(...epochHistory.map((d) => d.val_acc)).toFixed(2)}%
         </span>
       </div>
-      <svg viewBox="0 0 400 108" className="w-full h-28 overflow-visible" aria-hidden="true">
+      <svg
+        viewBox="0 0 400 108"
+        className="w-full h-28 overflow-visible"
+        role="img"
+        aria-label={`Validation accuracy across ${epochHistory.length} epochs, latest ${epochHistory[epochHistory.length - 1]?.val_acc.toFixed(2)}%`}
+      >
         {[20, 48, 76].map((gridY) => (
           <line
             key={gridY}
@@ -362,9 +367,9 @@ export const Module3Training: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Left Hyperparameter Control Panel */}
-        <Card className="overflow-hidden">
+        <Card className="min-w-0 overflow-hidden">
           <CardHeader className="pb-4 border-b border-line bg-surface-2">
             <CardTitle className="flex items-center gap-2">
               <Settings2 className="w-5 h-5 text-accent" />
@@ -666,7 +671,7 @@ export const Module3Training: React.FC = () => {
         </Card>
 
         {/* Right Hardware Telemetry & Real-Time Curves */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card className="overflow-hidden">
             <CardHeader className="pb-4 border-b border-line bg-surface-2">
               <CardTitle className="flex items-center gap-2">
@@ -765,7 +770,7 @@ export const Module3Training: React.FC = () => {
                       <div className="text-muted text-[13px] font-medium">
                         Current Loss:
                       </div>
-                      <div className="text-[20px] leading-[1.2] font-semibold text-critical mt-1">
+                      <div className="text-[20px] leading-[1.2] font-semibold text-critical-ink mt-1">
                         {epochHistory[epochHistory.length - 1].train_loss.toFixed(4)}
                       </div>
                     </div>
@@ -773,7 +778,7 @@ export const Module3Training: React.FC = () => {
                       <div className="text-muted text-[13px] font-medium">
                         Val Accuracy:
                       </div>
-                      <div className="text-[20px] leading-[1.2] font-semibold text-ok mt-1">
+                      <div className="text-[20px] leading-[1.2] font-semibold text-ok-ink mt-1">
                         {epochHistory[epochHistory.length - 1].val_acc.toFixed(2)}%
                       </div>
                     </div>
