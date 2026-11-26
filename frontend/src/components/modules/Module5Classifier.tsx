@@ -217,7 +217,7 @@ export const Module5Classifier: React.FC = () => {
                     </Badge>
                     <span className="text-xs font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 font-semibold flex items-center gap-1">
                       <Zap className="w-3.5 h-3.5 text-emerald-600" />
-                      {predictionResult.latency_ms.toFixed(1)} ms (RTX 4050)
+                      {predictionResult.latency_ms.toFixed(1)} ms ({predictionResult.device_name || (predictionResult.device?.includes("cuda") ? "CUDA GPU" : "CPU Host")})
                     </span>
                   </div>
                   <CardTitle className="text-2xl font-black text-slate-900 mt-2 font-mono tracking-tight">

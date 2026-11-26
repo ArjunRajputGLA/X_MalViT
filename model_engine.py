@@ -5,6 +5,7 @@ authentic patch attention attribution, and byte-level hex disassembly around PE 
 """
 
 import os
+import time
 import numpy as np
 from PIL import Image
 import matplotlib.cm as cm
@@ -23,6 +24,7 @@ class XMalViTEngine:
         self.classes = MALWARE_FAMILIES
         self.checkpoint_path = checkpoint_path
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device_name = torch.cuda.get_device_name(0) if self.device.type == "cuda" else "CPU Host"
         
         self.model = XMalViTModel(num_classes=self.num_classes).to(self.device)
         self.has_checkpoint = False
@@ -55,6 +57,10 @@ class XMalViTEngine:
         5. Hex-Dump byte inspection around the peak malicious offset
         """
         img_gray = pil_image.convert('L').resize(self.image_size)
+        if self.device.type == "cuda":
+            torch.cuda.synchronize()
+        t_start = time.perf_counter()
+
         arr = np.array(img_gray, dtype=np.float32) / 255.0
 
         # Prepare PyTorch Tensor
@@ -112,6 +118,10 @@ class XMalViTEngine:
         # Generate Hex Dump around hotspot
         hex_dump = self._generate_hex_dump(arr, pe_analysis["hotspot_coords"])
 
+        if self.device.type == "cuda":
+            torch.cuda.synchronize()
+        latency_ms = round((time.perf_counter() - t_start) * 1000.0, 1)
+
         return {
             "top_family": top_family,
             "confidence": top_predictions[0]["confidence"],
@@ -121,9 +131,10 @@ class XMalViTEngine:
             "overlay": overlay_img,
             "pe_analysis": pe_analysis,
             "hex_dump": hex_dump,
-            "latency_ms": 23.4,
+            "latency_ms": latency_ms,
             "checkpoint_loaded": self.has_checkpoint,
-            "device": str(self.device)
+            "device": str(self.device),
+            "device_name": self.device_name
         }
 
     def _get_category(self, family):
