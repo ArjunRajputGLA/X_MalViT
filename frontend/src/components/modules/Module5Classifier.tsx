@@ -10,11 +10,59 @@ import {
   Terminal, 
   Layers, 
   Zap,
-  Loader2
+  Loader2,
+  ChevronDown
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { AnimatedBar } from "@/components/ui/AnimatedBar";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { BinaryDropzone } from "@/components/ui/BinaryDropzone";
+
+function getCategoryChipClass(category?: string): string {
+  switch (category) {
+    case "Worm":
+      return "bg-critical-soft text-critical";
+    case "Backdoor":
+      return "bg-high-soft text-high";
+    case "Trojan":
+      return "bg-high-soft text-high";
+    case "Downloader":
+      return "bg-accent-soft text-accent";
+    case "Rogue":
+      return "bg-ok-soft text-ok";
+    default:
+      return "bg-accent-soft text-accent";
+  }
+}
+
+function getColormapGradient(colormap: string): string {
+  switch (colormap) {
+    case "plasma":
+      return "linear-gradient(to right, #0D0887, #6A00A8, #B12A90, #E16462, #FCA636, #F0F921)";
+    case "inferno":
+      return "linear-gradient(to right, #000004, #420A68, #932667, #DD513A, #FCA50A, #FCFFA4)";
+    case "viridis":
+      return "linear-gradient(to right, #440154, #3B528B, #21918C, #5EC962, #FDE725)";
+    case "jet":
+    default:
+      return "linear-gradient(to right, #000080, #0000FF, #00FFFF, #00FF00, #FFFF00, #FF0000, #800000)";
+  }
+}
+
+function parseHexDumpLines(hexDump?: string) {
+  if (!hexDump) return [];
+  return hexDump
+    .split("\n")
+    .filter((line) => line.trim().length > 0)
+    .map((line) => {
+      const match = line.match(/^([0-9A-Fa-f]+)\s{2,}(.+?)\s{2,}(\|.*\|)$/);
+      if (match) {
+        return { offset: match[1], bytes: match[2], ascii: match[3], raw: null };
+      }
+      return { offset: "", bytes: "", ascii: "", raw: line };
+    });
+}
 
 export const Module5Classifier: React.FC = () => {
   const [families, setFamilies] = useState<string[]>([]);
@@ -86,6 +134,20 @@ export const Module5Classifier: React.FC = () => {
     }
   };
 
+  const prefersReducedMotion = useReducedMotion();
+
+  const confidencePct = predictionResult ? predictionResult.confidence * 100 : 0;
+  const confidenceTierClass =
+    confidencePct >= 80
+      ? "bg-critical"
+      : confidencePct >= 50
+      ? "bg-high"
+      : "bg-muted";
+  const hexRows = parseHexDumpLines(predictionResult?.hex_dump);
+  const resultAnimKey = predictionResult
+    ? `${predictionResult.top_family}-${predictionResult.latency_ms}-${predictionResult.overlay_url?.slice(-24) || ""}`
+    : "empty";
+
   return (
     <div className="space-y-6">
       {/* Control Configuration Panel */}
@@ -96,69 +158,51 @@ export const Module5Classifier: React.FC = () => {
             Threat Input &amp; Grad-CAM Heatmap Configuration
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-6 space-y-4">
-          {/* Source Tabs */}
-          <div className="flex bg-surface-2 border border-line p-1 rounded-tile w-fit gap-1">
-            <button
-              type="button"
-              onClick={() => setInputMode("bank")}
-              className={`px-4 py-2 rounded-chip text-[13px] font-medium transition-colors cursor-pointer ${
-                inputMode === "bank"
-                  ? "bg-surface text-accent font-semibold border border-line"
-                  : "text-muted hover:text-ink border border-transparent"
-              }`}
-            >
-              Malimg Sample Bank
-            </button>
-            <button
-              type="button"
-              onClick={() => setInputMode("upload")}
-              className={`px-4 py-2 rounded-chip text-[13px] font-medium transition-colors cursor-pointer ${
-                inputMode === "upload"
-                  ? "bg-surface text-accent font-semibold border border-line"
-                  : "text-muted hover:text-ink border border-transparent"
-              }`}
-            >
-              Upload Custom Executable Image
-            </button>
+        <CardContent className="pt-6 space-y-5">
+          {/* Source SegmentedControl */}
+          <div className="w-full md:max-w-lg">
+            <SegmentedControl
+              ariaLabel="Threat Input Source"
+              layoutId="seg-classifier-input"
+              value={inputMode}
+              onChange={setInputMode}
+              options={[
+                { value: "bank" as const, label: "Malimg Sample Bank" },
+                { value: "upload" as const, label: "Upload Custom Executable Image" },
+              ]}
+            />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
             {inputMode === "bank" ? (
               <div>
                 <label className="text-[13px] font-medium text-ink block mb-1.5">
                   Select Target Malware Sample:
                 </label>
-                <select
-                  value={selectedFamily}
-                  onChange={(e) => setSelectedFamily(e.target.value)}
-                  className="w-full bg-surface-2 border border-line rounded-chip px-3 py-2 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent font-mono transition-colors"
-                >
-                  {families.map((fam) => (
-                    <option key={fam} value={fam}>
-                      {fam}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={selectedFamily}
+                    onChange={(e) => setSelectedFamily(e.target.value)}
+                    className="appearance-none h-10 w-full bg-surface-2 border border-line rounded-chip pl-3 pr-9 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent font-mono transition-colors cursor-pointer"
+                  >
+                    {families.map((fam) => (
+                      <option key={fam} value={fam}>
+                        {fam}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-muted pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
+                </div>
               </div>
             ) : (
               <div>
                 <label className="text-[13px] font-medium text-ink block mb-1.5">
                   Upload Binary Grayscale File (.png, .jpg):
                 </label>
-                <div className="border-2 border-dashed border-line hover:border-accent rounded-tile p-3 text-center bg-surface-2 cursor-pointer transition-colors">
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg"
-                    onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
-                    className="block w-full text-[13px] text-muted file:mr-2 file:py-1 file:px-2.5 file:rounded-chip file:border-0 file:text-[12px] file:font-medium file:bg-accent-soft file:text-accent hover:file:bg-accent-soft/80 cursor-pointer"
-                  />
-                  {uploadedFile && (
-                    <div className="text-[12px] text-ok mt-1.5 font-medium tabular-nums">
-                      Selected: <span className="font-mono">{uploadedFile.name}</span> ({(uploadedFile.size / 1024).toFixed(1)} KB)
-                    </div>
-                  )}
-                </div>
+                <BinaryDropzone
+                  uploadedFile={uploadedFile}
+                  onFileChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
+                />
               </div>
             )}
 
@@ -166,33 +210,49 @@ export const Module5Classifier: React.FC = () => {
               <label className="text-[13px] font-medium text-ink block mb-1.5">
                 Grad-CAM Color Gradient Map:
               </label>
-              <select
-                value={colormap}
-                onChange={(e) => setColormap(e.target.value)}
-                className="w-full bg-surface-2 border border-line rounded-chip px-3 py-2 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent font-medium transition-colors"
-              >
-                <option value="jet">Jet (Classic Cyber Rainbow)</option>
-                <option value="plasma">Plasma (High-Contrast Purple-Yellow)</option>
-                <option value="inferno">Inferno (Thermal Infrared)</option>
-                <option value="viridis">Viridis (Perceptually Uniform)</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={colormap}
+                  onChange={(e) => setColormap(e.target.value)}
+                  className="appearance-none h-10 w-full bg-surface-2 border border-line rounded-chip pl-3 pr-9 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent font-medium transition-colors cursor-pointer"
+                >
+                  <option value="jet">Jet (Classic Cyber Rainbow)</option>
+                  <option value="plasma">Plasma (High-Contrast Purple-Yellow)</option>
+                  <option value="inferno">Inferno (Thermal Infrared)</option>
+                  <option value="viridis">Viridis (Perceptually Uniform)</option>
+                </select>
+                <ChevronDown className="w-4 h-4 text-muted pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
+              </div>
             </div>
           </div>
 
-          <Button
-            onClick={handleRunInference}
-            disabled={isInferring}
-            className="w-full"
-            variant="cyber"
-            size="lg"
-          >
-            {isInferring ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Zap className="w-4 h-4 mr-2" />
+          <div className="space-y-2">
+            <Button
+              onClick={handleRunInference}
+              disabled={isInferring}
+              className="w-full"
+              variant="cyber"
+              size="lg"
+            >
+              {isInferring ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Zap className="w-4 h-4 mr-2" />
+              )}
+              {isInferring
+                ? "Computing Gradient Activation Attribution..."
+                : "Run X-MalViT Diagnostic Inference"}
+            </Button>
+
+            {isInferring && (
+              <div
+                aria-hidden="true"
+                className="h-1 w-full rounded-full bg-surface-2 overflow-hidden"
+              >
+                <div className="indeterminate-bar h-full w-1/3 bg-accent rounded-full" />
+              </div>
             )}
-            {isInferring ? "Computing Gradient Activation Attribution..." : "Run X-MalViT Diagnostic Inference"}
-          </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -235,119 +295,235 @@ export const Module5Classifier: React.FC = () => {
       )}
 
       {/* Inference Diagnostic Results */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {predictionResult && (
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.35 }}
-            className="space-y-6"
-          >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Top-1 Identified Card & Likelihood Table */}
-              <Card className="overflow-hidden">
-                <CardHeader className="pb-4 border-b border-line bg-surface-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <Badge variant="destructive" className="text-[12px] font-medium">
-                      Threat detected
-                    </Badge>
-                    <span className="text-[12px] text-ok bg-ok-soft px-2 py-0.5 rounded-chip border border-ok/20 font-medium flex items-center gap-1 tabular-nums">
-                      <Zap className="w-3.5 h-3.5 text-ok" />
-                      {predictionResult.latency_ms.toFixed(1)} ms ({predictionResult.device_name || (predictionResult.device?.includes("cuda") ? "CUDA GPU" : "CPU Host")})
-                    </span>
-                  </div>
-                  <CardTitle className="text-[28px] leading-[1.2] font-semibold text-ink mt-2 font-mono">
-                    {predictionResult.top_family}
-                  </CardTitle>
-                  <div className="text-[13px] text-muted font-medium">
-                    Category: <span className="text-accent font-semibold">{predictionResult.category}</span>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-6 space-y-4">
-                  <div>
-                    <div className="flex justify-between text-[13px] text-ink mb-1.5 font-medium tabular-nums">
-                      <span>Confidence Score:</span>
-                      <span className="text-accent font-semibold">
-                        {(predictionResult.confidence * 100).toFixed(2)}%
+          <div key={resultAnimKey} className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              {/* Step 1: Verdict Card fades in + Confidence AnimatedBar fills */}
+              <motion.div
+                initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.25, ease: "easeOut" }}
+                className="h-full"
+              >
+                <Card className="overflow-hidden flex flex-col h-full">
+                  <CardHeader className="pb-4 border-b border-line bg-surface-2">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <Badge variant="destructive" className="border-0 text-[12px] font-medium">
+                        Threat detected
+                      </Badge>
+                      <span className="text-[12px] text-ok bg-ok-soft px-2.5 py-0.5 rounded-chip font-mono font-medium inline-flex items-center gap-1 tabular-nums">
+                        <Zap className="w-3.5 h-3.5 text-ok" />
+                        {predictionResult.latency_ms.toFixed(1)} ms (
+                        {predictionResult.device_name ||
+                          (predictionResult.device?.includes("cuda") ? "CUDA GPU" : "CPU Host")}
+                        )
                       </span>
                     </div>
-                    <AnimatedBar percentage={predictionResult.confidence * 100} className="h-2.5" />
-                  </div>
-
-                  <div>
-                    <div className="text-[13px] font-semibold text-ink mb-2">
-                      Top-5 Family Likelihood Ranking
+                    <CardTitle className="text-[28px] leading-[1.2] font-semibold text-ink mt-2.5 font-mono">
+                      {predictionResult.top_family}
+                    </CardTitle>
+                    <div className="flex items-center gap-2 text-[13px] text-muted font-medium mt-1">
+                      <span>Category:</span>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-chip text-[12px] font-medium ${getCategoryChipClass(
+                          predictionResult.category
+                        )}`}
+                      >
+                        {predictionResult.category}
+                      </span>
                     </div>
-                    <div className="overflow-x-auto rounded-tile border border-line">
-                      <table className="w-full text-[13px] text-left tabular-nums">
-                        <thead className="bg-surface-2 text-muted text-[13px] font-medium border-b border-line">
-                          <tr>
-                            <th className="py-2 px-3 font-medium">Family variant</th>
-                            <th className="py-2 px-3 font-medium">Likelihood</th>
-                            <th className="py-2 px-3 font-medium">Category</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-line text-ink font-normal">
-                          {predictionResult.top_5.map((item: any, idx: number) => (
-                            <tr key={idx} className={idx === 0 ? "bg-accent-soft/60 text-ink font-semibold" : ""}>
-                              <td className="py-2 px-3 font-mono">{item.family}</td>
-                              <td className="py-2 px-3 tabular-nums">{(item.confidence * 100).toFixed(2)}%</td>
-                              <td className="py-2 px-3 text-muted">{item.category}</td>
+                  </CardHeader>
+                  <CardContent className="pt-6 space-y-5 flex-1">
+                    <div>
+                      <div className="flex justify-between text-[13px] text-ink mb-1.5 font-medium tabular-nums">
+                        <span>Confidence Score:</span>
+                        <span className="text-ink font-semibold font-mono">
+                          {confidencePct.toFixed(2)}%
+                        </span>
+                      </div>
+                      <AnimatedBar
+                        percentage={confidencePct}
+                        className="h-2.5"
+                        barClassName={confidenceTierClass}
+                      />
+                    </div>
+
+                    <div>
+                      <div className="text-[13px] font-semibold text-ink mb-2">
+                        Top-5 Family Likelihood Ranking
+                      </div>
+                      <div className="overflow-x-auto rounded-tile border border-line">
+                        <table className="w-full text-[13px] text-left tabular-nums">
+                          <thead className="bg-surface-2 text-muted text-[13px] font-medium border-b border-line">
+                            <tr>
+                              <th className="py-2 px-3 font-medium">Family variant</th>
+                              <th className="py-2 px-3 font-medium">Likelihood</th>
+                              <th className="py-2 px-3 font-medium">Category</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody className="divide-y divide-line text-ink font-normal">
+                            {predictionResult.top_5.map((item: any, idx: number) => {
+                              const itemPct = item.confidence * 100;
+                              return (
+                                <tr
+                                  key={idx}
+                                  className={
+                                    idx === 0
+                                      ? "bg-accent-soft/60 text-ink font-semibold"
+                                      : "hover:bg-surface-2 transition-colors"
+                                  }
+                                >
+                                  <td className="py-2 px-3 font-mono">{item.family}</td>
+                                  <td className="py-2 px-3">
+                                    <div className="flex items-center gap-2.5">
+                                      <div className="w-16 h-1.5 rounded-full bg-surface-2 overflow-hidden flex-shrink-0">
+                                        <div
+                                          className={`h-full rounded-full ${
+                                            idx === 0 ? "bg-accent" : "bg-muted/50"
+                                          }`}
+                                          style={{
+                                            width: `${Math.min(100, Math.max(3, itemPct))}%`,
+                                          }}
+                                        />
+                                      </div>
+                                      <span className="font-mono text-[12px] tabular-nums">
+                                        {itemPct.toFixed(2)}%
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="py-2 px-3 text-muted">{item.category}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-              {/* Visual Attribution 3-Panel Card */}
-              <Card className="overflow-hidden">
+              {/* Visual Attribution 3-Panel Card (Matches height to Verdict card) */}
+              <Card className="overflow-hidden flex flex-col h-full">
                 <CardHeader className="pb-4 border-b border-line bg-surface-2">
                   <CardTitle className="flex items-center gap-2">
                     <Flame className="w-5 h-5 text-critical" />
                     Grad-CAM Visual Attribution (XAI)
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="text-center">
-                      <div className="text-[12px] font-medium text-muted mb-1.5">1. Raw Binary</div>
-                      <div className="aspect-square rounded-tile overflow-hidden border border-line bg-surface-2 p-1">
-                        <img
-                          src={predictionResult.raw_image_url}
-                          alt="Raw Binary"
-                          className="w-full h-full object-cover rounded-chip"
-                        />
-                      </div>
-                    </div>
+                <CardContent className="pt-6 flex-1 flex flex-col justify-between gap-4">
+                  <div className="flex-1 flex items-center">
+                    <div className="grid grid-cols-3 gap-3 w-full items-start">
+                      {/* Step 2: Raw Binary image appears */}
+                      <motion.div
+                        initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{
+                          duration: prefersReducedMotion ? 0 : 0.2,
+                          delay: prefersReducedMotion ? 0 : 0.22,
+                          ease: "easeOut",
+                        }}
+                        className="text-center"
+                      >
+                        <div className="text-[12px] font-medium text-muted mb-1.5">
+                          1. Raw Binary
+                        </div>
+                        <div className="aspect-square rounded-tile overflow-hidden border border-line bg-surface-2 p-1">
+                          <img
+                            src={predictionResult.raw_image_url}
+                            alt="Raw Binary"
+                            style={{ imageRendering: "pixelated" }}
+                            className="w-full h-full object-cover rounded-chip"
+                          />
+                        </div>
+                      </motion.div>
 
-                    <div className="text-center">
-                      <div className="text-[12px] font-medium text-muted mb-1.5">2. Activation Map</div>
-                      <div className="aspect-square rounded-tile overflow-hidden border border-line bg-surface-2 p-1">
-                        <img
-                          src={predictionResult.heatmap_url}
-                          alt="Activation Map"
-                          className="w-full h-full object-cover rounded-chip"
-                        />
-                      </div>
-                    </div>
+                      {/* Step 3: Activation Map swept top-to-bottom + colour legend */}
+                      <div className="text-center">
+                        <div className="text-[12px] font-medium text-muted mb-1.5">
+                          2. Activation Map
+                        </div>
+                        <div className="relative aspect-square rounded-tile overflow-hidden border border-line bg-surface-2 p-1">
+                          <div className="relative w-full h-full rounded-chip overflow-hidden">
+                            <motion.img
+                              src={predictionResult.heatmap_url}
+                              alt="Activation Map"
+                              initial={{
+                                clipPath: prefersReducedMotion
+                                  ? "inset(0% 0% 0% 0%)"
+                                  : "inset(0% 0% 100% 0%)",
+                              }}
+                              animate={{ clipPath: "inset(0% 0% 0% 0%)" }}
+                              transition={{
+                                duration: prefersReducedMotion ? 0 : 0.7,
+                                delay: prefersReducedMotion ? 0 : 0.38,
+                                ease: "linear",
+                              }}
+                              style={{ imageRendering: "pixelated" }}
+                              className="w-full h-full object-cover"
+                            />
+                            {!prefersReducedMotion && (
+                              <motion.div
+                                aria-hidden="true"
+                                initial={{ top: "0%", opacity: 0 }}
+                                animate={{
+                                  top: ["0%", "100%"],
+                                  opacity: [0, 1, 1, 0],
+                                }}
+                                transition={{
+                                  duration: 0.7,
+                                  delay: 0.38,
+                                  ease: "linear",
+                                  times: [0, 0.08, 0.9, 1],
+                                }}
+                                className="pointer-events-none absolute inset-x-0 h-[2px] bg-accent shadow-[0_0_12px_2px_var(--accent)] z-20"
+                              />
+                            )}
+                          </div>
+                        </div>
 
-                    <div className="text-center">
-                      <div className="text-[12px] font-medium text-muted mb-1.5">3. Forensic Overlay</div>
-                      <div className="aspect-square rounded-tile overflow-hidden border-2 border-accent bg-surface-2 p-1">
-                        <img
-                          src={predictionResult.overlay_url}
-                          alt="Forensic Overlay"
-                          className="w-full h-full object-cover rounded-chip"
-                        />
+                        {/* Low -> High colour-scale legend matching colormap */}
+                        <div className="mt-2 px-0.5">
+                          <div
+                            className="h-1.5 w-full rounded-full border border-line/60"
+                            style={{ background: getColormapGradient(colormap) }}
+                            aria-hidden="true"
+                          />
+                          <div className="flex justify-between text-[10px] font-mono text-muted mt-1">
+                            <span>Low</span>
+                            <span>High</span>
+                          </div>
+                        </div>
                       </div>
+
+                      {/* Step 4: Forensic Overlay crossfades in last, selected accent ring */}
+                      <motion.div
+                        initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{
+                          duration: prefersReducedMotion ? 0 : 0.3,
+                          delay: prefersReducedMotion ? 0 : 1.08,
+                          ease: "easeOut",
+                        }}
+                        className="text-center"
+                      >
+                        <div className="text-[12px] font-medium text-ink mb-1.5">
+                          3. Forensic Overlay
+                        </div>
+                        <div className="aspect-square rounded-tile overflow-hidden border border-accent ring-2 ring-accent/30 bg-surface-2 p-1">
+                          <img
+                            src={predictionResult.overlay_url}
+                            alt="Forensic Overlay"
+                            style={{ imageRendering: "pixelated" }}
+                            className="w-full h-full object-cover rounded-chip"
+                          />
+                        </div>
+                      </motion.div>
                     </div>
                   </div>
 
-                  <div className="text-[12px] text-muted mt-3 text-center font-medium">
+                  <div className="text-[12px] text-muted pt-3 border-t border-line text-center font-medium">
                     Red pixels highlight the exact PE hotspot activating the classification decision.
                   </div>
                 </CardContent>
@@ -355,54 +531,100 @@ export const Module5Classifier: React.FC = () => {
             </div>
 
             {/* Reverse-Engineered PE Section Disassembly */}
-            <Card className="overflow-hidden">
-              <CardHeader className="pb-4 border-b border-line bg-surface-2">
-                <CardTitle className="flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-accent" />
-                  Reverse-Engineered PE Section Disassembly
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                  <div className="p-4 rounded-tile bg-surface-2 border border-line">
-                    <div className="text-[12px] text-muted font-medium">PE section pinpointed</div>
-                    <div className="text-[14px] font-medium text-ink mt-1 font-mono">
-                      {predictionResult.pe_analysis?.section}
+            <motion.div
+              initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
+              animate={{ opacity: 1 }}
+              transition={{
+                duration: prefersReducedMotion ? 0 : 0.25,
+                delay: prefersReducedMotion ? 0 : 0.12,
+                ease: "easeOut",
+              }}
+            >
+              <Card className="overflow-hidden">
+                <CardHeader className="pb-4 border-b border-line bg-surface-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-accent" />
+                    Reverse-Engineered PE Section Disassembly
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                    <div className="p-4 rounded-tile bg-surface-2 border border-line">
+                      <div className="text-[12px] text-muted font-medium">
+                        PE section pinpointed
+                      </div>
+                      <div className="text-[20px] leading-[1.2] font-semibold text-ink mt-1.5 font-mono">
+                        {predictionResult.pe_analysis?.section}
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-tile bg-surface-2 border border-line">
+                      <div className="text-[12px] text-muted font-medium">
+                        Virtual address offset
+                      </div>
+                      <div className="text-[20px] leading-[1.2] font-semibold text-accent mt-1.5 font-mono tabular-nums">
+                        {predictionResult.pe_analysis?.virtual_address}
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-tile bg-surface-2 border border-line">
+                      <div className="text-[12px] text-muted font-medium">
+                        Attention peak weight
+                      </div>
+                      <div className="text-[20px] leading-[1.2] font-semibold text-ok mt-1.5 font-mono tabular-nums">
+                        {predictionResult.pe_analysis?.attention_weight.toFixed(4)}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-tile bg-surface-2 border border-line">
-                    <div className="text-[12px] text-muted font-medium">Virtual address offset</div>
-                    <div className="text-[14px] font-medium text-accent mt-1 font-mono tabular-nums">
-                      {predictionResult.pe_analysis?.virtual_address}
+                  <div className="p-4 rounded-r-tile rounded-l-chip bg-accent-soft/45 border border-line border-l-4 border-l-accent text-[13px] text-ink leading-[1.5]">
+                    <strong className="text-ink font-semibold">Forensic Attribution:</strong>{" "}
+                    {predictionResult.pe_analysis?.forensic_meaning}. The model isolated this bytecode cluster without requiring dynamic sandbox execution.
+                  </div>
+
+                  {/* Hex Dump Inspector - Dark token scope */}
+                  <div>
+                    <div className="flex items-center gap-1.5 text-[13px] font-semibold text-ink mb-2">
+                      <Terminal className="w-4 h-4 text-high" />
+                      Disassembly Hex-Dump Inspector (Around Hotspot Offset)
+                    </div>
+                    <div className="dark hex-terminal p-3 text-[13px] leading-[1.6] font-mono overflow-x-auto text-ink tabular-nums">
+                      <div className="min-w-[600px]">
+                        <div className="grid grid-cols-[88px_minmax(320px,1fr)_160px] gap-4 px-2.5 pb-1.5 mb-1 border-b border-line text-[12px] text-muted font-medium select-none">
+                          <span>Offset</span>
+                          <span>Bytes</span>
+                          <span className="text-right">ASCII</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          {hexRows.map((row, idx) =>
+                            row.raw !== null ? (
+                              <div
+                                key={idx}
+                                className="px-2.5 py-0.5 rounded-chip hover:bg-surface transition-colors whitespace-pre"
+                              >
+                                {row.raw}
+                              </div>
+                            ) : (
+                              <div
+                                key={idx}
+                                className="grid grid-cols-[88px_minmax(320px,1fr)_160px] gap-4 items-center px-2.5 py-0.5 rounded-chip hover:bg-surface transition-colors"
+                              >
+                                <span className="text-muted select-none">{row.offset}</span>
+                                <span className="text-ink whitespace-pre">{row.bytes}</span>
+                                <span className="text-accent text-right whitespace-pre">
+                                  {row.ascii}
+                                </span>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-
-                  <div className="p-4 rounded-tile bg-surface-2 border border-line">
-                    <div className="text-[12px] text-muted font-medium">Attention peak weight</div>
-                    <div className="text-[16px] leading-[1.2] font-semibold text-ok mt-1 tabular-nums">
-                      {predictionResult.pe_analysis?.attention_weight.toFixed(4)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-tile bg-accent-soft/60 border-l-4 border-accent text-[13px] text-ink leading-[1.5]">
-                  <strong className="text-ink font-semibold">Forensic Attribution:</strong> {predictionResult.pe_analysis?.forensic_meaning}. The model isolated this bytecode cluster without requiring dynamic sandbox execution.
-                </div>
-
-                {/* Hex Dump Inspector - Dark token scope */}
-                <div>
-                  <div className="flex items-center gap-1.5 text-[13px] font-semibold text-ink mb-2">
-                    <Terminal className="w-4 h-4 text-high" />
-                    Disassembly Hex-Dump Inspector (Around Hotspot Offset)
-                  </div>
-                  <div className="dark hex-terminal p-4 text-[12px] leading-[1.5] font-mono overflow-x-auto text-ink tabular-nums">
-                    <pre>{predictionResult.hex_dump}</pre>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>
