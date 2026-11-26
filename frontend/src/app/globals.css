@@ -1,69 +1,116 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --background: #f8fafc;
-    --foreground: #0f172a;
-    --card: #ffffff;
-    --card-foreground: #0f172a;
-    --primary: #059669;
-    --primary-foreground: #ffffff;
-    --secondary: #f1f5f9;
-    --secondary-foreground: #1e293b;
-    --muted: #f8fafc;
-    --muted-foreground: #64748b;
-    --accent: #ecfdf5;
-    --accent-foreground: #047857;
-    --destructive: #ef4444;
-    --destructive-foreground: #ffffff;
-    --border: #e2e8f0;
-    --ring: #10b981;
-  }
+:root {
+  --canvas: #F3F5F8;
+  --surface: #FFFFFF;
+  --surface-2: #F8FAFC;
+  --line: #E3E7EE;
+  --ink: #121A2B;
+  --muted: #5B6678;
+  --accent: #2A5BD7;
+  --accent-soft: #E8EEFC;
+
+  --critical: #D92D20;
+  --critical-soft: rgba(217, 45, 32, 0.10);
+  --high: #DC6803;
+  --high-soft: rgba(220, 104, 3, 0.10);
+  --ok: #079455;
+  --ok-soft: rgba(7, 148, 85, 0.10);
+}
+
+.dark,
+[data-theme="dark"] {
+  --canvas: #0D1321;
+  --surface: #141B2D;
+  --surface-2: #1B2438;
+  --line: #26314A;
+  --ink: #E7ECF5;
+  --muted: #93A0B8;
+  --accent: #6E95FF;
+  --accent-soft: #1C2A4D;
+
+  --critical: #D92D20;
+  --critical-soft: rgba(217, 45, 32, 0.16);
+  --high: #DC6803;
+  --high-soft: rgba(220, 104, 3, 0.16);
+  --ok: #079455;
+  --ok-soft: rgba(7, 148, 85, 0.16);
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-critical: var(--critical);
+  --color-critical-soft: var(--critical-soft);
+  --color-high: var(--high);
+  --color-high-soft: var(--high-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+
+  --font-sans: var(--font-ibm-plex-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --shadow-panel: 0 1px 2px rgba(18, 26, 43, 0.04), 0 8px 24px rgba(18, 26, 43, 0.04);
+  --radius-panel: 16px;
+  --radius-tile: 10px;
+  --radius-chip: 6px;
 }
 
 body {
-  background-color: #f8fafc;
-  color: #0f172a;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
   overflow-x: hidden;
   margin: 0;
   padding: 0;
 }
 
-/* Crisp Clean SaaS Card Styling */
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.2;
+}
+
+/* Top-level panel utility */
 .saas-card {
-  background: #ffffff;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 1rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-panel);
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.saas-card:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -2px rgba(0, 0, 0, 0.03);
-}
-
-/* High-Contrast Code Terminal for Bytecode Disassembly */
+/* High-contrast code terminal for bytecode disassembly */
 .hex-terminal {
-  background: #090d16;
-  border: 1px solid #1e293b;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
+  background: var(--canvas);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-family: var(--font-mono);
 }
 
-/* Clean Minimal Scrollbar */
+/* Clean minimal scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--surface-2);
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--line);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--muted);
 }

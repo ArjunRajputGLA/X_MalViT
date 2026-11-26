@@ -94,22 +94,22 @@ export const Module2Dataset: React.FC = () => {
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Control Panel */}
-        <Card className="lg:col-span-1 border-slate-200/80 bg-white shadow-xs">
-          <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
-            <CardTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
-              <Database className="w-4 h-4 text-blue-600" />
+        <Card className="lg:col-span-1 overflow-hidden">
+          <CardHeader className="pb-4 border-b border-line bg-surface-2">
+            <CardTitle className="flex items-center gap-2">
+              <Database className="w-4 h-4 text-accent" />
               Threat Family Selector
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4 space-y-4">
+          <CardContent className="pt-6 space-y-4">
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1.5">
+              <label className="text-[13px] font-medium text-ink block mb-1.5">
                 Malware Threat Category
               </label>
               <select
                 value={selectedCategory}
                 onChange={(e) => handleCategoryChange(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all font-medium"
+                className="w-full bg-surface-2 border border-line rounded-chip px-3 py-2 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors font-medium"
               >
                 {Object.keys(categories).map((cat) => (
                   <option key={cat} value={cat}>
@@ -120,13 +120,13 @@ export const Module2Dataset: React.FC = () => {
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1.5">
+              <label className="text-[13px] font-medium text-ink block mb-1.5">
                 Target Malware Family
               </label>
               <select
                 value={selectedFamily}
                 onChange={(e) => handleFamilyChange(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all font-mono"
+                className="w-full bg-surface-2 border border-line rounded-chip px-3 py-2 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors font-mono"
               >
                 {(categories[selectedCategory] || []).map((fam) => (
                   <option key={fam} value={fam}>
@@ -136,28 +136,28 @@ export const Module2Dataset: React.FC = () => {
               </select>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs space-y-2 text-slate-600">
+            <div className="p-4 rounded-tile bg-surface-2 border border-line text-[13px] space-y-2.5 text-muted">
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 font-medium">Classification:</span>
-                <span className="font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/50">
+                <span className="font-medium">Classification:</span>
+                <span className="font-semibold text-ink bg-surface px-2 py-0.5 rounded-chip border border-line text-[12px]">
                   {selectedCategory}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 font-medium">Family Variant:</span>
-                <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200/50">
+                <span className="font-medium">Family Variant:</span>
+                <span className="font-mono font-medium text-accent bg-accent-soft px-2 py-0.5 rounded-chip border border-accent/20 text-[12px]">
                   {selectedFamily}
                 </span>
               </div>
-              <div className="pt-1 text-[11px] text-slate-500 border-t border-slate-200/60 leading-snug">
-                <span className="font-semibold text-slate-700">Typical Anatomy:</span> Repetitive unpacking loops, polymorphic shellcode, and high-entropy encrypted payloads.
+              <div className="pt-2 text-[12px] text-muted border-t border-line leading-[1.5]">
+                <span className="font-semibold text-ink">Typical Anatomy:</span> Repetitive unpacking loops, polymorphic shellcode, and high-entropy encrypted payloads.
               </div>
             </div>
 
             <Button
               onClick={handleSynthesizeNew}
               disabled={loadingSample}
-              className="w-full shadow-xs"
+              className="w-full"
               variant="cyber"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${loadingSample ? "animate-spin" : ""}`} />
@@ -167,48 +167,48 @@ export const Module2Dataset: React.FC = () => {
         </Card>
 
         {/* Right Preview & Histogram Panel */}
-        <Card className="lg:col-span-2 border-slate-200/80 bg-white shadow-xs">
-          <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
-              <BarChart2 className="w-4 h-4 text-blue-600" />
-              Visual Texture Matrix & Byte Frequency Histogram
+        <Card className="lg:col-span-2 overflow-hidden">
+          <CardHeader className="pb-4 border-b border-line bg-surface-2 flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <BarChart2 className="w-4 h-4 text-accent" />
+              Visual Texture Matrix &amp; Byte Frequency Histogram
             </CardTitle>
-            <Badge variant="cyber">{selectedFamily}</Badge>
+            <Badge variant="cyber" className="font-mono">{selectedFamily}</Badge>
           </CardHeader>
-          <CardContent className="pt-4">
+          <CardContent className="pt-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
               {/* Visual Texture Image */}
               <div className="flex flex-col items-center">
-                <div className="text-xs text-slate-600 font-semibold mb-2">
+                <div className="text-[13px] text-ink font-medium mb-2 tabular-nums">
                   224x224 Grayscale Byte Matrix
                 </div>
-                <div className="relative w-56 h-56 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shadow-inner flex items-center justify-center p-1">
+                <div className="relative w-56 h-56 rounded-tile overflow-hidden border border-line bg-surface-2 flex items-center justify-center p-1">
                   {sampleData?.image_data_url ? (
                     <img
                       src={sampleData.image_data_url}
                       alt={selectedFamily}
-                      className="w-full h-full object-cover rounded-lg"
+                      className="w-full h-full object-cover rounded-chip"
                     />
                   ) : (
-                    <div className="text-xs text-slate-400 font-mono">Loading texture...</div>
+                    <div className="text-[13px] text-muted">Loading texture...</div>
                   )}
                 </div>
-                <div className="text-[11px] text-slate-500 mt-2 font-mono">
+                <div className="text-[12px] text-muted mt-2">
                   Opcode layout preserved in 2D grid
                 </div>
               </div>
 
               {/* Byte Frequency Histogram (SVG) */}
               <div className="flex flex-col">
-                <div className="flex items-center justify-between text-xs text-slate-600 font-semibold mb-2">
+                <div className="flex items-center justify-between text-[13px] text-ink font-medium mb-2">
                   <span>Byte Distribution (0-255)</span>
                   {sampleData?.histogram?.mean_entropy && (
-                    <span className="text-[11px] text-blue-700 font-mono font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-200/50">
+                    <span className="text-[12px] text-accent font-semibold bg-accent-soft px-2 py-0.5 rounded-chip border border-accent/20 tabular-nums">
                       Entropy: {sampleData.histogram.mean_entropy.toFixed(2)} bits
                     </span>
                   )}
                 </div>
-                <div className="h-56 w-full rounded-xl bg-slate-50 border border-slate-200 p-2.5 flex items-end justify-between gap-[2px]">
+                <div className="h-56 w-full rounded-tile bg-surface-2 border border-line p-3 flex items-end justify-between gap-[2px]">
                   {sampleData?.histogram?.counts ? (
                     sampleData.histogram.counts.map((count, idx) => {
                       const heightPercent = Math.max(4, (count / maxHistCount) * 100);
@@ -217,17 +217,17 @@ export const Module2Dataset: React.FC = () => {
                           key={idx}
                           title={`Bin ${idx * 4}-${(idx + 1) * 4}: ${count} bytes`}
                           style={{ height: `${heightPercent}%` }}
-                          className="flex-1 bg-blue-500 hover:bg-blue-600 transition-all rounded-t-sm"
+                          className="flex-1 bg-accent hover:bg-accent/80 transition-colors rounded-t-[2px]"
                         />
                       );
                     })
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">
+                    <div className="w-full h-full flex items-center justify-center text-[13px] text-muted">
                       Computing histogram...
                     </div>
                   )}
                 </div>
-                <div className="flex justify-between text-[10px] text-slate-400 font-mono mt-1.5 px-1 font-semibold">
+                <div className="flex justify-between text-[12px] text-muted font-mono mt-1.5 px-1">
                   <span>0x00 (Null)</span>
                   <span>0x7F (Mid)</span>
                   <span>0xFF (High)</span>
@@ -239,54 +239,54 @@ export const Module2Dataset: React.FC = () => {
       </div>
 
       {/* Complete Malimg Ground-Truth Distribution Table */}
-      <Card className="border-slate-200/80 bg-white shadow-xs">
-        <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <CardTitle className="text-base text-slate-800 flex items-center gap-2 font-bold">
-            <Shield className="w-4 h-4 text-blue-600" />
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-4 border-b border-line bg-surface-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-2 tabular-nums">
+            <Shield className="w-4 h-4 text-accent" />
             Complete Malimg Ground-Truth Distribution (9,339 Binaries across 25 Families)
           </CardTitle>
           <div className="relative w-full sm:w-64">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-muted" />
             <input
               type="text"
               placeholder="Search family or type..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all"
+              className="w-full bg-surface border border-line rounded-chip pl-8 pr-3 py-1.5 text-[13px] text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors"
             />
           </div>
         </CardHeader>
         <CardContent className="pt-2">
           <div className="overflow-x-auto max-h-72 overflow-y-auto">
-            <table className="w-full text-xs text-left text-slate-700">
-              <thead className="text-[11px] uppercase bg-slate-50 text-slate-500 sticky top-0 border-b border-slate-200 font-semibold">
+            <table className="w-full text-[13px] text-left text-ink tabular-nums">
+              <thead className="text-[13px] bg-surface-2 text-muted sticky top-0 border-b border-line font-medium">
                 <tr>
-                  <th className="py-2.5 px-3">Family Name</th>
-                  <th className="py-2.5 px-3">Threat Type</th>
-                  <th className="py-2.5 px-3">Benchmark Samples</th>
-                  <th className="py-2.5 px-3">Risk Rating</th>
-                  <th className="py-2.5 px-3">Action</th>
+                  <th className="py-2.5 px-3 font-medium">Family name</th>
+                  <th className="py-2.5 px-3 font-medium">Threat type</th>
+                  <th className="py-2.5 px-3 font-medium">Benchmark samples</th>
+                  <th className="py-2.5 px-3 font-medium">Risk rating</th>
+                  <th className="py-2.5 px-3 font-medium">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
+              <tbody className="divide-y divide-line font-normal">
                 {filteredDist.map((item) => (
-                  <tr key={item.family} className="hover:bg-blue-50/40 transition-colors">
-                    <td className="py-2 px-3 font-mono text-blue-700 font-bold">{item.family}</td>
-                    <td className="py-2 px-3 text-slate-600">{item.category}</td>
-                    <td className="py-2 px-3 font-mono text-slate-700">{item.samples.toLocaleString()}</td>
-                    <td className="py-2 px-3">
-                      <Badge variant={item.risk === "CRITICAL" ? "destructive" : "warning"}>
+                  <tr key={item.family} className="hover:bg-surface-2 transition-colors">
+                    <td className="py-2.5 px-3 font-mono text-accent font-medium">{item.family}</td>
+                    <td className="py-2.5 px-3 text-muted">{item.category}</td>
+                    <td className="py-2.5 px-3 text-ink font-medium tabular-nums">{item.samples.toLocaleString()}</td>
+                    <td className="py-2.5 px-3">
+                      <Badge variant={item.risk === "CRITICAL" ? "destructive" : "warning"} className="lowercase first-letter:uppercase">
                         {item.risk}
                       </Badge>
                     </td>
-                    <td className="py-2 px-3">
+                    <td className="py-2.5 px-3">
                       <button
                         onClick={() => {
                           setSelectedCategory(item.category);
                           setSelectedFamily(item.family);
                           loadFamilySample(item.family);
                         }}
-                        className="text-[11px] text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+                        className="text-[13px] text-accent hover:underline font-medium cursor-pointer"
                       >
                         Inspect Texture &rarr;
                       </button>

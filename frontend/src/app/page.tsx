@@ -33,7 +33,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex bg-[#edf2ef] text-slate-900">
+    <div className="h-screen w-screen overflow-hidden flex bg-canvas text-ink">
       {/* Base Layer: Left Collapsible Sidebar with Animated Spring Width */}
       <SidebarNav
         activeModule={activeModule}
@@ -55,7 +55,7 @@ export default function Home() {
         />
 
         {/* Elevated Top Layer: Stretches automatically to fill all available width */}
-        <main className="flex-1 min-w-0 bg-white rounded-l-[36px] p-6 lg:p-8 border-y border-l border-slate-200/70 shadow-[0_-4px_24px_rgba(0,0,0,0.02)] overflow-y-auto">
+        <main className="flex-1 min-w-0 bg-surface rounded-l-panel p-6 border-y border-l border-line shadow-panel overflow-y-auto">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeModule}

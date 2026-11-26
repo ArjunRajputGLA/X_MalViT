@@ -94,23 +94,23 @@ export const Module5Classifier: React.FC = () => {
       className="space-y-6"
     >
       {/* Control Configuration Panel */}
-      <Card className="border-slate-200/80 bg-white shadow-xs">
-        <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
-          <CardTitle className="text-base text-slate-800 flex items-center gap-2 font-bold">
-            <SearchCode className="w-5 h-5 text-blue-600" />
-            Threat Input & Grad-CAM Heatmap Configuration
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-4 border-b border-line bg-surface-2">
+          <CardTitle className="flex items-center gap-2">
+            <SearchCode className="w-5 h-5 text-accent" />
+            Threat Input &amp; Grad-CAM Heatmap Configuration
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-4 space-y-4">
+        <CardContent className="pt-6 space-y-4">
           {/* Source Tabs */}
-          <div className="flex bg-slate-100 p-1 rounded-xl w-fit gap-1">
+          <div className="flex bg-surface-2 border border-line p-1 rounded-tile w-fit gap-1">
             <button
               type="button"
               onClick={() => setInputMode("bank")}
-              className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-4 py-2 rounded-chip text-[13px] font-medium transition-colors cursor-pointer ${
                 inputMode === "bank"
-                  ? "bg-white text-blue-700 shadow-xs font-bold"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-surface text-accent font-semibold border border-line"
+                  : "text-muted hover:text-ink border border-transparent"
               }`}
             >
               Malimg Sample Bank
@@ -118,10 +118,10 @@ export const Module5Classifier: React.FC = () => {
             <button
               type="button"
               onClick={() => setInputMode("upload")}
-              className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-4 py-2 rounded-chip text-[13px] font-medium transition-colors cursor-pointer ${
                 inputMode === "upload"
-                  ? "bg-white text-blue-700 shadow-xs font-bold"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-surface text-accent font-semibold border border-line"
+                  : "text-muted hover:text-ink border border-transparent"
               }`}
             >
               Upload Custom Executable Image
@@ -131,13 +131,13 @@ export const Module5Classifier: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
             {inputMode === "bank" ? (
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1.5">
+                <label className="text-[13px] font-medium text-ink block mb-1.5">
                   Select Target Malware Sample:
                 </label>
                 <select
                   value={selectedFamily}
                   onChange={(e) => setSelectedFamily(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 font-mono transition-all"
+                  className="w-full bg-surface-2 border border-line rounded-chip px-3 py-2 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent font-mono transition-colors"
                 >
                   {families.map((fam) => (
                     <option key={fam} value={fam}>
@@ -148,19 +148,19 @@ export const Module5Classifier: React.FC = () => {
               </div>
             ) : (
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1.5">
+                <label className="text-[13px] font-medium text-ink block mb-1.5">
                   Upload Binary Grayscale File (.png, .jpg):
                 </label>
-                <div className="border-2 border-dashed border-slate-200 hover:border-blue-400 rounded-xl p-3 text-center bg-slate-50/50 cursor-pointer transition-all">
+                <div className="border-2 border-dashed border-line hover:border-accent rounded-tile p-3 text-center bg-surface-2 cursor-pointer transition-colors">
                   <input
                     type="file"
                     accept="image/png,image/jpeg"
                     onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
-                    className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                    className="block w-full text-[13px] text-muted file:mr-2 file:py-1 file:px-2.5 file:rounded-chip file:border-0 file:text-[12px] file:font-medium file:bg-accent-soft file:text-accent hover:file:bg-accent-soft/80 cursor-pointer"
                   />
                   {uploadedFile && (
-                    <div className="text-[11px] text-emerald-600 mt-1 font-mono font-medium">
-                      Selected: {uploadedFile.name} ({(uploadedFile.size / 1024).toFixed(1)} KB)
+                    <div className="text-[12px] text-ok mt-1.5 font-medium tabular-nums">
+                      Selected: <span className="font-mono">{uploadedFile.name}</span> ({(uploadedFile.size / 1024).toFixed(1)} KB)
                     </div>
                   )}
                 </div>
@@ -168,13 +168,13 @@ export const Module5Classifier: React.FC = () => {
             )}
 
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1.5">
+              <label className="text-[13px] font-medium text-ink block mb-1.5">
                 Grad-CAM Color Gradient Map:
               </label>
               <select
                 value={colormap}
                 onChange={(e) => setColormap(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 font-medium transition-all"
+                className="w-full bg-surface-2 border border-line rounded-chip px-3 py-2 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent font-medium transition-colors"
               >
                 <option value="jet">Jet (Classic Cyber Rainbow)</option>
                 <option value="plasma">Plasma (High-Contrast Purple-Yellow)</option>
@@ -187,7 +187,7 @@ export const Module5Classifier: React.FC = () => {
           <Button
             onClick={handleRunInference}
             disabled={isInferring}
-            className="w-full shadow-sm"
+            className="w-full"
             variant="cyber"
             size="lg"
           >
@@ -209,29 +209,29 @@ export const Module5Classifier: React.FC = () => {
           >
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Top-1 Identified Card & Likelihood Table */}
-              <Card className="border-slate-200/80 bg-white shadow-xs">
-                <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
-                  <div className="flex items-center justify-between">
-                    <Badge variant="destructive" className="font-mono uppercase text-xs">
-                      THREAT DETECTED
+              <Card className="overflow-hidden">
+                <CardHeader className="pb-4 border-b border-line bg-surface-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge variant="destructive" className="text-[12px] font-medium">
+                      Threat detected
                     </Badge>
-                    <span className="text-xs font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 font-semibold flex items-center gap-1">
-                      <Zap className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-[12px] text-ok bg-ok-soft px-2 py-0.5 rounded-chip border border-ok/20 font-medium flex items-center gap-1 tabular-nums">
+                      <Zap className="w-3.5 h-3.5 text-ok" />
                       {predictionResult.latency_ms.toFixed(1)} ms ({predictionResult.device_name || (predictionResult.device?.includes("cuda") ? "CUDA GPU" : "CPU Host")})
                     </span>
                   </div>
-                  <CardTitle className="text-2xl font-black text-slate-900 mt-2 font-mono tracking-tight">
+                  <CardTitle className="text-[28px] leading-[1.2] font-semibold text-ink mt-2 font-mono">
                     {predictionResult.top_family}
                   </CardTitle>
-                  <div className="text-xs text-slate-600 font-medium">
-                    Category: <span className="text-blue-700 font-bold">{predictionResult.category}</span>
+                  <div className="text-[13px] text-muted font-medium">
+                    Category: <span className="text-accent font-semibold">{predictionResult.category}</span>
                   </div>
                 </CardHeader>
-                <CardContent className="pt-4 space-y-4">
+                <CardContent className="pt-6 space-y-4">
                   <div>
-                    <div className="flex justify-between text-xs font-mono text-slate-700 mb-1.5 font-medium">
+                    <div className="flex justify-between text-[13px] text-ink mb-1.5 font-medium tabular-nums">
                       <span>Confidence Score:</span>
-                      <span className="text-blue-700 font-bold">
+                      <span className="text-accent font-semibold">
                         {(predictionResult.confidence * 100).toFixed(2)}%
                       </span>
                     </div>
@@ -239,24 +239,24 @@ export const Module5Classifier: React.FC = () => {
                   </div>
 
                   <div>
-                    <div className="text-xs font-bold text-slate-700 mb-2">
+                    <div className="text-[13px] font-semibold text-ink mb-2">
                       Top-5 Family Likelihood Ranking
                     </div>
-                    <div className="overflow-x-auto rounded-xl border border-slate-200">
-                      <table className="w-full text-xs text-left">
-                        <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-semibold border-b border-slate-200">
+                    <div className="overflow-x-auto rounded-tile border border-line">
+                      <table className="w-full text-[13px] text-left tabular-nums">
+                        <thead className="bg-surface-2 text-muted text-[13px] font-medium border-b border-line">
                           <tr>
-                            <th className="py-2 px-3">Family Variant</th>
-                            <th className="py-2 px-3">Likelihood</th>
-                            <th className="py-2 px-3">Category</th>
+                            <th className="py-2 px-3 font-medium">Family variant</th>
+                            <th className="py-2 px-3 font-medium">Likelihood</th>
+                            <th className="py-2 px-3 font-medium">Category</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 font-mono text-slate-700 font-medium">
+                        <tbody className="divide-y divide-line text-ink font-normal">
                           {predictionResult.top_5.map((item: any, idx: number) => (
-                            <tr key={idx} className={idx === 0 ? "bg-blue-50/70 text-blue-900 font-bold" : ""}>
-                              <td className="py-1.5 px-3">{item.family}</td>
-                              <td className="py-1.5 px-3">{(item.confidence * 100).toFixed(2)}%</td>
-                              <td className="py-1.5 px-3 text-slate-500 font-sans">{item.category}</td>
+                            <tr key={idx} className={idx === 0 ? "bg-accent-soft/60 text-ink font-semibold" : "hover:bg-surface-2"}>
+                              <td className="py-2 px-3 font-mono">{item.family}</td>
+                              <td className="py-2 px-3 tabular-nums">{(item.confidence * 100).toFixed(2)}%</td>
+                              <td className="py-2 px-3 text-muted">{item.category}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -267,50 +267,50 @@ export const Module5Classifier: React.FC = () => {
               </Card>
 
               {/* Visual Attribution 3-Panel Card */}
-              <Card className="border-slate-200/80 bg-white shadow-xs">
-                <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
-                  <CardTitle className="text-base text-slate-800 flex items-center gap-2 font-bold">
-                    <Flame className="w-5 h-5 text-rose-500" />
+              <Card className="overflow-hidden">
+                <CardHeader className="pb-4 border-b border-line bg-surface-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <Flame className="w-5 h-5 text-critical" />
                     Grad-CAM Visual Attribution (XAI)
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-4">
+                <CardContent className="pt-6">
                   <div className="grid grid-cols-3 gap-3">
                     <div className="text-center">
-                      <div className="text-[11px] font-bold text-slate-500 mb-1.5">1. Raw Binary</div>
-                      <div className="aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 p-1 shadow-inner">
+                      <div className="text-[12px] font-medium text-muted mb-1.5">1. Raw Binary</div>
+                      <div className="aspect-square rounded-tile overflow-hidden border border-line bg-surface-2 p-1">
                         <img
                           src={predictionResult.raw_image_url}
                           alt="Raw Binary"
-                          className="w-full h-full object-cover rounded-lg"
+                          className="w-full h-full object-cover rounded-chip"
                         />
                       </div>
                     </div>
 
                     <div className="text-center">
-                      <div className="text-[11px] font-bold text-slate-500 mb-1.5">2. Activation Map</div>
-                      <div className="aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 p-1 shadow-inner">
+                      <div className="text-[12px] font-medium text-muted mb-1.5">2. Activation Map</div>
+                      <div className="aspect-square rounded-tile overflow-hidden border border-line bg-surface-2 p-1">
                         <img
                           src={predictionResult.heatmap_url}
                           alt="Activation Map"
-                          className="w-full h-full object-cover rounded-lg"
+                          className="w-full h-full object-cover rounded-chip"
                         />
                       </div>
                     </div>
 
                     <div className="text-center">
-                      <div className="text-[11px] font-bold text-slate-500 mb-1.5">3. Forensic Overlay</div>
-                      <div className="aspect-square rounded-xl overflow-hidden border-2 border-blue-500 bg-slate-50 p-1 shadow-md shadow-blue-500/10">
+                      <div className="text-[12px] font-medium text-muted mb-1.5">3. Forensic Overlay</div>
+                      <div className="aspect-square rounded-tile overflow-hidden border-2 border-accent bg-surface-2 p-1">
                         <img
                           src={predictionResult.overlay_url}
                           alt="Forensic Overlay"
-                          className="w-full h-full object-cover rounded-lg"
+                          className="w-full h-full object-cover rounded-chip"
                         />
                       </div>
                     </div>
                   </div>
 
-                  <div className="text-[11px] text-slate-500 mt-3 text-center font-medium">
+                  <div className="text-[12px] text-muted mt-3 text-center font-medium">
                     Red pixels highlight the exact PE hotspot activating the classification decision.
                   </div>
                 </CardContent>
@@ -318,48 +318,48 @@ export const Module5Classifier: React.FC = () => {
             </div>
 
             {/* Reverse-Engineered PE Section Disassembly */}
-            <Card className="border-slate-200/80 bg-white shadow-xs">
-              <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
-                <CardTitle className="text-base text-slate-800 flex items-center gap-2 font-bold">
-                  <Layers className="w-5 h-5 text-blue-600" />
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-4 border-b border-line bg-surface-2">
+                <CardTitle className="flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-accent" />
                   Reverse-Engineered PE Section Disassembly
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-4 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-center">
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                    <div className="text-[10px] text-slate-500 uppercase font-semibold font-sans">PE Section Pinpointed</div>
-                    <div className="text-base font-bold text-blue-700 mt-1 font-mono">
+              <CardContent className="pt-6 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                  <div className="p-4 rounded-tile bg-surface-2 border border-line">
+                    <div className="text-[12px] text-muted font-medium">PE section pinpointed</div>
+                    <div className="text-[14px] font-medium text-ink mt-1 font-mono">
                       {predictionResult.pe_analysis?.section}
                     </div>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                    <div className="text-[10px] text-slate-500 uppercase font-semibold font-sans">Virtual Address Offset</div>
-                    <div className="text-base font-bold text-indigo-700 mt-1 font-mono">
+                  <div className="p-4 rounded-tile bg-surface-2 border border-line">
+                    <div className="text-[12px] text-muted font-medium">Virtual address offset</div>
+                    <div className="text-[14px] font-medium text-accent mt-1 font-mono tabular-nums">
                       {predictionResult.pe_analysis?.virtual_address}
                     </div>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                    <div className="text-[10px] text-slate-500 uppercase font-semibold font-sans">Attention Peak Weight</div>
-                    <div className="text-base font-bold text-emerald-700 mt-1 font-mono">
+                  <div className="p-4 rounded-tile bg-surface-2 border border-line">
+                    <div className="text-[12px] text-muted font-medium">Attention peak weight</div>
+                    <div className="text-[16px] leading-[1.2] font-semibold text-ok mt-1 tabular-nums">
                       {predictionResult.pe_analysis?.attention_weight.toFixed(4)}
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-blue-50/70 border-l-4 border-blue-600 text-xs text-slate-700 leading-relaxed">
-                  <strong className="text-blue-950 font-bold">Forensic Attribution:</strong> {predictionResult.pe_analysis?.forensic_meaning}. The model isolated this bytecode cluster without requiring dynamic sandbox execution.
+                <div className="p-4 rounded-tile bg-accent-soft/60 border-l-4 border-accent text-[13px] text-ink leading-[1.5]">
+                  <strong className="text-ink font-semibold">Forensic Attribution:</strong> {predictionResult.pe_analysis?.forensic_meaning}. The model isolated this bytecode cluster without requiring dynamic sandbox execution.
                 </div>
 
-                {/* Hex Dump Inspector - Kept high contrast dark terminal for true binary disassembly viewing */}
+                {/* Hex Dump Inspector - Dark token scope */}
                 <div>
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 mb-2 font-mono">
-                    <Terminal className="w-4 h-4 text-amber-500" />
+                  <div className="flex items-center gap-1.5 text-[13px] font-semibold text-ink mb-2">
+                    <Terminal className="w-4 h-4 text-high" />
                     Disassembly Hex-Dump Inspector (Around Hotspot Offset)
                   </div>
-                  <div className="hex-terminal rounded-xl p-4 text-[11px] font-mono overflow-x-auto text-sky-300">
+                  <div className="dark hex-terminal p-4 text-[12px] leading-[1.5] font-mono overflow-x-auto text-ink tabular-nums">
                     <pre>{predictionResult.hex_dump}</pre>
                   </div>
                 </div>

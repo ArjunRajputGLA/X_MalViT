@@ -58,52 +58,52 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   const currentMeta = MODULE_TITLES[activeModule] || MODULE_TITLES.briefing;
 
   return (
-    <header className="h-16 flex-shrink-0 bg-transparent px-6 lg:px-8 flex items-center justify-between z-20">
+    <header className="min-h-16 py-3 flex-shrink-0 bg-transparent px-6 flex items-center justify-between gap-4 z-20">
       {/* Left: Collapse Icon Toggle + Dynamic Title */}
-      <div className="flex items-center gap-3.5">
+      <div className="flex items-center gap-3.5 min-w-0">
         <button
           type="button"
           onClick={onToggleCollapse}
           title={isCollapsed ? "Expand Sidebar (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
-          className="w-8 h-8 rounded-lg bg-white border border-slate-200/80 hover:bg-emerald-50 text-slate-500 hover:text-emerald-700 shadow-2xs hover:shadow-xs flex items-center justify-center transition-all cursor-pointer active:scale-95 group"
+          className="w-8 h-8 rounded-chip bg-surface border border-line hover:bg-accent-soft text-muted hover:text-accent flex items-center justify-center transition-colors cursor-pointer active:scale-95 group flex-shrink-0"
         >
           {isCollapsed ? (
-            <PanelLeft className="w-4 h-4 text-emerald-600 transition-transform group-hover:scale-110" />
+            <PanelLeft className="w-4 h-4 text-accent transition-transform group-hover:scale-110" />
           ) : (
             <PanelLeftClose className="w-4 h-4 transition-transform group-hover:scale-110" />
           )}
         </button>
 
-        <div className="h-5 w-px bg-slate-200/80" />
+        <div className="h-5 w-px bg-line flex-shrink-0" />
 
-        <div>
-          <h1 className="text-base lg:text-lg font-bold text-slate-900 tracking-tight">
+        <div className="min-w-0">
+          <h1 className="text-[20px] sm:text-[28px] leading-[1.2] font-semibold text-ink truncate">
             {currentMeta.title}
           </h1>
-          <p className="text-[11px] text-slate-500 hidden md:block">
+          <p className="text-[13px] leading-[1.5] text-muted hidden md:block truncate">
             {currentMeta.subtitle}
           </p>
         </div>
       </div>
 
       {/* Right Controls: Live Hardware Status + Quick Action CTA */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2.5 flex-shrink-0">
         {systemStatus && (
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs text-[11px] font-mono">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-chip bg-surface border border-line text-[13px] font-medium tabular-nums">
             <span className={cn(
               "w-2 h-2 rounded-full",
-              systemStatus.cuda_available ? "bg-emerald-500" : "bg-blue-500"
+              systemStatus.cuda_available ? "bg-ok" : "bg-accent"
             )} />
-            <span className="font-semibold text-slate-700">{systemStatus.cuda_available ? "CUDA GPU" : "CPU Host"}</span>
-            <span className="text-slate-300">•</span>
-            <span className="text-slate-500">{systemStatus.has_checkpoint ? "Checkpoint Ready" : "Awaiting Weights"}</span>
+            <span className="font-medium text-ink">{systemStatus.cuda_available ? "CUDA GPU" : "CPU Host"}</span>
+            <span className="text-line">•</span>
+            <span className="text-muted">{systemStatus.has_checkpoint ? "Checkpoint Ready" : "Awaiting Weights"}</span>
           </div>
         )}
 
         {/* Quick Triage CTA */}
         <button
           onClick={() => onNavigate("classifier")}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-500/20 transition-all cursor-pointer active:scale-95"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-chip text-[13px] font-medium bg-accent hover:bg-accent/90 text-white transition-colors cursor-pointer active:scale-95"
         >
           <Sparkles className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Run Threat Triage</span>

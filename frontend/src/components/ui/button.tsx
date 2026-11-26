@@ -12,19 +12,18 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] cursor-pointer",
+          "inline-flex items-center justify-center whitespace-nowrap rounded-chip text-[14px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99] cursor-pointer",
           {
-            "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow": variant === "default",
-            "bg-rose-600 text-white hover:bg-rose-700 shadow-sm hover:shadow": variant === "destructive",
-            "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 shadow-xs": variant === "outline",
-            "bg-slate-100 text-slate-800 hover:bg-slate-200": variant === "secondary",
-            "hover:bg-slate-100 text-slate-600 hover:text-slate-900": variant === "ghost",
-            "bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-sm shadow-emerald-500/20 hover:from-emerald-700 hover:to-teal-700 hover:shadow-md hover:shadow-emerald-500/25": variant === "cyber",
+            "bg-accent text-white hover:bg-accent/90": variant === "default" || variant === "cyber",
+            "bg-critical text-white hover:bg-critical/90": variant === "destructive",
+            "border border-line bg-surface text-ink hover:bg-surface-2": variant === "outline",
+            "bg-surface-2 text-ink border border-line hover:bg-line/50": variant === "secondary",
+            "hover:bg-surface-2 text-muted hover:text-ink": variant === "ghost",
           },
           {
             "h-10 px-4 py-2": size === "default",
-            "h-8 rounded-md px-3 text-xs": size === "sm",
-            "h-11 rounded-lg px-6 text-base": size === "lg",
+            "h-8 px-3 text-[13px]": size === "sm",
+            "h-11 px-6 text-[14px] font-semibold": size === "lg",
             "h-10 w-10 p-0": size === "icon",
           },
           className

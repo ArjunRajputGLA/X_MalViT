@@ -5,10 +5,10 @@ import { cn } from "@/lib/utils";
 export const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> & { indicatorColor?: string }
->(({ className, value, indicatorColor = "bg-gradient-to-r from-blue-500 to-indigo-600", ...props }, ref) => (
+>(({ className, value, indicatorColor = "bg-accent", ...props }, ref) => (
   <ProgressPrimitive.Root
     ref={ref}
-    className={cn("relative h-2.5 w-full overflow-hidden rounded-full bg-slate-100 border border-slate-200", className)}
+    className={cn("relative h-2.5 w-full overflow-hidden rounded-chip bg-surface-2 border border-line", className)}
     {...props}
   >
     <ProgressPrimitive.Indicator

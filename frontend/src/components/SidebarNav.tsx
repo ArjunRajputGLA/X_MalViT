@@ -77,7 +77,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             <div 
               onClick={onToggleCollapse}
               title={isCollapsed ? "Expand Sidebar (Ctrl+B)" : "X-MalViT Threat Intelligence"}
-              className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 flex-shrink-0 cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+              className="w-10 h-10 rounded-tile bg-accent flex items-center justify-center text-white flex-shrink-0 cursor-pointer hover:opacity-90 active:scale-95 transition-all"
             >
               <ShieldCheck className="w-5 h-5" />
             </div>
@@ -91,11 +91,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                   transition={{ duration: 0.18 }}
                   className="truncate"
                 >
-                  <div className="font-extrabold text-base tracking-tight text-slate-900 leading-tight truncate">
+                  <div className="font-semibold text-[16px] leading-[1.2] text-ink truncate">
                     X-MalViT
                   </div>
-                  <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider truncate">
-                    Threat Intelligence
+                  <div className="text-[12px] font-medium text-muted truncate mt-0.5">
+                    Threat intelligence
                   </div>
                 </motion.div>
               )}
@@ -103,16 +103,16 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
           </div>
         </div>
 
-        {/* Section 1: Command Center */}
-        <div className="mb-5">
+        {/* Section 1: Command center */}
+        <div className="mb-6">
           {!isCollapsed ? (
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 mb-2 font-mono">
-              Command Center
+            <div className="text-[12px] font-medium text-muted px-3 mb-2">
+              Command center
             </div>
           ) : (
-            <div className="h-px bg-slate-200/60 my-2 mx-1" />
+            <div className="h-px bg-line my-2 mx-1" />
           )}
-          <nav className="space-y-1.5">
+          <nav className="space-y-1">
             {COMMAND_CENTER_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = activeModule === item.key;
@@ -122,25 +122,25 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                   onClick={() => onSelectModule(item.key)}
                   title={isCollapsed ? `${item.label} (${item.tag || ""})` : undefined}
                   className={cn(
-                    "w-full flex items-center rounded-xl text-xs font-medium transition-all duration-150 cursor-pointer",
+                    "w-full flex items-center rounded-tile text-[13px] font-medium transition-colors duration-150 cursor-pointer",
                     isCollapsed 
                       ? "justify-center p-2.5" 
-                      : "justify-between px-3.5 py-2.5 text-left",
+                      : "justify-between px-3 py-2 text-left",
                     isActive
-                      ? "bg-white text-emerald-800 font-bold shadow-xs border border-slate-200/60"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                      ? "bg-surface text-accent font-semibold border border-line"
+                      : "text-muted hover:text-ink hover:bg-surface/60 border border-transparent"
                   )}
                 >
                   <div className="flex items-center gap-2.5 truncate">
-                    <Icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-emerald-600" : "text-slate-400")} />
+                    <Icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-accent" : "text-muted")} />
                     {!isCollapsed && (
                       <span className="truncate">{item.label}</span>
                     )}
                   </div>
                   {!isCollapsed && item.tag && (
                     <span className={cn(
-                      "text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold",
-                      isActive ? "bg-emerald-50 text-emerald-800 border border-emerald-200/50" : "bg-slate-200/60 text-slate-600"
+                      "text-[12px] px-1.5 py-0.5 rounded-chip font-medium tabular-nums",
+                      isActive ? "bg-accent-soft text-accent" : "bg-surface text-muted border border-line"
                     )}>
                       {item.tag}
                     </span>
@@ -151,16 +151,16 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
           </nav>
         </div>
 
-        {/* Section 2: Analytics & Explainability */}
-        <div className="mb-5">
+        {/* Section 2: Analytics & explainability */}
+        <div className="mb-6">
           {!isCollapsed ? (
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 mb-2 font-mono">
-              Analytics & XAI
+            <div className="text-[12px] font-medium text-muted px-3 mb-2">
+              Analytics &amp; XAI
             </div>
           ) : (
-            <div className="h-px bg-slate-200/60 my-2 mx-1" />
+            <div className="h-px bg-line my-2 mx-1" />
           )}
-          <nav className="space-y-1.5">
+          <nav className="space-y-1">
             {ANALYTICS_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = activeModule === item.key;
@@ -170,25 +170,25 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                   onClick={() => onSelectModule(item.key)}
                   title={isCollapsed ? `${item.label} (${item.tag || ""})` : undefined}
                   className={cn(
-                    "w-full flex items-center rounded-xl text-xs font-medium transition-all duration-150 cursor-pointer",
+                    "w-full flex items-center rounded-tile text-[13px] font-medium transition-colors duration-150 cursor-pointer",
                     isCollapsed 
                       ? "justify-center p-2.5" 
-                      : "justify-between px-3.5 py-2.5 text-left",
+                      : "justify-between px-3 py-2 text-left",
                     isActive
-                      ? "bg-white text-emerald-800 font-bold shadow-xs border border-slate-200/60"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                      ? "bg-surface text-accent font-semibold border border-line"
+                      : "text-muted hover:text-ink hover:bg-surface/60 border border-transparent"
                   )}
                 >
                   <div className="flex items-center gap-2.5 truncate">
-                    <Icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-emerald-600" : "text-slate-400")} />
+                    <Icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-accent" : "text-muted")} />
                     {!isCollapsed && (
                       <span className="truncate">{item.label}</span>
                     )}
                   </div>
                   {!isCollapsed && item.tag && (
                     <span className={cn(
-                      "text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold",
-                      isActive ? "bg-emerald-50 text-emerald-800 border border-emerald-200/50" : "bg-slate-200/60 text-slate-600"
+                      "text-[12px] px-1.5 py-0.5 rounded-chip font-medium tabular-nums",
+                      isActive ? "bg-accent-soft text-accent" : "bg-surface text-muted border border-line"
                     )}>
                       {item.tag}
                     </span>
@@ -209,25 +209,25 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
               target="_blank"
               rel="noopener noreferrer"
               title="X-MalViT: IEEE Conference Paper (Keshav Agrawal & Arjun S. Rajput - GLA University)"
-              className="w-10 h-10 rounded-xl bg-white hover:bg-emerald-600 text-slate-700 hover:text-white border border-slate-200/80 hover:border-emerald-600 flex flex-col items-center justify-center transition-all shadow-2xs group cursor-pointer"
+              className="w-10 h-10 rounded-tile bg-surface hover:bg-accent text-ink hover:text-white border border-line hover:border-accent flex flex-col items-center justify-center transition-colors group cursor-pointer"
             >
-              <FileText className="w-4 h-4 text-emerald-600 group-hover:text-white transition-colors" />
-              <span className="text-[7.5px] font-black uppercase tracking-tight text-slate-500 group-hover:text-white font-mono mt-0.5">
+              <FileText className="w-4 h-4 text-accent group-hover:text-white transition-colors" />
+              <span className="text-[9px] font-semibold text-muted group-hover:text-white mt-0.5 leading-none">
                 IEEE
               </span>
             </a>
           </div>
         ) : (
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-xs hover:border-emerald-300 transition-all">
+          <div className="bg-surface border border-line rounded-panel p-4 shadow-panel hover:border-accent/40 transition-colors">
             {/* Paper Title & Authors from X-MalViT_IEEE_Conference.pdf */}
-            <div className="mb-2.5">
-              <div className="text-xs font-bold text-slate-900 leading-snug line-clamp-1" title="X-MalViT: Explainable Vision Transformer">
+            <div className="mb-3">
+              <div className="text-[13px] font-semibold text-ink leading-[1.2] line-clamp-1" title="X-MalViT: Explainable Vision Transformer">
                 X-MalViT Framework
               </div>
-              <div className="text-[11px] text-slate-700 font-semibold truncate mt-0.5">
-                Keshav Agrawal & Arjun S. Rajput
+              <div className="text-[12px] text-ink font-medium truncate mt-1">
+                Keshav Agrawal &amp; Arjun S. Rajput
               </div>
-              <div className="text-[10px] text-slate-500 font-sans truncate mt-0.5" title="B.Tech Hons CS final year, GLA University">
+              <div className="text-[12px] text-muted truncate mt-0.5" title="B.Tech Hons CS final year, GLA University">
                 B.Tech Hons CS final year, GLA University
               </div>
             </div>
@@ -237,11 +237,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
               href="/api/documents/X-MalViT_IEEE_Conference.pdf"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl text-[11px] font-bold bg-slate-50 hover:bg-emerald-600 text-slate-700 hover:text-white border border-slate-200/80 hover:border-emerald-600 transition-all cursor-pointer group shadow-2xs"
+              className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-chip text-[12px] font-medium bg-surface-2 hover:bg-accent text-ink hover:text-white border border-line hover:border-accent transition-colors cursor-pointer group"
             >
-              <FileText className="w-3.5 h-3.5 text-emerald-600 group-hover:text-white transition-colors" />
+              <FileText className="w-3.5 h-3.5 text-accent group-hover:text-white transition-colors" />
               <span>Read IEEE Paper (PDF)</span>
-              <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-white transition-colors ml-auto" />
+              <ExternalLink className="w-3 h-3 text-muted group-hover:text-white transition-colors ml-auto" />
             </a>
           </div>
         )}
