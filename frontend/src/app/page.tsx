@@ -55,7 +55,7 @@ export default function Home() {
         />
 
         {/* Elevated Top Layer: Stretches automatically to fill all available width */}
-        <main className="flex-1 min-w-0 bg-white rounded-tl-[36px] p-6 lg:p-8 border-t border-l border-slate-200/70 shadow-[0_-4px_24px_rgba(0,0,0,0.02)] overflow-y-auto">
+        <main className="flex-1 min-w-0 bg-white rounded-l-[36px] p-6 lg:p-8 border-y border-l border-slate-200/70 shadow-[0_-4px_24px_rgba(0,0,0,0.02)] overflow-y-auto">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeModule}
