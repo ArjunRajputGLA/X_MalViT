@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Search, Database, BarChart2, Shield } from "lucide-react";
+import { RefreshCw, Search, Database, BarChart2, Shield, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export const Module2Dataset: React.FC = () => {
@@ -286,9 +286,10 @@ export const Module2Dataset: React.FC = () => {
                           setSelectedFamily(item.family);
                           loadFamilySample(item.family);
                         }}
-                        className="text-[13px] text-accent hover:underline font-medium cursor-pointer"
+                        className="inline-flex items-center gap-1 text-[13px] text-accent hover:underline font-medium cursor-pointer group"
                       >
-                        Inspect Texture &rarr;
+                        <span>Inspect Texture</span>
+                        <ChevronRight className="w-3.5 h-3.5 transition-transform duration-150 group-hover:translate-x-[2px]" />
                       </button>
                     </td>
                   </tr>

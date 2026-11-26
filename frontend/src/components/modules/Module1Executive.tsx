@@ -9,7 +9,7 @@ import {
   ShieldCheck, 
   FileCheck,
   Sparkles,
-  ArrowRight,
+  ChevronRight,
   Database,
   BarChart2,
   CheckCircle2,
@@ -205,9 +205,10 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
               </div>
               <button 
                 onClick={() => onNavigate && onNavigate("dataset")}
-                className="text-[13px] font-medium text-accent hover:underline cursor-pointer flex-shrink-0"
+                className="inline-flex items-center gap-1 text-[13px] font-medium text-accent hover:underline cursor-pointer flex-shrink-0 group"
               >
-                View All 25 Families &rarr;
+                <span>View All 25 Families</span>
+                <ChevronRight className="w-3.5 h-3.5 transition-transform duration-150 group-hover:translate-x-[2px]" />
               </button>
             </div>
 
@@ -353,10 +354,11 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
 
             <button
               onClick={() => onNavigate && onNavigate("classifier")}
-              className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-chip bg-accent hover:bg-accent/90 text-white text-[13px] font-medium transition-colors cursor-pointer active:scale-[0.99]"
+              className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-chip bg-accent hover:bg-accent/90 text-white text-[13px] font-medium transition-all cursor-pointer active:scale-[0.98] group outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              Launch Grad-CAM Classifier &rarr;
+              <span>Launch Grad-CAM Classifier</span>
+              <ChevronRight className="w-3.5 h-3.5 transition-transform duration-150 group-hover:translate-x-[2px]" />
             </button>
           </div>
 

@@ -43,9 +43,9 @@ export default function Home() {
         onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
       />
 
-      {/* Right Shell: Fixed Header + Fluidly Stretching Main Dashboard */}
-      <div className="flex-1 h-screen flex flex-col min-w-0 overflow-hidden bg-transparent">
-        {/* Base Layer: Top Header with Animated Collapse Toggle */}
+      {/* Right Shell: Scrollable Container with Sticky Header + Main Dashboard */}
+      <div className="flex-1 h-screen flex flex-col min-w-0 overflow-y-auto overflow-x-hidden bg-transparent relative">
+        {/* Sticky Top Header */}
         <TopHeader
           activeModule={activeModule}
           systemStatus={systemStatus}
@@ -55,7 +55,7 @@ export default function Home() {
         />
 
         {/* Elevated Top Layer: Stretches automatically to fill all available width */}
-        <main className="flex-1 min-w-0 bg-surface rounded-l-panel p-6 border-y border-l border-line shadow-panel overflow-y-auto">
+        <main className="flex-1 min-w-0 bg-surface rounded-l-panel p-6 border-y border-l border-line shadow-panel">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeModule}
