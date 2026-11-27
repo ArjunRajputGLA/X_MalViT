@@ -1,0 +1,14 @@
+.git/
+__pycache__/
+*.pyc
+*.pyo
+*.log
+*.bat
+data/sample/
+data/*.pt
+data/*.zip
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+verify_gpu.py
+populate_malimg_dataset.py

@@ -164,9 +164,16 @@ export const Module3Training: React.FC = () => {
     ]);
 
     try {
-      await fetch("http://127.0.0.1:8000/api/train/stop", { method: "POST" }).catch(() =>
-        fetch("/api/train/stop", { method: "POST" })
-      );
+      const isLocal =
+        typeof window !== "undefined" &&
+        (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+      if (isLocal) {
+        await fetch("http://127.0.0.1:8000/api/train/stop", { method: "POST" }).catch(() =>
+          fetch("/api/train/stop", { method: "POST" })
+        );
+      } else {
+        await fetch("/api/train/stop", { method: "POST" });
+      }
     } catch (err) {
       console.error("Error stopping training:", err);
     }
@@ -231,15 +238,26 @@ export const Module3Training: React.FC = () => {
 
     try {
       let res: Response;
-      // Connect directly to backend port 8000 to eliminate any Next.js proxy buffering, falling back to /api/train
-      try {
-        res = await fetch("http://127.0.0.1:8000/api/train", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: payload,
-        });
-      } catch (directErr) {
-        console.warn("Direct port 8000 connection failed, falling back to /api/train...", directErr);
+      const isLocal =
+        typeof window !== "undefined" &&
+        (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+      if (isLocal) {
+        // Connect directly to backend port 8000 locally to eliminate Next.js rewrite buffering, falling back to /api/train
+        try {
+          res = await fetch("http://127.0.0.1:8000/api/train", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: payload,
+          });
+        } catch (directErr) {
+          console.warn("Direct port 8000 connection failed, falling back to /api/train...", directErr);
+          res = await fetch("/api/train", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: payload,
+          });
+        }
+      } else {
         res = await fetch("/api/train", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

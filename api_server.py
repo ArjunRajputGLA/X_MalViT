@@ -590,7 +590,31 @@ def download_document(filename: str):
     file_path = next((p for p in candidates if os.path.exists(p)), None)
     if file_path is None:
         raise HTTPException(status_code=404, detail="Document not found")
-    return FileResponse(file_path, filename=filename)
+
+    ext = os.path.splitext(filename)[1].lower()
+    media_type = (
+        "application/pdf"
+        if ext == ".pdf"
+        else "application/zip"
+        if ext == ".zip"
+        else "application/octet-stream"
+    )
+
+    def _file_iter():
+        with open(file_path, "rb") as f:
+            while True:
+                chunk = f.read(65536)
+                if not chunk:
+                    break
+                yield chunk
+
+    return StreamingResponse(
+        _file_iter(),
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'inline; filename="{os.path.basename(file_path)}"'
+        },
+    )
 
 
 if __name__ == "__main__":
