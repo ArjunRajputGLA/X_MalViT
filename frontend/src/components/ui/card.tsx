@@ -17,7 +17,7 @@ export const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
         ref={ref}
         onMouseMove={handleMouseMove}
         className={cn(
-          "card-spotlight rounded-panel border border-line bg-surface shadow-panel text-ink hover:border-accent/25",
+          "card-spotlight rounded-panel border border-line bg-surface shadow-panel text-ink hover:border-accent/40",
           className
         )}
         {...props}

@@ -400,7 +400,7 @@ export const Module3Training: React.FC = () => {
                   value={architecture}
                   onChange={(e) => setArchitecture(e.target.value)}
                   disabled={isTraining}
-                  className="appearance-none h-10 w-full bg-surface-2 border border-line rounded-chip pl-3 pr-9 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-colors font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="appearance-none h-10 w-full bg-surface-2 border border-line hover:border-accent/50 hover:bg-surface rounded-chip pl-3 pr-9 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-colors font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="X-MalViT Tiny (Proposed - 5.8M Params)">
                     X-MalViT Tiny (Proposed - 5.8M Params)
@@ -694,7 +694,7 @@ export const Module3Training: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-6">
               <dl className="divide-y divide-line text-[13px]">
-                <div className="py-2.5 first:pt-0 flex items-center justify-between gap-3">
+                <div className="py-2.5 first:pt-0 flex items-center justify-between gap-3 px-2 -mx-2 rounded-chip hover:bg-surface-2/80 transition-colors">
                   <dt className="text-muted">Selected Device</dt>
                   <dd
                     className={`font-mono font-medium tabular-nums text-right ${
@@ -712,7 +712,7 @@ export const Module3Training: React.FC = () => {
                       : "CPU Host (x86_64 Multi-Core)"}
                   </dd>
                 </div>
-                <div className="py-2.5 flex items-center justify-between gap-3">
+                <div className="py-2.5 flex items-center justify-between gap-3 px-2 -mx-2 rounded-chip hover:bg-surface-2/80 transition-colors">
                   <dt className="text-muted">Precision Standard</dt>
                   <dd className="font-mono text-ink font-medium text-right">
                     {deviceMode === "cuda" && systemStatus?.cuda_available
@@ -720,13 +720,13 @@ export const Module3Training: React.FC = () => {
                       : "FP32 Single Precision"}
                   </dd>
                 </div>
-                <div className="py-2.5 flex items-center justify-between gap-3">
+                <div className="py-2.5 flex items-center justify-between gap-3 px-2 -mx-2 rounded-chip hover:bg-surface-2/80 transition-colors">
                   <dt className="text-muted">Checkpoint Target</dt>
                   <dd className="font-mono text-accent font-medium text-right truncate">
                     {systemStatus?.checkpoint_path || "checkpoints/x_malvit_weights.pt"}
                   </dd>
                 </div>
-                <div className="py-2.5 last:pb-0 flex items-center justify-between gap-3">
+                <div className="py-2.5 last:pb-0 flex items-center justify-between gap-3 px-2 -mx-2 rounded-chip hover:bg-surface-2/80 transition-colors">
                   <dt className="text-muted">Loss Regularization</dt>
                   <dd className="font-mono text-ink font-medium tabular-nums text-right">
                     Label Smoothing (ε = 0.1)

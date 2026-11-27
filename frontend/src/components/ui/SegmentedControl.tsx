@@ -61,7 +61,7 @@ export function SegmentedControl<T extends string | number>({
                 : "cursor-pointer",
               isSelected
                 ? "text-ink font-semibold"
-                : "text-muted font-medium hover:text-ink"
+                : "text-muted font-medium hover:text-ink hover:bg-surface/60"
             )}
           >
             {isSelected && (

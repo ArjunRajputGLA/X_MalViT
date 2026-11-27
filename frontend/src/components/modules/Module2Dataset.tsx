@@ -125,7 +125,7 @@ export const Module2Dataset: React.FC = () => {
                 <select
                   value={selectedCategory}
                   onChange={(e) => handleCategoryChange(e.target.value)}
-                  className="appearance-none h-10 w-full bg-surface-2 border border-line rounded-chip pl-3 pr-9 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-colors font-medium cursor-pointer"
+                  className="appearance-none h-10 w-full bg-surface-2 border border-line hover:border-accent/50 hover:bg-surface rounded-chip pl-3 pr-9 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-colors font-medium cursor-pointer"
                 >
                   {Object.keys(categories).map((cat) => (
                     <option key={cat} value={cat}>
@@ -145,7 +145,7 @@ export const Module2Dataset: React.FC = () => {
                 <select
                   value={selectedFamily}
                   onChange={(e) => handleFamilyChange(e.target.value)}
-                  className="appearance-none h-10 w-full bg-surface-2 border border-line rounded-chip pl-3 pr-9 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-colors font-mono cursor-pointer"
+                  className="appearance-none h-10 w-full bg-surface-2 border border-line hover:border-accent/50 hover:bg-surface rounded-chip pl-3 pr-9 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-colors font-mono cursor-pointer"
                 >
                   {(categories[selectedCategory] || []).map((fam) => (
                     <option key={fam} value={fam}>
@@ -311,7 +311,7 @@ export const Module2Dataset: React.FC = () => {
                               initial={{ height: 0 }}
                               animate={{ height: `${heightPercent}%` }}
                               transition={{ duration: 0.3, delay: idx * 0.002, ease: "easeOut" }}
-                              className="w-full bg-accent group-hover:bg-accent/80 transition-colors rounded-t-[2px]"
+                              className="w-full bg-accent group-hover:brightness-110 group-hover:shadow-[0_0_8px_color-mix(in_srgb,var(--accent)_45%,transparent)] transition-all rounded-t-[2px]"
                             />
                           </div>
                         );

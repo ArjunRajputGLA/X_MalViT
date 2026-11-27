@@ -153,7 +153,7 @@ function ConfusionMatrixHeatmap({
                             style={{
                               backgroundColor: `color-mix(in srgb, var(--accent) ${mixPct}%, transparent)`,
                             }}
-                            className={`relative w-14 h-9 rounded-chip flex items-center justify-center text-[12px] tabular-nums transition-shadow cursor-default select-none ${
+                            className={`relative w-14 h-9 rounded-chip flex items-center justify-center text-[12px] tabular-nums transition-all duration-150 cursor-default select-none hover:scale-105 ${
                               val === 0
                                 ? "border border-line/70 text-muted font-normal"
                                 : val > 50
@@ -349,7 +349,7 @@ export const Module4Benchmark: React.FC = () => {
                         className={
                           isOurs
                             ? "bg-accent-soft"
-                            : "hover:bg-surface-2 transition-colors"
+                            : "hover:bg-accent-soft/35 transition-colors"
                         }
                       >
                         <td

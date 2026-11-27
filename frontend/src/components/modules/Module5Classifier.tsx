@@ -436,12 +436,12 @@ export const Module5Classifier: React.FC = () => {
                         <div className="text-[12px] font-medium text-muted mb-1.5">
                           1. Raw Binary
                         </div>
-                        <div className="aspect-square rounded-tile overflow-hidden border border-line bg-surface-2 p-1">
+                        <div className="aspect-square rounded-tile overflow-hidden border border-line hover:border-accent/60 bg-surface-2 p-1 transition-all duration-200 hover:-translate-y-0.5 group">
                           <img
                             src={predictionResult.raw_image_url}
                             alt="Raw Binary"
                             style={{ imageRendering: "pixelated" }}
-                            className="w-full h-full object-cover rounded-chip"
+                            className="w-full h-full object-cover rounded-chip transition-transform duration-300 ease-out group-hover:scale-[1.04]"
                           />
                         </div>
                       </motion.div>
@@ -451,7 +451,7 @@ export const Module5Classifier: React.FC = () => {
                         <div className="text-[12px] font-medium text-muted mb-1.5">
                           2. Activation Map
                         </div>
-                        <div className="relative aspect-square rounded-tile overflow-hidden border border-line bg-surface-2 p-1">
+                        <div className="relative aspect-square rounded-tile overflow-hidden border border-line hover:border-accent/60 bg-surface-2 p-1 transition-all duration-200 hover:-translate-y-0.5 group">
                           <div className="relative w-full h-full rounded-chip overflow-hidden">
                             <motion.img
                               src={predictionResult.heatmap_url}
@@ -468,7 +468,7 @@ export const Module5Classifier: React.FC = () => {
                                 ease: "linear",
                               }}
                               style={{ imageRendering: "pixelated" }}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.04]"
                             />
                             {!prefersReducedMotion && (
                               <motion.div
@@ -518,12 +518,12 @@ export const Module5Classifier: React.FC = () => {
                         <div className="text-[12px] font-medium text-ink mb-1.5">
                           3. Forensic Overlay
                         </div>
-                        <div className="aspect-square rounded-tile overflow-hidden border border-accent ring-2 ring-accent/30 bg-surface-2 p-1">
+                        <div className="aspect-square rounded-tile overflow-hidden border border-accent ring-2 ring-accent/30 bg-surface-2 p-1 transition-all duration-200 hover:-translate-y-0.5 group">
                           <img
                             src={predictionResult.overlay_url}
                             alt="Forensic Overlay"
                             style={{ imageRendering: "pixelated" }}
-                            className="w-full h-full object-cover rounded-chip"
+                            className="w-full h-full object-cover rounded-chip transition-transform duration-300 ease-out group-hover:scale-[1.04]"
                           />
                         </div>
                       </motion.div>
@@ -556,7 +556,7 @@ export const Module5Classifier: React.FC = () => {
                 </CardHeader>
                 <CardContent className="pt-6 space-y-5">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                    <div className="p-4 rounded-tile bg-surface-2 border border-line">
+                    <div className="p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/40 hover:bg-surface hover:-translate-y-0.5 transition-all duration-200">
                       <div className="text-[12px] text-muted font-medium">
                         PE section pinpointed
                       </div>
@@ -565,7 +565,7 @@ export const Module5Classifier: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-tile bg-surface-2 border border-line">
+                    <div className="p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/40 hover:bg-surface hover:-translate-y-0.5 transition-all duration-200">
                       <div className="text-[12px] text-muted font-medium">
                         Virtual address offset
                       </div>
@@ -574,7 +574,7 @@ export const Module5Classifier: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-tile bg-surface-2 border border-line">
+                    <div className="p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/40 hover:bg-surface hover:-translate-y-0.5 transition-all duration-200">
                       <div className="text-[12px] text-muted font-medium">
                         Attention peak weight
                       </div>

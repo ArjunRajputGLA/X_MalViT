@@ -96,13 +96,13 @@ function SidebarContent({
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "relative w-full flex items-center rounded-tile text-[13px] font-medium transition-colors duration-150 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas overflow-hidden",
+                "group relative w-full flex items-center rounded-tile text-[13px] font-medium transition-all duration-150 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas overflow-hidden",
                 isCollapsed
                   ? "justify-center p-2.5"
                   : "justify-between px-3 py-2.5 text-left gap-2",
                 isActive
                   ? "text-ink font-semibold"
-                  : "text-muted hover:text-ink hover:bg-surface/60"
+                  : "text-muted hover:text-ink hover:bg-surface/80 hover:translate-x-[2px]"
               )}
             >
               {isActive && (
@@ -115,7 +115,7 @@ function SidebarContent({
                 </motion.div>
               )}
               <div className={cn("relative z-10 flex items-center gap-2.5 min-w-0", isCollapsed && "justify-center")}>
-                <Icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-accent" : "text-muted")} />
+                <Icon className={cn("w-4 h-4 flex-shrink-0 transition-transform duration-150 group-hover:scale-110", isActive ? "text-accent" : "text-muted group-hover:text-ink")} />
                 {!isCollapsed && (
                   <span className="whitespace-nowrap">{item.label}</span>
                 )}

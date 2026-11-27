@@ -163,25 +163,25 @@ export const Module6Manuscript: React.FC = () => {
 
           {/* Key Metrics Strip: Plain figures separated by hairlines */}
           <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-line mt-6 pt-6 border-t border-line">
-            <div className="py-2 sm:py-0 sm:pr-6">
+            <div className="py-2 sm:py-1 sm:px-4 first:sm:pl-2 rounded-chip hover:bg-surface-2/60 transition-colors">
               <div className="text-[12px] text-muted font-medium">Classification acc</div>
               <div className="text-[24px] leading-[1.2] font-semibold text-ink mt-1 tabular-nums">
                 <AnimatedNumber value="98.8%" />
               </div>
             </div>
-            <div className="py-2 sm:py-0 px-0 sm:px-6">
+            <div className="py-2 sm:py-1 px-0 sm:px-4 rounded-chip hover:bg-surface-2/60 transition-colors">
               <div className="text-[12px] text-muted font-medium">Model footprint</div>
               <div className="text-[24px] leading-[1.2] font-semibold text-ink mt-1 tabular-nums">
                 <AnimatedNumber value="5.8 M" />
               </div>
             </div>
-            <div className="py-2 sm:py-0 px-0 sm:px-6">
+            <div className="py-2 sm:py-1 px-0 sm:px-4 rounded-chip hover:bg-surface-2/60 transition-colors">
               <div className="text-[12px] text-muted font-medium">Edge inference</div>
               <div className="text-[24px] leading-[1.2] font-semibold text-ink mt-1 tabular-nums">
                 <AnimatedNumber value="23.4 ms" />
               </div>
             </div>
-            <div className="py-2 sm:py-0 sm:pl-6">
+            <div className="py-2 sm:py-1 sm:px-4 rounded-chip hover:bg-surface-2/60 transition-colors">
               <div className="text-[12px] text-muted font-medium">Hardware target</div>
               <div className="text-[24px] leading-[1.2] font-semibold text-ink mt-1">
                 RTX 4050
@@ -266,7 +266,7 @@ export const Module6Manuscript: React.FC = () => {
         </CardHeader>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <div className="group p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/35 hover:bg-surface transition-all duration-200">
+            <div className="group p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/40 hover:bg-surface hover:-translate-y-0.5 hover:shadow-panel transition-all duration-200">
               <div className="w-8 h-8 rounded-chip bg-accent-soft text-accent group-hover:bg-accent group-hover:text-on-accent group-hover:scale-105 transition-all duration-200 flex items-center justify-center mb-2.5">
                 <LayoutGrid className="w-4 h-4" />
               </div>
@@ -276,7 +276,7 @@ export const Module6Manuscript: React.FC = () => {
               </p>
             </div>
 
-            <div className="group p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/35 hover:bg-surface transition-all duration-200">
+            <div className="group p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/40 hover:bg-surface hover:-translate-y-0.5 hover:shadow-panel transition-all duration-200">
               <div className="w-8 h-8 rounded-chip bg-accent-soft text-accent group-hover:bg-accent group-hover:text-on-accent group-hover:scale-105 transition-all duration-200 flex items-center justify-center mb-2.5">
                 <Network className="w-4 h-4" />
               </div>
@@ -286,7 +286,7 @@ export const Module6Manuscript: React.FC = () => {
               </p>
             </div>
 
-            <div className="group p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/35 hover:bg-surface transition-all duration-200">
+            <div className="group p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/40 hover:bg-surface hover:-translate-y-0.5 hover:shadow-panel transition-all duration-200">
               <div className="w-8 h-8 rounded-chip bg-accent-soft text-accent group-hover:bg-accent group-hover:text-on-accent group-hover:scale-105 transition-all duration-200 flex items-center justify-center mb-2.5">
                 <Flame className="w-4 h-4" />
               </div>
@@ -296,7 +296,7 @@ export const Module6Manuscript: React.FC = () => {
               </p>
             </div>
 
-            <div className="group p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/35 hover:bg-surface transition-all duration-200">
+            <div className="group p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/40 hover:bg-surface hover:-translate-y-0.5 hover:shadow-panel transition-all duration-200">
               <div className="w-8 h-8 rounded-chip bg-accent-soft text-accent group-hover:bg-accent group-hover:text-on-accent group-hover:scale-105 transition-all duration-200 flex items-center justify-center mb-2.5">
                 <Cpu className="w-4 h-4" />
               </div>

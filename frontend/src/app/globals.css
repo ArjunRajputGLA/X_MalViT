@@ -197,6 +197,16 @@ h4 {
     transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.card-spotlight:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(18, 26, 43, 0.06), 0 12px 28px rgba(18, 26, 43, 0.08);
+}
+
+.dark .card-spotlight:hover,
+[data-theme="dark"] .card-spotlight:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28), 0 14px 32px rgba(0, 0, 0, 0.36);
+}
+
 .card-spotlight::before {
   content: "";
   position: absolute;
@@ -204,13 +214,22 @@ h4 {
   border-radius: inherit;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 250ms ease;
+  transition: opacity 220ms ease;
   background: radial-gradient(
-    420px circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%),
-    color-mix(in srgb, var(--accent) 6%, transparent),
-    transparent 65%
+    380px circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%),
+    color-mix(in srgb, var(--accent) 10%, transparent),
+    transparent 62%
   );
   z-index: 0;
+}
+
+.dark .card-spotlight::before,
+[data-theme="dark"] .card-spotlight::before {
+  background: radial-gradient(
+    380px circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%),
+    color-mix(in srgb, var(--accent) 14%, transparent),
+    transparent 62%
+  );
 }
 
 .card-spotlight:hover::before {
@@ -226,6 +245,9 @@ h4 {
   .card-spotlight,
   .card-spotlight::before {
     transition: none;
+  }
+  .card-spotlight:hover {
+    transform: none;
   }
   .card-spotlight:hover::before {
     opacity: 0;

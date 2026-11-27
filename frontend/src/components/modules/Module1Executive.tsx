@@ -218,7 +218,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
                           borderColor: "var(--accent)",
                         }}
                         transition={{ delay: idx * 0.12, duration: 0.18 }}
-                        className="w-8 h-8 rounded-full border-2 flex items-center justify-center font-semibold text-[12px] tabular-nums flex-shrink-0 bg-surface transition-transform duration-200 group-hover:scale-110"
+                        className="w-8 h-8 rounded-full border-2 flex items-center justify-center font-semibold text-[12px] tabular-nums flex-shrink-0 bg-surface transition-all duration-200 group-hover:scale-110 group-hover:ring-4 group-hover:ring-accent-soft"
                       >
                         {stage.step}
                       </motion.div>
@@ -395,25 +395,25 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
             </div>
 
             <dl className="divide-y divide-line text-[13px]">
-              <div className="py-2.5 first:pt-0 flex items-center justify-between gap-3">
+              <div className="py-2.5 first:pt-1 flex items-center justify-between gap-3 px-2 -mx-2 rounded-chip hover:bg-surface-2/80 transition-colors">
                 <dt className="text-muted">Compute Hardware</dt>
                 <dd className="font-mono text-ink font-medium text-right tabular-nums">
                   {systemStatus?.device_name || "CPU Host"}
                 </dd>
               </div>
-              <div className="py-2.5 flex items-center justify-between gap-3">
+              <div className="py-2.5 flex items-center justify-between gap-3 px-2 -mx-2 rounded-chip hover:bg-surface-2/80 transition-colors">
                 <dt className="text-muted">Precision Mode</dt>
                 <dd className="font-mono text-ink font-medium text-right">
                   {systemStatus?.cuda_available ? "FP16 AMP (CUDA)" : "FP32 Host Execution"}
                 </dd>
               </div>
-              <div className="py-2.5 flex items-center justify-between gap-3">
+              <div className="py-2.5 flex items-center justify-between gap-3 px-2 -mx-2 rounded-chip hover:bg-surface-2/80 transition-colors">
                 <dt className="text-muted">Memory Allocated</dt>
                 <dd className="font-mono text-ink font-medium text-right tabular-nums">
                   {systemStatus?.vram_allocated || "0.0 MB"}
                 </dd>
               </div>
-              <div className="py-2.5 last:pb-0 flex items-center justify-between gap-3">
+              <div className="py-2.5 last:pb-1 flex items-center justify-between gap-3 px-2 -mx-2 rounded-chip hover:bg-surface-2/80 transition-colors">
                 <dt className="text-muted">Active Checkpoint</dt>
                 <dd className="font-mono text-ink font-medium text-right">
                   {systemStatus?.has_checkpoint ? "Weights Compiled" : "Standard ViT"}
