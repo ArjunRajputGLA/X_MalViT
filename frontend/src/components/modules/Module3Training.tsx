@@ -127,12 +127,12 @@ function ConvergenceMiniChart({
 }
 
 export const Module3Training: React.FC = () => {
-  const [architecture, setArchitecture] = useState<string>("X-MalViT Tiny (Proposed - 5.8M Params)");
+  const [architecture, setArchitecture] = useState<string>("X-MalViT Tiny (3-Layer Optimal - 1.44M Params)");
   const [deviceMode, setDeviceMode] = useState<"cuda" | "cpu">("cuda");
-  const [epochs, setEpochs] = useState<number>(4);
-  const [batchSize, setBatchSize] = useState<number>(32);
-  const [samplesPerFam, setSamplesPerFam] = useState<number>(20);
-  const [learningRate, setLearningRate] = useState<number>(0.0003);
+  const [epochs, setEpochs] = useState<number>(12);
+  const [batchSize, setBatchSize] = useState<number>(64);
+  const [samplesPerFam, setSamplesPerFam] = useState<number>(0);
+  const [learningRate, setLearningRate] = useState<number>(0.0004);
 
   const [systemStatus, setSystemStatus] = useState<any>(null);
   const [isTraining, setIsTraining] = useState<boolean>(false);
@@ -376,7 +376,7 @@ export const Module3Training: React.FC = () => {
     }
   };
 
-  const epochPct = ((epochs - 2) / (10 - 2)) * 100;
+  const epochPct = ((epochs - 2) / (20 - 2)) * 100;
 
   return (
     <div className="space-y-6">
@@ -402,14 +402,14 @@ export const Module3Training: React.FC = () => {
                   disabled={isTraining}
                   className="appearance-none h-10 w-full bg-surface-2 border border-line hover:border-accent/50 hover:bg-surface rounded-chip pl-3 pr-9 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-colors font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option value="X-MalViT Tiny (Proposed - 5.8M Params)">
-                    X-MalViT Tiny (Proposed - 5.8M Params)
+                  <option value="X-MalViT Tiny (3-Layer Optimal - 1.44M Params)">
+                    X-MalViT Tiny (3-Layer Optimal - 1.44M Params)
                   </option>
-                  <option value="ResNet-18 (CNN Baseline - 11.2M Params)">
-                    ResNet-18 (CNN Baseline - 11.2M Params)
+                  <option value="ResNet-18 (CNN Baseline - 11.18M Params)">
+                    ResNet-18 (CNN Baseline - 11.18M Params)
                   </option>
-                  <option value="MobileNetV2 (Edge Baseline - 3.4M Params)">
-                    MobileNetV2 (Edge Baseline - 3.4M Params)
+                  <option value="MobileNetV2 (Edge Baseline - 2.26M Params)">
+                    MobileNetV2 (Edge Baseline - 2.26M Params)
                   </option>
                 </select>
                 <ChevronDown className="w-4 h-4 text-muted pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
@@ -530,7 +530,7 @@ export const Module3Training: React.FC = () => {
                   <input
                     type="range"
                     min="2"
-                    max="10"
+                    max="20"
                     step="1"
                     value={epochs}
                     disabled={isTraining}
@@ -546,8 +546,8 @@ export const Module3Training: React.FC = () => {
                   </div>
                 </div>
                 <div className="relative h-5 mx-[9px] mt-0.5 text-[12px] text-muted font-medium tabular-nums select-none">
-                  {[2, 4, 6, 8, 10].map((tick) => {
-                    const tickPct = ((tick - 2) / 8) * 100;
+                  {[2, 6, 12, 16, 20].map((tick) => {
+                    const tickPct = ((tick - 2) / 18) * 100;
                     return (
                       <span
                         key={tick}
@@ -610,8 +610,8 @@ export const Module3Training: React.FC = () => {
                 ]}
               />
               {samplesPerFam === 0 && (
-                <p className="text-[12px] text-high mt-1.5 font-medium leading-[1.5]">
-                  ⚡ Full 9,339 Malimg benchmark selected. Streamed directly from disk. (On CPU, full passes require more time per epoch).
+                <p className="text-[12px] text-ok-ink mt-1.5 font-medium leading-[1.5]">
+                  ⚡ Full 9,339 Malimg benchmark selected. Loaded via RAM cache in ~0.3s (~4.3s/epoch on RTX 4050).
                 </p>
               )}
             </div>
@@ -628,7 +628,7 @@ export const Module3Training: React.FC = () => {
                 onChange={setLearningRate}
                 disabled={isTraining}
                 className="tabular-nums"
-                options={[0.0001, 0.0003, 0.0005, 0.001].map((lr) => ({
+                options={[0.0001, 0.0003, 0.0004, 0.0005, 0.001].map((lr) => ({
                   value: lr,
                   label: lr,
                 }))}

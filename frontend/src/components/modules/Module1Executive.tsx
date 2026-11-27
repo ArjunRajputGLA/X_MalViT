@@ -102,7 +102,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
               <AnimatedNumber value={accuracyFormatted} />
             </div>
             <div className="text-[13px] font-medium text-ok-ink mt-1.5 flex items-center gap-1 tabular-nums">
-              <span className="font-semibold">+2.4%</span> over ResNet-18 baseline
+              <span className="font-semibold">+2.83% Macro-F1</span> over ResNet-18
             </div>
           </div>
         </Card>
@@ -126,15 +126,15 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
         {/* Card 3: Inference Latency */}
         <Card className="group p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between text-muted text-[13px] font-medium">
-            <span>Inference Latency</span>
+            <span>CUDA Kernel Latency</span>
             <Zap className="w-4 h-4 text-muted group-hover:text-accent transition-colors flex-shrink-0" />
           </div>
           <div className="mt-3">
             <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">
-              <AnimatedNumber value="23.4 ms" />
+              <AnimatedNumber value="3.79 ms" />
             </div>
             <div className="text-[13px] text-muted mt-1.5 tabular-nums">
-              Real-time static triage (&lt;25ms)
+              Real-time static triage (&lt;5 ms GPU)
             </div>
           </div>
         </Card>
@@ -147,10 +147,10 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
           </div>
           <div className="mt-3">
             <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">
-              <AnimatedNumber value="5.8 M" />
+              <AnimatedNumber value={systemStatus?.parameters ? systemStatus.parameters.replace(" Million", " M") : "2.78 M"} />
             </div>
             <div className="text-[13px] text-muted mt-1.5 tabular-nums">
-              ViT-Tiny (14x14 Patch Tokens)
+              ViT-Tiny (1.44M optimal, 14x14 patches)
             </div>
           </div>
         </Card>
@@ -340,7 +340,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
                 <strong className="text-ink font-semibold">Abstract:</strong> Static signature-based antivirus engines rely on cryptographic hash matching (MD5, SHA-256), which fails against modern polymorphic and metamorphic malware. We propose <strong className="text-ink font-semibold">X-MalViT</strong>, a lightweight Vision Transformer architecture coupled with Gradient-weighted Class Activation Mapping (Grad-CAM) visual explainability for static malware family classification.
               </p>
               <p>
-                Executable binaries from the benchmark Malimg dataset (9,339 samples across 25 families) are converted into two-dimensional grayscale byte matrices, tokenized into non-overlapping patches, and analyzed with multi-head self-attention. Unlike black-box models, X-MalViT projects activation heatmaps back to discrete PE file sections (<code className="text-ink bg-surface-2 px-1.5 py-0.5 rounded-chip border border-line font-mono text-[13px]">.text</code>, <code className="text-ink bg-surface-2 px-1.5 py-0.5 rounded-chip border border-line font-mono text-[13px]">.rsrc</code>, shellcode jump offsets). Trained locally using FP16 mixed precision on an NVIDIA RTX 4050 GPU, X-MalViT converges in under 4 minutes with <strong className="text-ink font-semibold tabular-nums">98.8% accuracy</strong> and an inference latency of <strong className="text-ink font-semibold tabular-nums">23.4 ms per binary</strong>.
+                Executable binaries from the benchmark Malimg dataset (9,339 samples across 25 families) are converted into two-dimensional grayscale byte matrices, tokenized into non-overlapping patches, and analyzed with multi-head self-attention. Unlike black-box models, X-MalViT projects penultimate-token Grad-CAM heatmaps back to discrete PE file sections (<code className="text-ink bg-surface-2 px-1.5 py-0.5 rounded-chip border border-line font-mono text-[13px]">.text</code>, <code className="text-ink bg-surface-2 px-1.5 py-0.5 rounded-chip border border-line font-mono text-[13px]">.rsrc</code>, unpacking stubs). Trained locally using FP16 mixed precision on an NVIDIA RTX 4050 GPU, our 3-layer X-MalViT converges in under 2 minutes with <strong className="text-ink font-semibold tabular-nums">98.77% accuracy</strong>, <strong className="text-ink font-semibold tabular-nums">96.91% Macro-F1</strong>, and an inference latency of <strong className="text-ink font-semibold tabular-nums">3.79 ms per binary</strong>.
               </p>
             </div>
           </Card>
@@ -363,9 +363,9 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
             <div className="grid grid-cols-3 divide-x divide-line text-center pt-4 border-t border-line">
               <div className="px-2">
                 <div className="text-ink font-semibold text-[16px] leading-[1.2] tabular-nums">
-                  <AnimatedNumber value="98.7%" />
+                  <AnimatedNumber value="96.9%" />
                 </div>
-                <div className="text-[12px] text-muted font-medium mt-1">F1-Score</div>
+                <div className="text-[12px] text-muted font-medium mt-1">Macro-F1</div>
               </div>
               <div className="px-2">
                 <div className="text-ink font-semibold text-[16px] leading-[1.2] tabular-nums">
@@ -375,7 +375,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
               </div>
               <div className="px-2">
                 <div className="text-ink font-semibold text-[16px] leading-[1.2] tabular-nums">
-                  <AnimatedNumber value="5.8M" />
+                  <AnimatedNumber value={systemStatus?.parameters ? systemStatus.parameters.replace(" Million", "M") : "2.78M"} />
                 </div>
                 <div className="text-[12px] text-muted font-medium mt-1">Weights</div>
               </div>

@@ -209,7 +209,7 @@ function SidebarContent({
             </div>
 
             <a
-              href="/api/documents/X-MalViT_IEEE_Conference.pdf"
+              href="/api/documents/X-MalViT_IEEE_Research_Paper.pdf"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-chip text-[13px] font-medium bg-surface-2 hover:bg-line/50 text-ink border border-line transition-colors cursor-pointer group outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"

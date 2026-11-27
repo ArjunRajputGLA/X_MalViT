@@ -312,11 +312,19 @@ export const Module5Classifier: React.FC = () => {
                       <Badge variant="destructive" className="border-0 text-[12px] font-medium">
                         Threat detected
                       </Badge>
-                      <span className="text-[12px] text-ok-ink bg-ok-soft px-2.5 py-0.5 rounded-chip font-mono font-medium inline-flex items-center gap-1 tabular-nums">
-                        <Zap className="w-3.5 h-3.5 text-ok" />
-                        {predictionResult.latency_ms.toFixed(1)} ms (
-                        {predictionResult.device_name ||
-                          (predictionResult.device?.includes("cuda") ? "CUDA GPU" : "CPU Host")}
+                      <span
+                        title={predictionResult.device_name || predictionResult.device}
+                        className="text-[12px] text-ok-ink bg-ok-soft px-2.5 py-0.5 rounded-chip font-mono font-medium inline-flex items-center gap-1 tabular-nums whitespace-nowrap shrink-0"
+                      >
+                        <Zap className="w-3.5 h-3.5 text-ok shrink-0" />
+                        {predictionResult.latency_ms.toFixed(2)} ms (
+                        {predictionResult.device_name?.includes("RTX")
+                          ? predictionResult.device_name
+                              .replace("NVIDIA GeForce ", "")
+                              .replace(" Laptop GPU", "")
+                          : predictionResult.device?.toLowerCase().includes("cuda")
+                          ? "CUDA GPU"
+                          : "CPU"}
                         )
                       </span>
                     </div>
@@ -414,10 +422,17 @@ export const Module5Classifier: React.FC = () => {
                   Three side-by-side matrices: raw binary image, Grad-CAM activation map using the {colormap} scale, and forensic overlay highlighting the {predictionResult.pe_analysis?.section || "PE"} hotspot.
                 </p>
                 <CardHeader className="pb-4 border-b border-line bg-surface-2">
-                  <CardTitle className="flex items-center gap-2">
-                    <Flame className="w-5 h-5 text-critical" />
-                    Grad-CAM Visual Attribution (XAI)
-                  </CardTitle>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <CardTitle className="flex items-center gap-2">
+                      <Flame className="w-5 h-5 text-critical" />
+                      Grad-CAM Visual Attribution (XAI)
+                    </CardTitle>
+                    {predictionResult.gradcam_ms != null && (
+                      <span className="text-[12px] font-mono text-critical-ink bg-critical-soft px-2 py-0.5 rounded-chip font-medium whitespace-nowrap shrink-0 tabular-nums">
+                        XAI Backprop: {predictionResult.gradcam_ms.toFixed(1)} ms
+                      </span>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="pt-6 flex-1 flex flex-col justify-between gap-4">
                   <div className="flex-1 flex items-center">

@@ -69,35 +69,35 @@ export const Module6Manuscript: React.FC = () => {
 
   const manuscripts = data?.manuscripts || [
     {
-      title: "IEEE Conference Full Research Paper (4-Page Official Manuscript)",
-      filename: "IEEE_Research_Paper_X_MalViT.pdf",
-      size: "943 KB",
-      description: "Complete camera-ready double-column IEEE format manuscript with mathematical formulations and comparative ablation tables.",
-      url: "/api/documents/IEEE_Research_Paper_X_MalViT.pdf"
+      title: "X-MalViT IEEE Research Paper (7-Page Camera-Ready PDF)",
+      filename: "X-MalViT_IEEE_Research_Paper.pdf",
+      size: "5.58 MB",
+      description: "Complete 7-page double-column IEEE conference manuscript with Table I literature gaps, PyTorch Grad-CAM forensics, ablations, and overlay robustness benchmarks.",
+      url: "/api/documents/X-MalViT_IEEE_Research_Paper.pdf"
+    },
+    {
+      title: "IEEEtran LaTeX Source Package (Overleaf-Ready ZIP)",
+      filename: "X-MalViT_IEEE_Conference_LaTeX_Updated.zip",
+      size: "4.00 MB",
+      description: "Synchronized IEEEtran .tex source, BibTeX references, IEEEtran.cls/.bst, and 300 DPI figures ready for IEEE/Springer submission.",
+      url: "/api/documents/X-MalViT_IEEE_Conference_LaTeX_Updated.zip"
     },
     {
       title: "Malware Research Project Guide (Executive Blueprint)",
       filename: "Malware_Research_Project_Guide.pdf",
-      size: "382 KB",
+      size: "373 KB",
       description: "Executive research roadmap detailing visual tokenization methodology and threat intelligence pipeline.",
       url: "/api/documents/Malware_Research_Project_Guide.pdf"
-    },
-    {
-      title: "X-MalViT IEEE Conference Preprint",
-      filename: "X-MalViT_IEEE_Conference.pdf",
-      size: "295 KB",
-      description: "Author preprint showcasing experimental comparisons against CNNs, MalConv, and random forest baselines.",
-      url: "/api/documents/X-MalViT_IEEE_Conference.pdf"
     }
   ];
 
-  const bibtexCode = `@article{agrawal2026xmalvit,
-  title={X-MalViT: Explainable Vision Transformer for Static Malware Family Classification via 2D Opcode Textures and Grad-CAM PE Attribution},
-  author={Agrawal, Keshav and Rajput, Arjun S.},
+  const bibtexCode = `@inproceedings{agrawal2026xmalvit,
+  title={X-MalViT: Explainable Vision Transformer with Grad-CAM for Visual Malware Family Classification},
+  author={Agrawal, Keshav and Rajput, Arjun Singh},
+  booktitle={IEEE Conference on Cyber Threat Intelligence \\& Machine Learning},
   institution={GLA University, Mathura},
-  journal={IEEE Conference on Cyber Threat Intelligence & Machine Learning},
   year={2026},
-  pages={1--4},
+  pages={1--7},
   keywords={Vision Transformer, Static Malware Analysis, Explainable AI, Grad-CAM, Malimg Benchmark}
 }`;
 
@@ -141,13 +141,13 @@ export const Module6Manuscript: React.FC = () => {
           </div>
 
           <h2 className="text-[32px] leading-[1.2] font-semibold text-ink max-w-4xl">
-            X-MalViT: Explainable Vision Transformer for Static Malware Family Classification via 2D Opcode Textures and Grad-CAM PE Attribution
+            X-MalViT: Explainable Vision Transformer with Grad-CAM for Visual Malware Family Classification
           </h2>
 
           <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-muted font-medium">
             <div className="flex items-center gap-1.5">
               <span className="text-ink font-semibold">Authors:</span>
-              <span>Keshav Agrawal &amp; Arjun S. Rajput</span>
+              <span>Keshav Agrawal &amp; Arjun Singh Rajput</span>
             </div>
             <div className="hidden sm:block text-line">&bull;</div>
             <div className="flex items-center gap-1.5">
@@ -166,19 +166,19 @@ export const Module6Manuscript: React.FC = () => {
             <div className="py-2 sm:py-1 sm:px-4 first:sm:pl-2 rounded-chip hover:bg-surface-2/60 transition-colors">
               <div className="text-[12px] text-muted font-medium">Classification acc</div>
               <div className="text-[24px] leading-[1.2] font-semibold text-ink mt-1 tabular-nums">
-                <AnimatedNumber value="98.8%" />
+                <AnimatedNumber value="98.77%" />
               </div>
             </div>
             <div className="py-2 sm:py-1 px-0 sm:px-4 rounded-chip hover:bg-surface-2/60 transition-colors">
               <div className="text-[12px] text-muted font-medium">Model footprint</div>
               <div className="text-[24px] leading-[1.2] font-semibold text-ink mt-1 tabular-nums">
-                <AnimatedNumber value="5.8 M" />
+                <AnimatedNumber value="1.44 M" />
               </div>
             </div>
             <div className="py-2 sm:py-1 px-0 sm:px-4 rounded-chip hover:bg-surface-2/60 transition-colors">
-              <div className="text-[12px] text-muted font-medium">Edge inference</div>
+              <div className="text-[12px] text-muted font-medium">GPU latency</div>
               <div className="text-[24px] leading-[1.2] font-semibold text-ink mt-1 tabular-nums">
-                <AnimatedNumber value="23.4 ms" />
+                <AnimatedNumber value="3.79 ms" />
               </div>
             </div>
             <div className="py-2 sm:py-1 sm:px-4 rounded-chip hover:bg-surface-2/60 transition-colors">
@@ -302,7 +302,7 @@ export const Module6Manuscript: React.FC = () => {
               </div>
               <div className="font-semibold text-[14px] text-ink">Edge Hardware Feasibility</div>
               <p className="text-[12px] text-muted mt-1.5 leading-[1.5] tabular-nums">
-                Requires only 5.8M parameters with 23.4 ms latency and FP16 AMP support on an NVIDIA RTX 4050 GPU, enabling edge deployment.
+                Compact 3-layer ViT-Tiny uses only 1.44M parameters with 3.79 ms GPU latency and FP16 AMP support on an NVIDIA RTX 4050 laptop GPU.
               </p>
             </div>
           </div>

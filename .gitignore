@@ -36,6 +36,8 @@ node_modules/
 out/
 build/
 
-# Dataset Binaries
+# Dataset Binaries & Caches
 data/sample/
 data/*.zip
+data/*.pt
+data/malimg_cache_224.pt
