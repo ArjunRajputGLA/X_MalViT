@@ -178,10 +178,10 @@ class PatchEmbedding(nn.Module):
 class XMalViTModel(nn.Module):
     """
     Lightweight Vision Transformer (ViT-Tiny) tailored for Malware Byte Images.
-    196 patch tokens of dimension 192, 8 attention heads, 6 transformer encoder blocks.
-    Parameters: ~5.8 Million.
+    196 patch tokens of dimension 192, 8 attention heads, 3 transformer encoder blocks.
+    Parameters: ~1.44 Million.
     """
-    def __init__(self, num_classes=25, embed_dim=192, num_heads=8, num_layers=6):
+    def __init__(self, num_classes=25, embed_dim=192, num_heads=8, num_layers=3):
         super().__init__()
         self.patch_embed = PatchEmbedding(in_channels=1, patch_size=16, embed_dim=embed_dim)
         num_patches = 14 * 14  # 196
@@ -253,16 +253,31 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
         log("[HALT] Dataset initialization aborted by user.")
         return checkpoint_path, {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": [], "vram_mb": []}
 
-    train_size = int(0.8 * len(dataset))
-    val_size = len(dataset) - train_size
-    train_set, val_set = torch.utils.data.random_split(dataset, [train_size, val_size])
+    # Stratified 80/20 split preserves minority family representation across all 25 classes
+    if dataset.preloaded and isinstance(dataset.cached_labels, torch.Tensor):
+        labels_np = dataset.cached_labels.cpu().numpy()
+    else:
+        labels_np = np.array([item[1] for item in dataset.file_items])
 
-    log(f"[DATASET] Split configured: {train_size} Training samples, {val_size} Validation samples.")
+    rng = np.random.RandomState(42)
+    train_indices, val_indices = [], []
+    for cls_id in np.unique(labels_np):
+        cls_idx = np.where(labels_np == cls_id)[0]
+        rng.shuffle(cls_idx)
+        n_val = max(1, int(round(0.2 * len(cls_idx)))) if len(cls_idx) >= 5 else 0
+        val_indices.extend(cls_idx[:n_val].tolist())
+        train_indices.extend(cls_idx[n_val:].tolist())
+
+    train_set = torch.utils.data.Subset(dataset, train_indices)
+    val_set = torch.utils.data.Subset(dataset, val_indices)
+    train_size, val_size = len(train_set), len(val_set)
+
+    log(f"[DATASET] Stratified 80/20 split configured: {train_size} Training samples, {val_size} Validation samples.")
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, drop_last=False, pin_memory=is_cuda)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False, pin_memory=is_cuda)
 
-    log(f"[MODEL] Constructing X-MalViT Model (ViT-Tiny: 196 Patches, 8 Attention Heads, 6 Layers, 5.8M Params)...")
-    model = XMalViTModel(num_classes=len(MALWARE_FAMILIES)).to(device)
+    log(f"[MODEL] Constructing X-MalViT Model (ViT-Tiny: 196 Patches, 8 Attention Heads, 3 Layers, 1.44M Params)...")
+    model = XMalViTModel(num_classes=len(MALWARE_FAMILIES), num_layers=3).to(device)
     criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)

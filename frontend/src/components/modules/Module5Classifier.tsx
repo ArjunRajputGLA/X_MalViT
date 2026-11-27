@@ -211,13 +211,22 @@ export const Module5Classifier: React.FC = () => {
               {/* Top-1 Identified Card & Likelihood Table */}
               <Card className="border-slate-200/80 bg-white shadow-xs">
                 <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
-                  <div className="flex items-center justify-between">
-                    <Badge variant="destructive" className="font-mono uppercase text-xs">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <Badge variant="destructive" className="font-mono uppercase text-xs whitespace-nowrap shrink-0">
                       THREAT DETECTED
                     </Badge>
-                    <span className="text-xs font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 font-semibold flex items-center gap-1">
-                      <Zap className="w-3.5 h-3.5 text-emerald-600" />
-                      {predictionResult.latency_ms.toFixed(1)} ms (RTX 4050)
+                    <span
+                      title={predictionResult.device_name || predictionResult.device}
+                      className="text-xs font-mono text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-200/60 font-semibold flex items-center gap-1 whitespace-nowrap shrink-0"
+                    >
+                      <Zap className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      {predictionResult.latency_ms.toFixed(2)} ms (
+                      {predictionResult.device_name?.includes("RTX")
+                        ? predictionResult.device_name.replace("NVIDIA GeForce ", "").replace(" Laptop GPU", "")
+                        : predictionResult.device?.toLowerCase().includes("cuda")
+                        ? "CUDA GPU"
+                        : "CPU"}
+                      )
                     </span>
                   </div>
                   <CardTitle className="text-2xl font-black text-slate-900 mt-2 font-mono tracking-tight">
@@ -269,10 +278,17 @@ export const Module5Classifier: React.FC = () => {
               {/* Visual Attribution 3-Panel Card */}
               <Card className="border-slate-200/80 bg-white shadow-xs">
                 <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
-                  <CardTitle className="text-base text-slate-800 flex items-center gap-2 font-bold">
-                    <Flame className="w-5 h-5 text-rose-500" />
-                    Grad-CAM Visual Attribution (XAI)
-                  </CardTitle>
+                  <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="text-base text-slate-800 flex items-center gap-2 font-bold">
+                      <Flame className="w-5 h-5 text-rose-500" />
+                      Grad-CAM Visual Attribution (XAI)
+                    </CardTitle>
+                    {predictionResult.gradcam_ms != null && (
+                      <span className="text-[11px] font-mono text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200/60 font-semibold whitespace-nowrap shrink-0">
+                        XAI Backprop: {predictionResult.gradcam_ms.toFixed(1)} ms
+                      </span>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="pt-4">
                   <div className="grid grid-cols-3 gap-3">

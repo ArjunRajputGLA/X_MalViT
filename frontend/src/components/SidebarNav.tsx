@@ -205,7 +205,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         {isCollapsed ? (
           <div className="flex flex-col items-center">
             <a
-              href="/api/documents/X-MalViT_IEEE_Conference.pdf"
+              href="/api/documents/X-MalViT_IEEE_Research_Paper.pdf"
               target="_blank"
               rel="noopener noreferrer"
               title="X-MalViT: IEEE Conference Paper (Keshav Agrawal & Arjun S. Rajput - GLA University)"
@@ -232,9 +232,9 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
               </div>
             </div>
 
-            {/* Direct Action to view X-MalViT_IEEE_Conference.pdf */}
+            {/* Direct Action to view X-MalViT_IEEE_Research_Paper.pdf */}
             <a
-              href="/api/documents/X-MalViT_IEEE_Conference.pdf"
+              href="/api/documents/X-MalViT_IEEE_Research_Paper.pdf"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl text-[11px] font-bold bg-slate-50 hover:bg-emerald-600 text-slate-700 hover:text-white border border-slate-200/80 hover:border-emerald-600 transition-all cursor-pointer group shadow-2xs"

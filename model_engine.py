@@ -1,13 +1,14 @@
 """
 X-MalViT Model Engine & Explainable AI (Grad-CAM) Generator.
 Implements PyTorch Vision Transformer inference pipeline, checkpoint loading,
-authentic patch attention attribution, and byte-level hex disassembly around PE hotspots.
+authentic penultimate-layer token Grad-CAM attribution, live CUDA/CPU latency
+measurement, and byte-level hex disassembly around PE hotspots.
 """
 
 import os
+import time
 import numpy as np
 from PIL import Image
-import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 
 import torch
@@ -16,6 +17,7 @@ import torch.nn.functional as F
 from dataset_generator import MALWARE_FAMILIES, FAMILY_CATEGORIES
 from train import XMalViTModel
 
+
 class XMalViTEngine:
     def __init__(self, num_classes=25, image_size=(224, 224), checkpoint_path="checkpoints/x_malvit_weights.pt"):
         self.num_classes = num_classes
@@ -23,56 +25,103 @@ class XMalViTEngine:
         self.classes = MALWARE_FAMILIES
         self.checkpoint_path = checkpoint_path
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
-        self.model = XMalViTModel(num_classes=self.num_classes).to(self.device)
-        self.has_checkpoint = False
-        self.checkpoint_accuracy = 0.988
-        
+        self.device_name = torch.cuda.get_device_name(0) if self.device.type == "cuda" else "CPU Host"
+
+        # Auto-detect layer depth from checkpoint so 3-layer and 6-layer weights both load cleanly
+        detected_layers = 6
+        ckpt_loaded_obj = None
         if os.path.exists(checkpoint_path):
             try:
-                ckpt = torch.load(checkpoint_path, map_location=self.device)
-                if isinstance(ckpt, dict):
-                    if 'model_state_dict' in ckpt:
-                        self.model.load_state_dict(ckpt['model_state_dict'])
-                    if 'accuracy' in ckpt:
-                        self.checkpoint_accuracy = float(ckpt['accuracy'])
+                ckpt_loaded_obj = torch.load(checkpoint_path, map_location=self.device, weights_only=False)
+                sd = ckpt_loaded_obj.get("model_state_dict", ckpt_loaded_obj) if isinstance(ckpt_loaded_obj, dict) else ckpt_loaded_obj
+                layer_ids = {int(k.split(".")[2]) for k in sd if k.startswith("transformer.layers.")}
+                if layer_ids:
+                    detected_layers = max(layer_ids) + 1
+            except Exception:
+                pass
+
+        self.num_layers = detected_layers
+        self.model = XMalViTModel(num_classes=self.num_classes, num_layers=self.num_layers).to(self.device)
+        self.param_count = sum(p.numel() for p in self.model.parameters())
+        self.has_checkpoint = False
+        self.checkpoint_accuracy = 0.9877
+
+        if ckpt_loaded_obj is not None:
+            try:
+                if isinstance(ckpt_loaded_obj, dict):
+                    if "model_state_dict" in ckpt_loaded_obj:
+                        self.model.load_state_dict(ckpt_loaded_obj["model_state_dict"])
+                    if "accuracy" in ckpt_loaded_obj:
+                        self.checkpoint_accuracy = float(ckpt_loaded_obj["accuracy"])
                 else:
-                    self.model.load_state_dict(ckpt)
+                    self.model.load_state_dict(ckpt_loaded_obj)
                 self.has_checkpoint = True
-                print(f"[X-MalViT Engine] Loaded PyTorch checkpoint from {checkpoint_path} on {self.device}")
+                print(
+                    f"[X-MalViT Engine] Loaded {self.num_layers}-layer checkpoint "
+                    f"({self.param_count / 1e6:.2f}M params) from {checkpoint_path} on {self.device_name}"
+                )
             except Exception as e:
                 print(f"[X-MalViT Engine] Warning: Checkpoint load error: {e}")
-                
+
         self.model.eval()
+        # One-time forward + backward kernel warmup so live UI Grad-CAM clicks exclude JIT overhead
+        try:
+            dummy = torch.zeros(1, 1, self.image_size[0], self.image_size[1], device=self.device)
+            _, _ = self._compute_real_vit_gradcam(dummy)
+            if self.device.type == "cuda":
+                torch.cuda.synchronize()
+        except Exception:
+            pass
 
     def predict(self, pil_image, target_family=None, colormap_name="jet"):
         """
-        Runs real PyTorch inference on a malware image and generates:
-        1. Top-5 predicted families with confidence scores
-        2. Grad-CAM visual attribution heatmap with user-chosen colormap
+        Runs live PyTorch inference on a malware image, times actual execution, and computes:
+        1. Top-5 predicted families with softmax confidence scores
+        2. Authentic penultimate-layer ViT Grad-CAM visual attribution heatmap
         3. Heatmap overlaid on the original grayscale image
         4. Reverse-engineered PE binary section mapping
         5. Hex-Dump byte inspection around the peak malicious offset
         """
-        img_gray = pil_image.convert('L').resize(self.image_size)
+        img_gray = pil_image.convert("L").resize(self.image_size, Image.BILINEAR)
         arr = np.array(img_gray, dtype=np.float32) / 255.0
-
-        # Prepare PyTorch Tensor
         norm_arr = (arr - 0.5) / 0.5
         tensor_in = torch.tensor(norm_arr, dtype=torch.float32, device=self.device).unsqueeze(0).unsqueeze(0)
 
-        # PyTorch forward pass
-        with torch.no_grad():
-            logits = self.model(tensor_in)
-            probs = F.softmax(logits, dim=-1).squeeze(0).cpu().numpy()
+        # 1. Measure exact GPU kernel forward inference latency (or CPU perf_counter)
+        if self.device.type == "cuda":
+            fwd_start = torch.cuda.Event(enable_timing=True)
+            fwd_end = torch.cuda.Event(enable_timing=True)
+            fwd_start.record()
+            with torch.no_grad():
+                logits = self.model(tensor_in)
+            fwd_end.record()
+            torch.cuda.synchronize()
+            inference_ms = round(float(fwd_start.elapsed_time(fwd_end)), 2)
 
-        # In case checkpoint was newly initialized without fine-tuning, preserve high-fidelity family prior matching
-        if not self.has_checkpoint or float(np.max(probs)) < 0.25:
-            # High-fidelity structural heuristic prior blending
+            xai_start = torch.cuda.Event(enable_timing=True)
+            xai_end = torch.cuda.Event(enable_timing=True)
+            xai_start.record()
+            cam_resized, _ = self._compute_real_vit_gradcam(tensor_in)
+            xai_end.record()
+            torch.cuda.synchronize()
+            gradcam_ms = round(float(xai_start.elapsed_time(xai_end)), 2)
+        else:
+            t_fwd0 = time.perf_counter()
+            with torch.no_grad():
+                logits = self.model(tensor_in)
+            inference_ms = round((time.perf_counter() - t_fwd0) * 1000.0, 2)
+
+            t_xai0 = time.perf_counter()
+            cam_resized, _ = self._compute_real_vit_gradcam(tensor_in)
+            gradcam_ms = round((time.perf_counter() - t_xai0) * 1000.0, 2)
+
+        probs = F.softmax(logits, dim=-1).squeeze(0).detach().cpu().numpy()
+
+        # Heuristic fallback only if no trained checkpoint is loaded on disk
+        if not self.has_checkpoint:
             payload_entropy = float(np.std(arr[125:180, :]))
             code_energy = float(np.mean(arr[22:125, :]))
             header_entropy = float(np.std(arr[:22, :]))
-
             scores = np.zeros(self.num_classes)
             for i, family in enumerate(self.classes):
                 base_score = 0.05
@@ -90,7 +139,6 @@ class XMalViTEngine:
                     seed = abs(hash(family) + int(payload_entropy * 100)) % 100
                     base_score = 0.02 + (seed / 1000.0)
                 scores[i] = base_score
-            
             exp_scores = np.exp(scores * 5.0)
             probs = exp_scores / np.sum(exp_scores)
 
@@ -99,17 +147,15 @@ class XMalViTEngine:
             {
                 "family": self.classes[idx],
                 "confidence": float(probs[idx]),
-                "category": self._get_category(self.classes[idx])
+                "category": self._get_category(self.classes[idx]),
             }
             for idx in top_indices
         ]
-
         top_family = top_predictions[0]["family"]
 
-        # Generate Grad-CAM Heatmap
-        cam_map, overlay_img, pe_analysis = self._generate_gradcam(arr, top_family, colormap_name=colormap_name)
-
-        # Generate Hex Dump around hotspot
+        heatmap_img, overlay_img, pe_analysis = self._render_cam_and_pe(
+            arr, cam_resized, colormap_name=colormap_name
+        )
         hex_dump = self._generate_hex_dump(arr, pe_analysis["hotspot_coords"])
 
         return {
@@ -117,53 +163,89 @@ class XMalViTEngine:
             "confidence": top_predictions[0]["confidence"],
             "category": top_predictions[0]["category"],
             "top_5": top_predictions,
-            "heatmap": cam_map,
+            "heatmap": heatmap_img,
             "overlay": overlay_img,
             "pe_analysis": pe_analysis,
             "hex_dump": hex_dump,
-            "latency_ms": 23.4,
+            "latency_ms": inference_ms,
+            "gradcam_ms": gradcam_ms,
+            "total_ms": round(inference_ms + gradcam_ms, 2),
             "checkpoint_loaded": self.has_checkpoint,
-            "device": str(self.device)
+            "device": str(self.device),
+            "device_name": self.device_name,
         }
 
-    def _get_category(self, family):
-        for cat, families in FAMILY_CATEGORIES.items():
-            if family in families:
-                return cat
-        return "Trojan"
+    def _compute_real_vit_gradcam(self, tensor_in):
+        """
+        Computes gradient-weighted Class Activation Mapping (Grad-CAM) over the
+        penultimate Transformer Encoder layer's 14x14 spatial patch tokens.
+        """
+        h, w = self.image_size
+        acts = {}
 
-    def _generate_gradcam(self, img_arr, family_name, colormap_name="jet"):
-        h, w = img_arr.shape
-        cam = np.zeros((14, 14), dtype=np.float32)
+        # Choose penultimate layer when >= 2 layers exist so spatial tokens retain non-zero gradients
+        target_layer = (
+            self.model.transformer.layers[-2]
+            if len(self.model.transformer.layers) >= 2
+            else self.model.patch_embed
+        )
 
-        for r in range(14):
-            for c in range(14):
-                patch = img_arr[r*16:(r+1)*16, c*16:(c+1)*16]
-                patch_variance = np.var(patch)
-                if 7 <= r <= 11:
-                    cam[r, c] = patch_variance * 3.5 + 0.45
-                elif r <= 1:
-                    cam[r, c] = patch_variance * 1.5 + 0.12
+        def fwd_hook(module, inp, out):
+            acts["tokens"] = out
+            if out.requires_grad:
+                out.retain_grad()
+
+        handle = target_layer.register_forward_hook(fwd_hook)
+        try:
+            x = tensor_in.detach().clone().requires_grad_(True)
+            self.model.zero_grad(set_to_none=True)
+            logits = self.model(x)
+            top_idx = int(logits.argmax(dim=1).item())
+            logits[0, top_idx].backward()
+
+            tok = acts.get("tokens")
+            if tok is not None and tok.grad is not None:
+                # Skip [CLS] token at index 0 if sequence length == 197
+                A = tok[0, 1:, :].detach() if tok.shape[1] == 197 else tok[0].detach()
+                G = tok.grad[0, 1:, :].detach() if tok.grad.shape[1] == 197 else tok.grad[0].detach()
+                # Transformer LayerNorm/GELU tokens are zero-centered: apply element-wise positive
+                # gradient-activation alignment (Chefer et al.) blended with channel Grad-CAM
+                cam_pos = F.relu(A * G).sum(dim=1)
+                alpha = G.mean(dim=0, keepdim=True)
+                cam_global = F.relu((A * alpha).sum(dim=1))
+                cam_pos_norm = (cam_pos - cam_pos.min()) / (cam_pos.max() - cam_pos.min() + 1e-8)
+                if cam_global.max() > 1e-8:
+                    cam_g_norm = cam_global / (cam_global.max() + 1e-8)
+                    cam_flat = 0.55 * cam_pos_norm + 0.45 * cam_g_norm
                 else:
-                    cam[r, c] = patch_variance * 0.5
+                    cam_flat = cam_pos_norm
+                grid_sz = int(round(cam_flat.numel() ** 0.5))
+                cam = cam_flat.view(grid_sz, grid_sz).cpu().numpy()
+            else:
+                cam = np.ones((14, 14), dtype=np.float32) * 0.5
+        finally:
+            handle.remove()
+            self.model.zero_grad(set_to_none=True)
 
-        cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)
-        cam_pil = Image.fromarray((cam * 255).astype(np.uint8)).resize((w, h), resample=Image.BILINEAR)
+        if cam.max() > cam.min():
+            cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)
+        cam_pil = Image.fromarray((cam * 255).astype(np.uint8)).resize((w, h), resample=Image.BICUBIC)
         cam_resized = np.array(cam_pil, dtype=np.float32) / 255.0
+        return cam_resized, logits.detach()
 
+    def _render_cam_and_pe(self, img_arr, cam_resized, colormap_name="jet"):
+        h, w = img_arr.shape
         try:
             colormap = plt.get_cmap(colormap_name)
         except Exception:
-            colormap = plt.get_cmap('jet')
+            colormap = plt.get_cmap("jet")
 
-        heatmap_colored = colormap(cam_resized)[:, :, :3]
-        heatmap_colored = (heatmap_colored * 255).astype(np.uint8)
-
+        heatmap_colored = (colormap(cam_resized)[:, :, :3] * 255).astype(np.uint8)
         orig_rgb = np.stack([img_arr * 255] * 3, axis=-1).astype(np.uint8)
         overlay = (0.52 * orig_rgb + 0.48 * heatmap_colored).astype(np.uint8)
 
         peak_y, peak_x = np.unravel_index(np.argmax(cam_resized), cam_resized.shape)
-        
+
         if peak_y < int(h * 0.10):
             section_name = ".text (PE Optional Header & Entry Point)"
             va_offset = hex(0x00401000 + peak_y * 16 + peak_x)
@@ -186,10 +268,16 @@ class XMalViTEngine:
             "section": section_name,
             "virtual_address": va_offset,
             "forensic_meaning": meaning,
-            "attention_weight": float(cam_resized[peak_y, peak_x])
+            "attention_weight": float(cam_resized[peak_y, peak_x]),
         }
 
         return Image.fromarray(heatmap_colored), Image.fromarray(overlay), pe_analysis
+
+    def _get_category(self, family):
+        for cat, families in FAMILY_CATEGORIES.items():
+            if family in families:
+                return cat
+        return "Trojan"
 
     def _generate_hex_dump(self, arr, hotspot_coords, num_lines=6):
         """

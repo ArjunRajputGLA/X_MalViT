@@ -117,9 +117,9 @@ def get_system_status():
         "vram_allocated": vram_alloc,
         "has_checkpoint": eng.has_checkpoint,
         "checkpoint_path": eng.checkpoint_path,
-        "checkpoint_accuracy": getattr(eng, "checkpoint_accuracy", 0.988),
-        "model_name": "X-MalViT-Tiny (Vision Transformer)",
-        "parameters": "5.8 Million",
+        "checkpoint_accuracy": getattr(eng, "checkpoint_accuracy", 0.9877),
+        "model_name": f"X-MalViT-Tiny ({getattr(eng, 'num_layers', 6)}-Layer ViT)",
+        "parameters": f"{getattr(eng, 'param_count', 2777881) / 1e6:.2f} Million",
         "num_classes": len(MALWARE_FAMILIES),
         "input_dimensions": "224x224 Grayscale Byte Matrix"
     }
@@ -224,7 +224,10 @@ def predict_sample(req: SamplePredictRequest):
         "pe_analysis": pred["pe_analysis"],
         "hex_dump": pred["hex_dump"],
         "latency_ms": float(pred["latency_ms"]),
+        "gradcam_ms": float(pred.get("gradcam_ms", 0.0)),
+        "total_ms": float(pred.get("total_ms", pred["latency_ms"])),
         "device": pred["device"],
+        "device_name": pred.get("device_name", "CPU Host"),
         "checkpoint_loaded": pred["checkpoint_loaded"],
         "raw_image_url": raw_url,
         "heatmap_url": heatmap_url,
@@ -259,7 +262,10 @@ async def predict_upload(
         "pe_analysis": pred["pe_analysis"],
         "hex_dump": pred["hex_dump"],
         "latency_ms": float(pred["latency_ms"]),
+        "gradcam_ms": float(pred.get("gradcam_ms", 0.0)),
+        "total_ms": float(pred.get("total_ms", pred["latency_ms"])),
         "device": pred["device"],
+        "device_name": pred.get("device_name", "CPU Host"),
         "checkpoint_loaded": pred["checkpoint_loaded"],
         "raw_image_url": raw_url,
         "heatmap_url": heatmap_url,
@@ -416,70 +422,70 @@ def stop_training():
 def get_benchmarks():
     benchmark_models = [
         {
-            "model": "Random Forest Baseline [1]",
-            "input_format": "1D Byte Histogram",
-            "parameters": "~15 MB",
-            "accuracy": 91.4,
-            "precision": 90.8,
-            "f1_score": 91.1,
-            "latency": "14.2 ms (CPU)"
+            "model": "Random Forest (Spatial/Hist Stats) [1]",
+            "input_format": "192 Statistical Features",
+            "parameters": "— (CPU)",
+            "accuracy": 99.14,
+            "precision": 99.15,
+            "f1_score": 99.15,
+            "latency": "0.07 ms (CPU)"
         },
         {
-            "model": "MalConv (1D Byte Sequence CNN) [4]",
-            "input_format": "Raw Byte Stream (1D)",
-            "parameters": "~45.0 M",
-            "accuracy": 93.8,
-            "precision": 93.2,
-            "f1_score": 93.5,
-            "latency": "85.0 ms (GPU)"
+            "model": "MalConv-1D (Byte Stream CNN) [2]",
+            "input_format": "50,176-Byte 1D Stream",
+            "parameters": "0.26 M",
+            "accuracy": 97.91,
+            "precision": 97.88,
+            "f1_score": 97.82,
+            "latency": "3.03 ms (RTX 4050)"
         },
         {
-            "model": "MobileNetV2 (Edge CNN) [10]",
+            "model": "ResNet-18 (Standard 2D CNN) [9]",
             "input_format": "224x224 Grayscale Image",
-            "parameters": "3.4 M",
-            "accuracy": 96.8,
-            "precision": 96.5,
-            "f1_score": 96.6,
-            "latency": "11.8 ms (GPU)"
+            "parameters": "11.18 M",
+            "accuracy": 98.23,
+            "precision": 97.27,
+            "f1_score": 97.70,
+            "latency": "3.66 ms (RTX 4050)"
         },
         {
-            "model": "ResNet-18 (Standard CNN) [2]",
+            "model": "MobileNetV2 (Depthwise CNN) [10]",
             "input_format": "224x224 Grayscale Image",
-            "parameters": "11.2 M",
-            "accuracy": 97.6,
-            "precision": 97.4,
-            "f1_score": 97.5,
-            "latency": "16.5 ms (GPU)"
+            "parameters": "2.26 M",
+            "accuracy": 99.04,
+            "precision": 99.07,
+            "f1_score": 99.03,
+            "latency": "8.51 ms (RTX 4050)"
         },
         {
-            "model": "ViT-Tiny (Standard ViT) [6]",
-            "input_format": "16x16 Image Patches",
-            "parameters": "5.7 M",
-            "accuracy": 98.2,
-            "precision": 98.0,
-            "f1_score": 98.1,
-            "latency": "22.1 ms (GPU)"
+            "model": "X-MalViT (Standard L=3, Ours)",
+            "input_format": "196 Patches + Grad-CAM",
+            "parameters": "1.44 M",
+            "accuracy": 98.34,
+            "precision": 98.37,
+            "f1_score": 98.34,
+            "latency": "3.47 ms (RTX 4050)"
         },
         {
-            "model": "X-MalViT (Ours + Grad-CAM)",
-            "input_format": "Patches + Visual XAI",
-            "parameters": "5.8 M",
-            "accuracy": 98.8,
-            "precision": 98.7,
-            "f1_score": 98.7,
-            "latency": "23.4 ms (RTX 4050)"
+            "model": "X-MalViT (Optimal L=3 + Grad-CAM, Ours)",
+            "input_format": "196 Patches + Grad-CAM XAI",
+            "parameters": "1.44 M",
+            "accuracy": 98.77,
+            "precision": 98.77,
+            "f1_score": 98.77,
+            "latency": "3.79 ms (RTX 4050)"
         }
     ]
 
     top_fams = ["Allaple.A", "Allaple.L", "Yuner.A", "Fakerean", "Dontovo.A", "Autorun.K", "Swizzor.gen!I"]
     cm_matrix = [
-        [98,  1,  0,  0,  0,  1,  0],
-        [ 2, 97,  0,  0,  0,  1,  0],
-        [ 0,  0, 99,  1,  0,  0,  0],
-        [ 0,  0,  1, 98,  1,  0,  0],
-        [ 0,  0,  0,  2, 98,  0,  0],
-        [ 1,  0,  0,  0,  0, 99,  0],
-        [ 0,  0,  0,  0,  1,  0, 99]
+        [100,   0,   0,   0,   0,   0,   0],
+        [  0, 100,   0,   0,   0,   0,   0],
+        [  0,   0, 100,   0,   0,   0,   0],
+        [  0,   0,   0, 100,   0,   0,   0],
+        [  0,   0,   0,   0, 100,   0,   0],
+        [  0,   0,   0,   0,   0, 100,   0],
+        [  0,   0,   0,   0,   0,   0,  62]
     ]
 
     return {
@@ -492,42 +498,50 @@ def get_benchmarks():
 
 
 # ==================== 6. RESEARCH MANUSCRIPTS & PUBLICATIONS ====================
+def _human_size(path: str, fallback: str) -> str:
+    if os.path.exists(path):
+        sz = os.path.getsize(path)
+        return f"{sz / (1024 * 1024):.2f} MB" if sz >= 1024 * 1024 else f"{sz // 1024} KB"
+    return fallback
+
 @app.get("/api/manuscripts")
 def get_manuscripts():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    papers_dir = os.path.join(base_dir, "Papers")
     return {
-        "title": "X-MalViT: Explainable Vision Transformer for Static Malware Family Classification",
-        "authors": ["Keshav Agrawal", "Arjun S. Rajput"],
+        "title": "X-MalViT: Explainable Vision Transformer with Grad-CAM for Visual Malware Family Classification",
+        "authors": ["Keshav Agrawal", "Arjun Singh Rajput"],
         "affiliation": "Department of Computer Science & Engineering, GLA University, Mathura",
-        "venue": "IEEE International Conference on Cyber Threat Intelligence & Machine Learning",
-        "status": "Peer-Review Ready / Official Manuscript",
+        "venue": "IEEE Conference Manuscript (Camera-Ready Double-Column Format)",
+        "status": "Peer-Review Ready / Camera-Ready Manuscript",
         "metrics": {
-            "accuracy": "98.8%",
-            "f1_score": "98.7%",
-            "latency": "23.4 ms",
-            "parameters": "5.8 Million",
+            "accuracy": "98.77%",
+            "f1_score": "96.91% Macro / 98.77% Weighted",
+            "latency": "3.79 ms",
+            "parameters": "1.44 Million",
             "dataset": "9,339 Authenticated Binaries (25 Families)"
         },
         "manuscripts": [
             {
-                "title": "IEEE Conference Full Research Paper (4-Page Official Manuscript)",
-                "filename": "IEEE_Research_Paper_X_MalViT.pdf",
-                "size": "943 KB",
-                "description": "Complete camera-ready double-column IEEE format manuscript with mathematical formulations and comparative ablation tables.",
-                "url": "/api/documents/IEEE_Research_Paper_X_MalViT.pdf"
+                "title": "X-MalViT IEEE Research Paper (7-Page Camera-Ready PDF)",
+                "filename": "X-MalViT_IEEE_Research_Paper.pdf",
+                "size": _human_size(os.path.join(papers_dir, "X-MalViT_IEEE_Research_Paper.pdf"), "5.58 MB"),
+                "description": "Complete 7-page double-column IEEE conference manuscript with Table I literature gaps, PyTorch Grad-CAM forensics, ablations, and overlay robustness benchmarks.",
+                "url": "/api/documents/X-MalViT_IEEE_Research_Paper.pdf"
+            },
+            {
+                "title": "IEEEtran LaTeX Source Package (Overleaf-Ready ZIP)",
+                "filename": "X-MalViT_IEEE_Conference_LaTeX_Updated.zip",
+                "size": _human_size(os.path.join(papers_dir, "X-MalViT_IEEE_Conference_LaTeX_Updated.zip"), "4.00 MB"),
+                "description": "Synchronized IEEEtran .tex source, BibTeX references, IEEEtran.cls/.bst, and 300 DPI figures ready for IEEE/Springer submission.",
+                "url": "/api/documents/X-MalViT_IEEE_Conference_LaTeX_Updated.zip"
             },
             {
                 "title": "Malware Research Project Guide (Executive Blueprint)",
                 "filename": "Malware_Research_Project_Guide.pdf",
-                "size": "382 KB",
+                "size": _human_size(os.path.join(papers_dir, "Malware_Research_Project_Guide.pdf"), "373 KB"),
                 "description": "Executive research roadmap detailing visual tokenization methodology and threat intelligence pipeline.",
                 "url": "/api/documents/Malware_Research_Project_Guide.pdf"
-            },
-            {
-                "title": "X-MalViT IEEE Conference Preprint",
-                "filename": "X-MalViT_IEEE_Conference.pdf",
-                "size": "295 KB",
-                "description": "Author preprint showcasing experimental comparisons against CNNs, MalConv, and random forest baselines.",
-                "url": "/api/documents/X-MalViT_IEEE_Conference.pdf"
             }
         ]
     }
@@ -540,8 +554,12 @@ def get_viva_alias():
 @app.get("/api/documents/{filename}")
 def download_document(filename: str):
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(base_dir, filename)
-    if not os.path.exists(file_path):
+    candidates = [
+        os.path.join(base_dir, "Papers", filename),
+        os.path.join(base_dir, filename),
+    ]
+    file_path = next((p for p in candidates if os.path.exists(p)), None)
+    if file_path is None:
         raise HTTPException(status_code=404, detail="Document not found")
     return FileResponse(file_path, filename=filename)
 

@@ -65,7 +65,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
           <div className="mt-2">
             <div className="text-3xl font-extrabold text-slate-900 tracking-tight">{accuracyFormatted}</div>
             <div className="text-xs font-medium text-emerald-600 mt-1 flex items-center gap-1">
-              <span className="font-semibold">+2.4%</span> over ResNet-18 baseline
+              <span className="font-semibold">+2.83% Macro-F1</span> over ResNet-18
             </div>
           </div>
         </div>
@@ -89,15 +89,15 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
         {/* Card 3: Inference Latency */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-            <span>Inference Latency</span>
+            <span>CUDA Kernel Latency</span>
             <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
               <Zap className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2">
-            <div className="text-3xl font-extrabold text-slate-900 tracking-tight">23.4 ms</div>
+            <div className="text-3xl font-extrabold text-slate-900 tracking-tight">3.79 ms</div>
             <div className="text-xs font-medium text-amber-600 mt-1">
-              Real-time static triage (&lt;25ms)
+              Real-time static triage (&lt;5 ms GPU)
             </div>
           </div>
         </div>
@@ -111,9 +111,11 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
             </div>
           </div>
           <div className="mt-2">
-            <div className="text-3xl font-extrabold text-slate-900 tracking-tight">5.8 M</div>
+            <div className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              {systemStatus?.parameters ? systemStatus.parameters.replace(" Million", " M") : "2.78 M"}
+            </div>
             <div className="text-xs font-medium text-purple-600 mt-1">
-              ViT-Tiny (14x14 Patch Tokens)
+              ViT-Tiny (1.44M optimal, 14x14 patches)
             </div>
           </div>
         </div>
@@ -278,7 +280,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
                 <strong className="text-slate-900">Abstract:</strong> Static signature-based antivirus engines rely on cryptographic hash matching (MD5, SHA-256), which fails against modern polymorphic and metamorphic malware. We propose <strong className="text-emerald-700">X-MalViT</strong>, a lightweight Vision Transformer architecture coupled with Gradient-weighted Class Activation Mapping (Grad-CAM) visual explainability for static malware family classification.
               </p>
               <p>
-                Executable binaries from the benchmark Malimg dataset (9,339 samples across 25 families) are converted into two-dimensional grayscale byte matrices, tokenized into non-overlapping patches, and analyzed with multi-head self-attention. Unlike black-box models, X-MalViT projects activation heatmaps back to discrete PE file sections (<code className="text-emerald-700 bg-emerald-50 px-1 rounded border border-emerald-200 font-mono text-[11px]">.text</code>, <code className="text-emerald-700 bg-emerald-50 px-1 rounded border border-emerald-200 font-mono text-[11px]">.rsrc</code>, shellcode jump offsets). Trained locally using FP16 mixed precision on an NVIDIA RTX 4050 GPU, X-MalViT converges in under 4 minutes with <strong className="text-emerald-700">98.8% accuracy</strong> and an inference latency of <strong className="text-emerald-700">23.4 ms per binary</strong>.
+                Executable binaries from the benchmark Malimg dataset (9,339 samples across 25 families) are converted into two-dimensional grayscale byte matrices, tokenized into non-overlapping patches, and analyzed with multi-head self-attention. Unlike black-box models, X-MalViT projects penultimate-token Grad-CAM heatmaps back to discrete PE file sections (<code className="text-emerald-700 bg-emerald-50 px-1 rounded border border-emerald-200 font-mono text-[11px]">.text</code>, <code className="text-emerald-700 bg-emerald-50 px-1 rounded border border-emerald-200 font-mono text-[11px]">.rsrc</code>, unpacking stubs). Trained locally using FP16 mixed precision on an NVIDIA RTX 4050 GPU, our 3-layer X-MalViT converges in under 2 minutes with <strong className="text-emerald-700">98.77% accuracy</strong>, <strong className="text-emerald-700">96.91% Macro-F1</strong>, and an inference latency of <strong className="text-emerald-700">3.79 ms per binary</strong>.
               </p>
             </div>
           </div>
@@ -303,15 +305,17 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
             {/* 3 Telemetry Pills */}
             <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t border-slate-100">
               <div className="p-2 rounded-xl bg-emerald-50/70 border border-emerald-100">
-                <div className="text-emerald-600 font-extrabold text-base">98.7%</div>
-                <div className="text-[10px] text-emerald-800 font-medium mt-0.5">F1-Score</div>
+                <div className="text-emerald-600 font-extrabold text-base">96.9%</div>
+                <div className="text-[10px] text-emerald-800 font-medium mt-0.5">Macro-F1</div>
               </div>
               <div className="p-2 rounded-xl bg-blue-50/70 border border-blue-100">
                 <div className="text-blue-600 font-extrabold text-base">{overview?.total_families || 25}</div>
                 <div className="text-[10px] text-blue-800 font-medium mt-0.5">Families</div>
               </div>
               <div className="p-2 rounded-xl bg-purple-50/70 border border-purple-100">
-                <div className="text-purple-600 font-extrabold text-base">5.8M</div>
+                <div className="text-purple-600 font-extrabold text-base">
+                  {systemStatus?.parameters ? systemStatus.parameters.replace(" Million", "M") : "2.78M"}
+                </div>
                 <div className="text-[10px] text-purple-800 font-medium mt-0.5">Weights</div>
               </div>
             </div>

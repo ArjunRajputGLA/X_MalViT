@@ -39,12 +39,12 @@ interface TrainingLog {
 }
 
 export const Module3Training: React.FC = () => {
-  const [architecture, setArchitecture] = useState<string>("X-MalViT Tiny (Proposed - 5.8M Params)");
+  const [architecture, setArchitecture] = useState<string>("X-MalViT Tiny (3-Layer Optimal - 1.44M Params)");
   const [deviceMode, setDeviceMode] = useState<"cuda" | "cpu">("cuda");
-  const [epochs, setEpochs] = useState<number>(4);
-  const [batchSize, setBatchSize] = useState<number>(32);
-  const [samplesPerFam, setSamplesPerFam] = useState<number>(20);
-  const [learningRate, setLearningRate] = useState<number>(0.0003);
+  const [epochs, setEpochs] = useState<number>(12);
+  const [batchSize, setBatchSize] = useState<number>(64);
+  const [samplesPerFam, setSamplesPerFam] = useState<number>(0);
+  const [learningRate, setLearningRate] = useState<number>(0.0004);
 
   const [systemStatus, setSystemStatus] = useState<any>(null);
   const [isTraining, setIsTraining] = useState<boolean>(false);
@@ -323,14 +323,14 @@ export const Module3Training: React.FC = () => {
                 disabled={isTraining}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all font-medium"
               >
-                <option value="X-MalViT Tiny (Proposed - 5.8M Params)">
-                  X-MalViT Tiny (Proposed - 5.8M Params)
+                <option value="X-MalViT Tiny (3-Layer Optimal - 1.44M Params)">
+                  X-MalViT Tiny (3-Layer Optimal - 1.44M Params)
                 </option>
-                <option value="ResNet-18 (CNN Baseline - 11.2M Params)">
-                  ResNet-18 (CNN Baseline - 11.2M Params)
+                <option value="ResNet-18 (CNN Baseline - 11.18M Params)">
+                  ResNet-18 (CNN Baseline - 11.18M Params)
                 </option>
-                <option value="MobileNetV2 (Edge Baseline - 3.4M Params)">
-                  MobileNetV2 (Edge Baseline - 3.4M Params)
+                <option value="MobileNetV2 (Edge Baseline - 2.26M Params)">
+                  MobileNetV2 (Edge Baseline - 2.26M Params)
                 </option>
               </select>
             </div>
@@ -423,7 +423,7 @@ export const Module3Training: React.FC = () => {
               <input
                 type="range"
                 min="2"
-                max="10"
+                max="20"
                 step="1"
                 value={epochs}
                 disabled={isTraining}
@@ -432,10 +432,10 @@ export const Module3Training: React.FC = () => {
               />
               <div className="flex justify-between text-[10px] text-slate-400 font-mono mt-1 font-semibold">
                 <span>2</span>
-                <span>4</span>
                 <span>6</span>
-                <span>8</span>
-                <span>10</span>
+                <span>12</span>
+                <span>16</span>
+                <span>20</span>
               </div>
             </div>
 
@@ -497,8 +497,8 @@ export const Module3Training: React.FC = () => {
                 ))}
               </div>
               {samplesPerFam === 0 && (
-                <p className="text-[10.5px] text-amber-700 mt-1.5 font-medium leading-tight">
-                  ⚡ Full 9,339 Malimg benchmark selected. Streamed directly from disk. (On CPU, full passes require more time per epoch).
+                <p className="text-[10.5px] text-emerald-700 mt-1.5 font-medium leading-tight">
+                  ⚡ Full 9,339 Malimg benchmark selected. Loaded via RAM cache in ~0.3s (~4.3s/epoch on RTX 4050).
                 </p>
               )}
             </div>
@@ -508,8 +508,8 @@ export const Module3Training: React.FC = () => {
               <label className="text-xs font-semibold text-slate-700 block mb-1.5">
                 AdamW Learning Rate
               </label>
-              <div className="grid grid-cols-4 gap-2">
-                {[0.0001, 0.0003, 0.0005, 0.001].map((lr) => (
+              <div className="grid grid-cols-5 gap-1.5">
+                {[0.0001, 0.0003, 0.0004, 0.0005, 0.001].map((lr) => (
                   <button
                     key={lr}
                     type="button"
