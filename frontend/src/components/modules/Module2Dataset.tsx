@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,8 @@ export const Module2Dataset: React.FC = () => {
   const [distribution, setDistribution] = useState<any[]>([]);
   const [loadingSample, setLoadingSample] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [sampleIndex, setSampleIndex] = useState<number>(0);
+  const sampleRequestSeq = useRef<number>(0);
 
   useEffect(() => {
     fetchOverview();
@@ -49,7 +51,7 @@ export const Module2Dataset: React.FC = () => {
         setCategories(data.categories || {});
         setDistribution(data.distribution || []);
         if (data.categories?.Worm?.length > 0) {
-          loadFamilySample(data.categories.Worm[0]);
+          loadFamilySample(data.categories.Worm[0], 0);
         }
       }
     } catch (e) {
@@ -58,20 +60,25 @@ export const Module2Dataset: React.FC = () => {
   };
 
   const loadFamilySample = async (family: string, seed?: number) => {
+    const requestId = ++sampleRequestSeq.current;
+    const effectiveSeed = seed ?? 0;
+    setSampleIndex(effectiveSeed);
     setLoadingSample(true);
     try {
-      const url = seed !== undefined
-        ? `/api/dataset/sample?family=${encodeURIComponent(family)}&seed=${seed}`
-        : `/api/dataset/sample?family=${encodeURIComponent(family)}`;
-      const res = await fetch(url);
+      const url = `/api/dataset/sample?family=${encodeURIComponent(family)}&seed=${effectiveSeed}`;
+      const res = await fetch(url, { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
-        setSampleData(data);
+        if (requestId === sampleRequestSeq.current) {
+          setSampleData(data);
+        }
       }
     } catch (e) {
       console.error("Error loading sample:", e);
     } finally {
-      setLoadingSample(false);
+      if (requestId === sampleRequestSeq.current) {
+        setLoadingSample(false);
+      }
     }
   };
 
@@ -80,17 +87,17 @@ export const Module2Dataset: React.FC = () => {
     const fams = categories[cat] || [];
     if (fams.length > 0) {
       setSelectedFamily(fams[0]);
-      loadFamilySample(fams[0]);
+      loadFamilySample(fams[0], 0);
     }
   };
 
   const handleFamilyChange = (fam: string) => {
     setSelectedFamily(fam);
-    loadFamilySample(fam);
+    loadFamilySample(fam, 0);
   };
 
   const handleSynthesizeNew = () => {
-    loadFamilySample(selectedFamily, Date.now());
+    loadFamilySample(selectedFamily, sampleIndex + 1);
   };
 
   const filteredDist = distribution.filter(d =>
@@ -394,7 +401,7 @@ export const Module2Dataset: React.FC = () => {
                           onClick={() => {
                             setSelectedCategory(item.category);
                             setSelectedFamily(item.family);
-                            loadFamilySample(item.family);
+                            loadFamilySample(item.family, 0);
                           }}
                           className="group text-accent hover:text-accent hover:bg-accent-soft/60 -ml-2"
                         >

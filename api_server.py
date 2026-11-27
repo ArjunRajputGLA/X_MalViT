@@ -21,7 +21,7 @@ import numpy as np
 from PIL import Image
 import torch
 
-from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException, BackgroundTasks, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse, FileResponse
 from pydantic import BaseModel
@@ -173,7 +173,8 @@ def get_dataset_overview():
     }
 
 @app.get("/api/dataset/sample")
-def get_synthetic_sample(family: str = Query(..., description="Target malware family name"), seed: Optional[int] = None):
+def get_synthetic_sample(response: Response, family: str = Query(..., description="Target malware family name"), seed: Optional[int] = None):
+    response.headers["Cache-Control"] = "no-store"
     fam = normalize_family_name(family)
     if fam not in MALWARE_FAMILIES and family not in MALWARE_FAMILIES:
         raise HTTPException(status_code=400, detail=f"Unknown family '{family}'. Must be one of {MALWARE_FAMILIES}")
