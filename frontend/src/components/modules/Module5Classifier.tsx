@@ -136,7 +136,8 @@ export const Module5Classifier: React.FC = () => {
 
   const prefersReducedMotion = useReducedMotion();
 
-  const confidencePct = predictionResult ? predictionResult.confidence * 100 : 0;
+  const isOod = Boolean(predictionResult?.is_out_of_distribution);
+  const confidencePct = predictionResult && !isOod ? predictionResult.confidence * 100 : 0;
   const confidenceTierClass =
     confidencePct >= 80
       ? "bg-critical"
@@ -145,7 +146,7 @@ export const Module5Classifier: React.FC = () => {
       : "bg-muted";
   const hexRows = parseHexDumpLines(predictionResult?.hex_dump);
   const resultAnimKey = predictionResult
-    ? `${predictionResult.top_family}-${predictionResult.latency_ms}-${predictionResult.overlay_url?.slice(-24) || ""}`
+    ? `${predictionResult.top_family}-${predictionResult.latency_ms}-${predictionResult.raw_image_url?.slice(-24) || ""}`
     : "empty";
 
   return (
@@ -309,13 +310,13 @@ export const Module5Classifier: React.FC = () => {
                 <Card className="overflow-hidden flex flex-col h-full">
                   <CardHeader className="pb-4 border-b border-line bg-surface-2">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <Badge variant="destructive" className="border-0 text-[12px] font-medium">
-                        Threat detected
-                      </Badge>
-                      <span
-                        title={predictionResult.device_name || predictionResult.device}
-                        className="text-[12px] text-ok-ink bg-ok-soft px-2.5 py-0.5 rounded-chip font-mono font-medium inline-flex items-center gap-1 tabular-nums whitespace-nowrap shrink-0"
+                      <Badge
+                        variant={isOod ? "warning" : "destructive"}
+                        className="border-0 text-[12px] font-medium"
                       >
+                        {isOod ? "Non-PE / Out-of-Distribution" : "Threat detected"}
+                      </Badge>
+                      <span className="text-[12px] text-ok-ink bg-ok-soft px-2.5 py-0.5 rounded-chip font-mono font-medium inline-flex items-center gap-1 tabular-nums whitespace-nowrap shrink-0" title={predictionResult.device_name || predictionResult.device}>
                         <Zap className="w-3.5 h-3.5 text-ok shrink-0" />
                         {predictionResult.latency_ms.toFixed(2)} ms (
                         {predictionResult.device_name?.includes("RTX")
@@ -334,9 +335,11 @@ export const Module5Classifier: React.FC = () => {
                     <div className="flex items-center gap-2 text-[13px] text-muted font-medium mt-1">
                       <span>Category:</span>
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-chip text-[12px] font-medium ${getCategoryChipClass(
-                          predictionResult.category
-                        )}`}
+                        className={`inline-flex items-center px-2 py-0.5 rounded-chip text-[12px] font-medium ${
+                          isOod
+                            ? "bg-surface-2 text-muted"
+                            : getCategoryChipClass(predictionResult.category)
+                        }`}
                       >
                         {predictionResult.category}
                       </span>
@@ -357,57 +360,71 @@ export const Module5Classifier: React.FC = () => {
                       />
                     </div>
 
-                    <div>
-                      <div className="text-[13px] font-semibold text-ink mb-2">
-                        Top-5 Family Likelihood Ranking
+                    {isOod ? (
+                      <div className="p-4 rounded-tile bg-high-soft border border-high/20 text-[13px] text-ink leading-[1.55] space-y-1.5">
+                        <div className="font-semibold text-high-ink">
+                          Not recognized as a compiled PE binary texture
+                        </div>
+                        <p className="text-muted text-[12px]">
+                          {predictionResult.ood_reason}
+                        </p>
+                        <p className="text-muted text-[12px]">
+                          Upload an 8-bit grayscale executable byte matrix or choose a sample from the Malimg Sample Bank to run 25-family classification.
+                        </p>
                       </div>
-                      <div className="overflow-x-auto rounded-tile border border-line">
-                        <table className="w-full text-[13px] text-left tabular-nums">
-                          <thead className="bg-surface-2 text-muted text-[13px] font-medium border-b border-line">
-                            <tr>
-                              <th className="py-2 px-3 font-medium">Family variant</th>
-                              <th className="py-2 px-3 font-medium">Likelihood</th>
-                              <th className="py-2 px-3 font-medium">Category</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-line text-ink font-normal">
-                            {predictionResult.top_5.map((item: any, idx: number) => {
-                              const itemPct = item.confidence * 100;
-                              return (
-                                <tr
-                                  key={idx}
-                                  className={
-                                    idx === 0
-                                      ? "bg-accent-soft/60 text-ink font-semibold"
-                                      : "hover:bg-surface-2 transition-colors"
-                                  }
-                                >
-                                  <td className="py-2 px-3 font-mono">{item.family}</td>
-                                  <td className="py-2 px-3">
-                                    <div className="flex items-center gap-2.5">
-                                      <div className="w-16 h-1.5 rounded-full bg-surface-2 overflow-hidden flex-shrink-0">
-                                        <div
-                                          className={`h-full rounded-full ${
-                                            idx === 0 ? "bg-accent" : "bg-muted/50"
-                                          }`}
-                                          style={{
-                                            width: `${Math.min(100, Math.max(3, itemPct))}%`,
-                                          }}
-                                        />
+                    ) : (
+                      <div>
+                        <div className="text-[13px] font-semibold text-ink mb-2">
+                          Top-5 Family Likelihood Ranking
+                        </div>
+                        <div className="overflow-x-auto rounded-tile border border-line">
+                          <table className="w-full text-[13px] text-left tabular-nums">
+                            <thead className="bg-surface-2 text-muted text-[13px] font-medium border-b border-line">
+                              <tr>
+                                <th className="py-2 px-3 font-medium">Family variant</th>
+                                <th className="py-2 px-3 font-medium">Likelihood</th>
+                                <th className="py-2 px-3 font-medium">Category</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-line text-ink font-normal">
+                              {(predictionResult.top_5 || []).map((item: any, idx: number) => {
+                                const itemPct = item.confidence * 100;
+                                return (
+                                  <tr
+                                    key={idx}
+                                    className={
+                                      idx === 0
+                                        ? "bg-accent-soft/60 text-ink font-semibold"
+                                        : "hover:bg-surface-2 transition-colors"
+                                    }
+                                  >
+                                    <td className="py-2 px-3 font-mono">{item.family}</td>
+                                    <td className="py-2 px-3">
+                                      <div className="flex items-center gap-2.5">
+                                        <div className="w-16 h-1.5 rounded-full bg-surface-2 overflow-hidden flex-shrink-0">
+                                          <div
+                                            className={`h-full rounded-full ${
+                                              idx === 0 ? "bg-accent" : "bg-muted/50"
+                                            }`}
+                                            style={{
+                                              width: `${Math.min(100, Math.max(3, itemPct))}%`,
+                                            }}
+                                          />
+                                        </div>
+                                        <span className="font-mono text-[12px] tabular-nums">
+                                          {itemPct.toFixed(2)}%
+                                        </span>
                                       </div>
-                                      <span className="font-mono text-[12px] tabular-nums">
-                                        {itemPct.toFixed(2)}%
-                                      </span>
-                                    </div>
-                                  </td>
-                                  <td className="py-2 px-3 text-muted">{item.category}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                                    </td>
+                                    <td className="py-2 px-3 text-muted">{item.category}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
@@ -466,57 +483,65 @@ export const Module5Classifier: React.FC = () => {
                         <div className="text-[12px] font-medium text-muted mb-1.5">
                           2. Activation Map
                         </div>
-                        <div className="relative aspect-square rounded-tile overflow-hidden border border-line hover:border-accent/60 bg-surface-2 p-1 transition-all duration-200 hover:-translate-y-0.5 group">
-                          <div className="relative w-full h-full rounded-chip overflow-hidden">
-                            <motion.img
-                              src={predictionResult.heatmap_url}
-                              alt="Activation Map"
-                              initial={{
-                                clipPath: prefersReducedMotion
-                                  ? "inset(0% 0% 0% 0%)"
-                                  : "inset(0% 0% 100% 0%)",
-                              }}
-                              animate={{ clipPath: "inset(0% 0% 0% 0%)" }}
-                              transition={{
-                                duration: prefersReducedMotion ? 0 : 0.7,
-                                delay: prefersReducedMotion ? 0 : 0.38,
-                                ease: "linear",
-                              }}
-                              style={{ imageRendering: "pixelated" }}
-                              className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.04]"
-                            />
-                            {!prefersReducedMotion && (
-                              <motion.div
-                                aria-hidden="true"
-                                initial={{ top: "0%", opacity: 0 }}
-                                animate={{
-                                  top: ["0%", "100%"],
-                                  opacity: [0, 1, 1, 0],
-                                }}
-                                transition={{
-                                  duration: 0.7,
-                                  delay: 0.38,
-                                  ease: "linear",
-                                  times: [0, 0.08, 0.9, 1],
-                                }}
-                                className="pointer-events-none absolute inset-x-0 h-[2px] bg-accent shadow-[0_0_12px_2px_var(--accent)] z-20"
-                              />
-                            )}
+                        {isOod || !predictionResult.heatmap_url ? (
+                          <div className="aspect-square rounded-tile border border-dashed border-line bg-surface-2 flex items-center justify-center p-3 text-[11px] text-muted">
+                            Skipped (Non-PE)
                           </div>
-                        </div>
+                        ) : (
+                          <>
+                            <div className="relative aspect-square rounded-tile overflow-hidden border border-line hover:border-accent/60 bg-surface-2 p-1 transition-all duration-200 hover:-translate-y-0.5 group">
+                              <div className="relative w-full h-full rounded-chip overflow-hidden">
+                                <motion.img
+                                  src={predictionResult.heatmap_url}
+                                  alt="Activation Map"
+                                  initial={{
+                                    clipPath: prefersReducedMotion
+                                      ? "inset(0% 0% 0% 0%)"
+                                      : "inset(0% 0% 100% 0%)",
+                                  }}
+                                  animate={{ clipPath: "inset(0% 0% 0% 0%)" }}
+                                  transition={{
+                                    duration: prefersReducedMotion ? 0 : 0.7,
+                                    delay: prefersReducedMotion ? 0 : 0.38,
+                                    ease: "linear",
+                                  }}
+                                  style={{ imageRendering: "pixelated" }}
+                                  className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.04]"
+                                />
+                                {!prefersReducedMotion && (
+                                  <motion.div
+                                    aria-hidden="true"
+                                    initial={{ top: "0%", opacity: 0 }}
+                                    animate={{
+                                      top: ["0%", "100%"],
+                                      opacity: [0, 1, 1, 0],
+                                    }}
+                                    transition={{
+                                      duration: 0.7,
+                                      delay: 0.38,
+                                      ease: "linear",
+                                      times: [0, 0.08, 0.9, 1],
+                                    }}
+                                    className="pointer-events-none absolute inset-x-0 h-[2px] bg-accent shadow-[0_0_12px_2px_var(--accent)] z-20"
+                                  />
+                                )}
+                              </div>
+                            </div>
 
-                        {/* Low -> High colour-scale legend matching colormap */}
-                        <div className="mt-2 px-0.5">
-                          <div
-                            className="h-1.5 w-full rounded-full border border-line/60"
-                            style={{ background: getColormapGradient(colormap) }}
-                            aria-hidden="true"
-                          />
-                          <div className="flex justify-between text-[10px] font-mono text-muted mt-1">
-                            <span>Low</span>
-                            <span>High</span>
-                          </div>
-                        </div>
+                            {/* Low -> High colour-scale legend matching colormap */}
+                            <div className="mt-2 px-0.5">
+                              <div
+                                className="h-1.5 w-full rounded-full border border-line/60"
+                                style={{ background: getColormapGradient(colormap) }}
+                                aria-hidden="true"
+                              />
+                              <div className="flex justify-between text-[10px] font-mono text-muted mt-1">
+                                <span>Low</span>
+                                <span>High</span>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       {/* Step 4: Forensic Overlay crossfades in last, selected accent ring */}
@@ -533,26 +558,35 @@ export const Module5Classifier: React.FC = () => {
                         <div className="text-[12px] font-medium text-ink mb-1.5">
                           3. Forensic Overlay
                         </div>
-                        <div className="aspect-square rounded-tile overflow-hidden border border-accent ring-2 ring-accent/30 bg-surface-2 p-1 transition-all duration-200 hover:-translate-y-0.5 group">
-                          <img
-                            src={predictionResult.overlay_url}
-                            alt="Forensic Overlay"
-                            style={{ imageRendering: "pixelated" }}
-                            className="w-full h-full object-cover rounded-chip transition-transform duration-300 ease-out group-hover:scale-[1.04]"
-                          />
-                        </div>
+                        {isOod || !predictionResult.overlay_url ? (
+                          <div className="aspect-square rounded-tile border border-dashed border-line bg-surface-2 flex items-center justify-center p-3 text-[11px] text-muted">
+                            Skipped (Non-PE)
+                          </div>
+                        ) : (
+                          <div className="aspect-square rounded-tile overflow-hidden border border-accent ring-2 ring-accent/30 bg-surface-2 p-1 transition-all duration-200 hover:-translate-y-0.5 group">
+                            <img
+                              src={predictionResult.overlay_url}
+                              alt="Forensic Overlay"
+                              style={{ imageRendering: "pixelated" }}
+                              className="w-full h-full object-cover rounded-chip transition-transform duration-300 ease-out group-hover:scale-[1.04]"
+                            />
+                          </div>
+                        )}
                       </motion.div>
                     </div>
                   </div>
 
                   <div className="text-[12px] text-muted pt-3 border-t border-line text-center font-medium">
-                    Red pixels highlight the exact PE hotspot activating the classification decision.
+                    {isOod
+                      ? "Grad-CAM PE attribution was skipped because the upload failed binary texture validation."
+                      : "Red pixels highlight the exact PE hotspot activating the classification decision."}
                   </div>
                 </CardContent>
               </Card>
             </div>
 
             {/* Reverse-Engineered PE Section Disassembly */}
+            {!isOod && predictionResult.pe_analysis && (
             <motion.div
               initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
               animate={{ opacity: 1 }}
@@ -646,6 +680,7 @@ export const Module5Classifier: React.FC = () => {
                 </CardContent>
               </Card>
             </motion.div>
+            )}
           </div>
         )}
       </AnimatePresence>

@@ -243,11 +243,38 @@ async def predict_upload(
     """Predicts a user-uploaded PE byte matrix or grayscale image."""
     try:
         content = await file.read()
-        pil_image = Image.open(io.BytesIO(content)).convert('L')
+        raw_image = Image.open(io.BytesIO(content))
+        raw_image.load()
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to decode image file: {str(e)}")
 
     eng = get_engine()
+    t0 = time.perf_counter()
+    is_valid_pe, ood_reason = eng.validate_pe_image(raw_image)
+    pil_image = raw_image.convert('L')
+
+    if not is_valid_pe:
+        elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+        return {
+            "is_out_of_distribution": True,
+            "ood_reason": ood_reason,
+            "top_family": "Non-Malware / Non-PE Input",
+            "confidence": 0.0,
+            "category": "Out-of-Distribution",
+            "top_5": [],
+            "pe_analysis": None,
+            "hex_dump": "",
+            "latency_ms": elapsed_ms,
+            "gradcam_ms": 0.0,
+            "total_ms": elapsed_ms,
+            "device": str(eng.device),
+            "device_name": eng.device_name,
+            "checkpoint_loaded": eng.has_checkpoint,
+            "raw_image_url": to_base64_data_url(pil_image),
+            "heatmap_url": None,
+            "overlay_url": None,
+        }
+
     pred = eng.predict(pil_image, target_family=target_family, colormap_name=colormap)
 
     raw_url = to_base64_data_url(pil_image)
@@ -255,6 +282,8 @@ async def predict_upload(
     overlay_url = to_base64_data_url(pred['overlay'])
 
     return {
+        "is_out_of_distribution": False,
+        "ood_reason": None,
         "top_family": pred["top_family"],
         "confidence": float(pred["confidence"]),
         "category": pred["category"],

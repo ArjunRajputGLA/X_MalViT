@@ -73,6 +73,56 @@ class XMalViTEngine:
         except Exception:
             pass
 
+    def validate_pe_image(self, pil_image):
+        """
+        Verifies whether an uploaded image exhibits 2D grayscale PE executable
+        byte-matrix statistics before attributing it to one of the 25 malware families.
+        Returns (True, None) for valid PE byte matrices, or (False, reason) for
+        out-of-distribution uploads (e.g. color photos, QR codes, UI screenshots, solid frames).
+        """
+        rgb = np.array(pil_image.convert("RGB"), dtype=np.int16)
+        color_frac = float(
+            np.mean((np.abs(rgb[:, :, 0] - rgb[:, :, 1]) > 8) | (np.abs(rgb[:, :, 1] - rgb[:, :, 2]) > 8))
+        )
+        if color_frac > 0.03:
+            return False, (
+                f"RGB color channels detected ({color_frac * 100:.1f}% chromatic pixels); "
+                "PE byte matrices are strictly 8-bit grayscale."
+            )
+
+        gray = np.array(pil_image.convert("L"), dtype=np.uint8)
+        white_frac = float(np.mean(gray >= 235))
+        if white_frac > 0.25:
+            return False, (
+                f"High bright-white ratio ({white_frac * 100:.1f}% >= 0xEB), characteristic of "
+                "QR codes, documents, or screenshots rather than PE executable binaries."
+            )
+
+        midtone_frac = float(np.mean((gray > 20) & (gray < 235)))
+        if midtone_frac < 0.03:
+            return False, (
+                f"Near bi-level or uniform pixel distribution ({midtone_frac * 100:.1f}% midtone bytes); "
+                "expected multi-byte PE opcode textures."
+            )
+
+        counts = np.bincount(gray.ravel(), minlength=256)
+        probs = counts[counts > 0] / counts.sum()
+        entropy = float(-np.sum(probs * np.log2(probs)))
+        if entropy < 0.8:
+            return False, (
+                f"Insufficient Shannon byte entropy ({entropy:.2f} bits) for a compiled PE executable."
+            )
+
+        g224 = np.array(pil_image.convert("L").resize(self.image_size, Image.BILINEAR), dtype=np.int16)
+        flat_diff = float(np.mean(np.abs(g224[:, 1:] - g224[:, :-1]) <= 2))
+        if flat_diff > 0.94:
+            return False, (
+                f"Ultra-smooth or constant byte runs ({flat_diff * 100:.1f}% flat transitions) "
+                "rather than variable assembly instruction opcodes."
+            )
+
+        return True, None
+
     def predict(self, pil_image, target_family=None, colormap_name="jet"):
         """
         Runs live PyTorch inference on a malware image, times actual execution, and computes:
