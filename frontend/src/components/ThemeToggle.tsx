@@ -16,8 +16,7 @@ function subscribeTheme(callback: () => void) {
 
 function getThemeSnapshot(): boolean {
   const stored = window.localStorage.getItem("theme");
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  return stored ? stored === "dark" : prefersDark;
+  return stored === "dark";
 }
 
 function getServerSnapshot(): boolean {
