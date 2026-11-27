@@ -7,7 +7,12 @@
     },
     "backend": {
       "root": ".",
-      "entrypoint": "api_server:app"
+      "entrypoint": "api_server:app",
+      "functions": {
+        "api_server.py": {
+          "excludeFiles": "frontend/**"
+        }
+      }
     }
   },
   "rewrites": [
