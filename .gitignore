@@ -45,3 +45,5 @@ data/malimg_cache_224.pt
 # Vercel
 .vercel/
 
+.vercel
+.env*
