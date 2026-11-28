@@ -107,7 +107,7 @@ export const Module6Manuscript: React.FC = () => {
         {/* Faint byte-texture motif on right */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 right-0 w-72 sm:w-96 overflow-hidden"
+          className="pointer-events-none absolute inset-y-0 right-0 z-0 w-72 sm:w-96 overflow-hidden"
         >
           <img
             src="/malimg-motif.png"
@@ -115,11 +115,11 @@ export const Module6Manuscript: React.FC = () => {
             style={{
               imageRendering: "pixelated",
               maskImage:
-                "linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.45) 45%, transparent 100%)",
+                "radial-gradient(ellipse 85% 90% at 85% 50%, rgba(0,0,0,1) 10%, rgba(0,0,0,0.4) 55%, transparent 100%)",
               WebkitMaskImage:
-                "linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.45) 45%, transparent 100%)",
+                "radial-gradient(ellipse 85% 90% at 85% 50%, rgba(0,0,0,1) 10%, rgba(0,0,0,0.4) 55%, transparent 100%)",
             }}
-            className="w-full h-full object-cover opacity-[0.12] dark:opacity-[0.16] select-none"
+            className="w-full h-full object-cover opacity-[0.08] dark:opacity-[0.14] select-none"
           />
         </div>
 

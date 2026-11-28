@@ -236,7 +236,7 @@ h4 {
   opacity: 1;
 }
 
-.card-spotlight > * {
+.card-spotlight > :not(.absolute) {
   position: relative;
   z-index: 1;
 }
