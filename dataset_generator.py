@@ -19,11 +19,42 @@ MALWARE_FAMILIES = [
 ]
 
 FAMILY_CATEGORIES = {
-    "Worm": ["Allaple.A", "Allaple.L", "Yuner.A", "Autorun.K"],
-    "Trojan": ["Dialplatform.B", "Dontovo.A", "Fakerean", "Instantaccess", "Skintrim.N", "Agent.FYI", "Adialer.C"],
-    "Rogue": ["Alueron.gen!J", "C2LOP.P", "C2LOP.gen!g"],
-    "Backdoor": ["Rbot!gen", "Malex.gen!J", "VB.AT"],
-    "Downloader": ["Swizzor.gen!E", "Swizzor.gen!I", "Obfuscator.AD", "Lolyda.AA1", "Lolyda.AA2", "Lolyda.AA3", "Lolyda.AT", "Wintrim.BX"]
+    "Worm": ["Allaple.A", "Allaple.L", "Yuner.A", "VB.AT", "Autorun.K"],
+    "Trojan": ["C2LOP.gen!g", "Alueron.gen!J", "C2LOP.P", "Malex.gen!J", "Skintrim.N"],
+    "Dialer": ["Instantaccess", "Dialplatform.B", "Adialer.C"],
+    "PWS": ["Lolyda.AA1", "Lolyda.AA2", "Lolyda.AT", "Lolyda.AA3"],
+    "Trojan Downloader": ["Dontovo.A", "Obfuscator.AD", "Swizzor.gen!I", "Swizzor.gen!E", "Wintrim.BX"],
+    "Rogue": ["Fakerean"],
+    "Backdoor": ["Rbot!gen", "Agent.FYI"]
+}
+
+# Exact Malimg ground-truth sample counts per family (Table I of the paper, N = 9,339)
+MALIMG_BENCHMARK_COUNTS = {
+    "Adialer.C": 122,
+    "Agent.FYI": 116,
+    "Allaple.A": 2949,
+    "Allaple.L": 1591,
+    "Alueron.gen!J": 198,
+    "Autorun.K": 106,
+    "C2LOP.P": 146,
+    "C2LOP.gen!g": 200,
+    "Dialplatform.B": 177,
+    "Dontovo.A": 162,
+    "Fakerean": 381,
+    "Instantaccess": 431,
+    "Lolyda.AA1": 213,
+    "Lolyda.AA2": 184,
+    "Lolyda.AA3": 123,
+    "Lolyda.AT": 159,
+    "Malex.gen!J": 136,
+    "Obfuscator.AD": 142,
+    "Rbot!gen": 158,
+    "Skintrim.N": 80,
+    "Swizzor.gen!E": 128,
+    "Swizzor.gen!I": 132,
+    "VB.AT": 408,
+    "Wintrim.BX": 97,
+    "Yuner.A": 800,
 }
 
 FAMILY_ALIASES = {

@@ -42,14 +42,14 @@ interface NavItem {
 }
 
 const COMMAND_CENTER_ITEMS: NavItem[] = [
-  { key: "briefing", label: "Executive Briefing", icon: Rocket, tag: "SOTA" },
+  { key: "briefing", label: "Executive Briefing", icon: Rocket, tag: "ViT" },
   { key: "dataset", label: "Malimg Signatures", icon: FolderSearch, tag: "9.3k" },
-  { key: "training", label: "RTX 4050 Training Lab", icon: Cpu, tag: "PyTorch" },
+  { key: "training", label: "PyTorch Training Lab", icon: Cpu, tag: "Train" },
 ];
 
 const ANALYTICS_ITEMS: NavItem[] = [
   { key: "classifier", label: "Grad-CAM Classifier", icon: SearchCode, tag: "XAI" },
-  { key: "benchmark", label: "SOTA Benchmarks", icon: BarChart3, tag: "98.8%" },
+  { key: "benchmark", label: "Paper Benchmarks", icon: BarChart3, tag: "Tables" },
   { key: "manuscript", label: "Research Manuscript", icon: FileText, tag: "IEEE" },
 ];
 
@@ -209,13 +209,13 @@ function SidebarContent({
             </div>
 
             <a
-              href="/api/documents/X-MalViT_IEEE_Research_Paper.pdf"
+              href="/api/documents/X-MalViT_Research_Paper.pdf"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-chip text-[13px] font-medium bg-surface-2 hover:bg-line/50 text-ink border border-line transition-colors cursor-pointer group outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               <FileText className="w-3.5 h-3.5 text-muted group-hover:text-ink transition-colors" />
-              <span>Read IEEE Paper (PDF)</span>
+              <span>Read Paper (PDF)</span>
               <ExternalLink className="w-3 h-3 text-muted group-hover:text-ink transition-colors ml-auto" />
             </a>
           </div>

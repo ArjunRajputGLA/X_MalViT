@@ -19,7 +19,7 @@ export default function Home() {
 
   useEffect(() => {
     fetch("/api/status")
-      .then((res) => res.json())
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((data) => setSystemStatus(data))
       .catch((err) => console.error("Error loading system status:", err));
 

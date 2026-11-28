@@ -29,6 +29,7 @@ from pydantic import BaseModel
 from dataset_generator import (
     MALWARE_FAMILIES, 
     FAMILY_CATEGORIES, 
+    MALIMG_BENCHMARK_COUNTS,
     generate_synthetic_malware_image, 
     ensure_sample_dataset,
     get_disk_sample_image,
@@ -86,11 +87,14 @@ def to_base64_data_url(img_or_arr: Any, format: str = "PNG") -> str:
 
 # ==================== DATA SCHEMAS ====================
 class TrainRequest(BaseModel):
-    epochs: int = 4
-    batch_size: int = 32
-    lr: float = 3e-4
-    samples_per_family: int = 20
-    architecture: str = "X-MalViT Tiny (Proposed - 5.8M Params)"
+    epochs: int = 12
+    batch_size: int = 64
+    lr: float = 4e-4
+    samples_per_family: int = 0
+    architecture: str = "X-MalViT (L=3, P=16, 1.44M - Optimal)"
+    num_layers: Optional[int] = None
+    overlay_aug: Optional[bool] = None
+    label_smoothing: float = 0.1
     device: Optional[str] = None
 
 class SamplePredictRequest(BaseModel):
@@ -117,9 +121,14 @@ def get_system_status():
         "vram_allocated": vram_alloc,
         "has_checkpoint": eng.has_checkpoint,
         "checkpoint_path": eng.checkpoint_path,
-        "checkpoint_accuracy": getattr(eng, "checkpoint_accuracy", 0.9877),
-        "model_name": f"X-MalViT-Tiny ({getattr(eng, 'num_layers', 6)}-Layer ViT)",
-        "parameters": f"{getattr(eng, 'param_count', 2777881) / 1e6:.2f} Million",
+        "checkpoint_accuracy": getattr(eng, "checkpoint_accuracy", None),
+        "checkpoint_epoch": getattr(eng, "checkpoint_epoch", None),
+        "checkpoint_macro_f1": getattr(eng, "checkpoint_macro_f1", None),
+        "checkpoint_overlay_aug": getattr(eng, "checkpoint_overlay_aug", False),
+        "model_name": f"X-MalViT ({eng.num_layers}-Layer ViT)",
+        "num_layers": eng.num_layers,
+        "parameters": f"{eng.param_count / 1e6:.2f} Million",
+        "param_count": eng.param_count,
         "num_classes": len(MALWARE_FAMILIES),
         "input_dimensions": "224x224 Grayscale Byte Matrix"
     }
@@ -135,16 +144,7 @@ def get_dataset_overview():
     total_samples = 0
     for raw_f in MALWARE_FAMILIES:
         f = normalize_family_name(raw_f)
-        if f in FAMILY_CATEGORIES["Worm"]:
-            cat = "Worm"
-        elif f in FAMILY_CATEGORIES["Trojan"]:
-            cat = "Trojan"
-        elif f in FAMILY_CATEGORIES["Rogue"]:
-            cat = "Rogue"
-        elif f in FAMILY_CATEGORIES["Backdoor"]:
-            cat = "Backdoor"
-        else:
-            cat = "Downloader"
+        cat = next((c for c, fams in FAMILY_CATEGORIES.items() if f in fams), "Unknown")
             
         fam_dir = os.path.join(sample_dir, f)
         if os.path.isdir(fam_dir):
@@ -152,8 +152,8 @@ def get_dataset_overview():
         else:
             disk_count = 0
 
-        # If on disk, use real count; otherwise benchmark standard count
-        samples = disk_count if disk_count > 0 else (2949 if "Allaple.A" in f else 1591 if "Allaple.L" in f else 400 if "Yuner" in f else 250)
+        # Use authentic disk count when full Malimg corpus is present; otherwise exact Table I count
+        samples = disk_count if disk_count > 0 else MALIMG_BENCHMARK_COUNTS.get(f, 0)
         total_samples += samples
         risk = "CRITICAL" if ("Allaple" in f or "Autorun" in f) else "HIGH"
         
@@ -208,7 +208,7 @@ def predict_sample(req: SamplePredictRequest):
     """Predicts a sample loaded from the Malimg Sample Bank on disk."""
     eng = get_engine()
     fam = normalize_family_name(req.family)
-    seed = req.seed if req.seed is not None else (abs(hash(fam)) % 9999)
+    seed = req.seed if req.seed is not None else 0
     img = get_disk_sample_image(fam, index=seed)
     
     pred = eng.predict(img, target_family=fam, colormap_name=req.colormap)
@@ -358,6 +358,11 @@ def launch_training(req: TrainRequest):
             fallback_applied = (device == "cpu" and cuda_requested)
 
         try:
+            arch_str = (req.architecture or "").lower()
+            resolved_layers = req.num_layers if req.num_layers is not None else (6 if "l=6" in arch_str or "6-layer" in arch_str else 3)
+            resolved_oa = req.overlay_aug if req.overlay_aug is not None else ("-oa" in arch_str or "overlay" in arch_str)
+            resolved_eps = float(req.label_smoothing)
+
             log_handler(f"[INIT] Worker started on device '{device}'. Loading Malimg training engine...")
             ckpt_path, hist = train_model(
                 epochs=req.epochs,
@@ -367,7 +372,10 @@ def launch_training(req: TrainRequest):
                 device=device,
                 callback=train_callback,
                 log_fn=log_handler,
-                stop_event=ACTIVE_TRAINING_STOP_EVENT
+                stop_event=ACTIVE_TRAINING_STOP_EVENT,
+                num_layers=resolved_layers,
+                overlay_aug=resolved_oa,
+                label_smoothing=resolved_eps,
             )
             # Reload global engine with freshly trained weights
             global ENGINE
@@ -450,79 +458,153 @@ def stop_training():
 # ==================== 5. SOTA BENCHMARKS & CONFUSION MATRIX ====================
 @app.get("/api/benchmarks")
 def get_benchmarks():
+    # Exact Table II from Papers/X-MalViT_Research_Paper.pdf (1,868-image stratified split)
     benchmark_models = [
         {
-            "model": "Random Forest (Spatial/Hist Stats) [1]",
-            "input_format": "192 Statistical Features",
-            "parameters": "— (CPU)",
+            "model": "Random forest [25]",
+            "input_format": "192 image statistics",
+            "parameters": "—",
             "accuracy": 99.14,
-            "precision": 99.15,
-            "f1_score": 99.15,
+            "ci_95": "98.61–99.47",
+            "errors": 16,
+            "weighted_f1": 99.15,
+            "macro_f1": 98.00,
             "latency": "0.07 ms (CPU)"
         },
         {
-            "model": "MalConv-1D (Byte Stream CNN) [2]",
-            "input_format": "50,176-Byte 1D Stream",
+            "model": "MalConv-style 1-D CNN [10]",
+            "input_format": "50,176-byte sequence",
             "parameters": "0.26 M",
             "accuracy": 97.91,
-            "precision": 97.88,
-            "f1_score": 97.82,
-            "latency": "3.03 ms (RTX 4050)"
+            "ci_95": "97.16–98.47",
+            "errors": 39,
+            "weighted_f1": 97.82,
+            "macro_f1": 94.42,
+            "latency": "3.03 ms"
         },
         {
-            "model": "ResNet-18 (Standard 2D CNN) [9]",
-            "input_format": "224x224 Grayscale Image",
+            "model": "ResNet-18 [26]",
+            "input_format": "224 × 224 image",
             "parameters": "11.18 M",
             "accuracy": 98.23,
-            "precision": 97.27,
-            "f1_score": 97.70,
-            "latency": "3.66 ms (RTX 4050)"
+            "ci_95": "97.53–98.74",
+            "errors": 33,
+            "weighted_f1": 97.70,
+            "macro_f1": 94.08,
+            "latency": "3.66 ms"
         },
         {
-            "model": "MobileNetV2 (Depthwise CNN) [10]",
-            "input_format": "224x224 Grayscale Image",
+            "model": "MobileNetV2 [27]",
+            "input_format": "224 × 224 image",
             "parameters": "2.26 M",
             "accuracy": 99.04,
-            "precision": 99.07,
-            "f1_score": 99.03,
-            "latency": "8.51 ms (RTX 4050)"
+            "ci_95": "98.48–99.39",
+            "errors": 18,
+            "weighted_f1": 99.03,
+            "macro_f1": 97.47,
+            "latency": "8.51 ms"
         },
         {
-            "model": "X-MalViT (Standard L=3, Ours)",
-            "input_format": "196 Patches + Grad-CAM",
+            "model": "X-MalViT, ε = 0.05 (Ours)",
+            "input_format": "196 patches",
             "parameters": "1.44 M",
             "accuracy": 98.34,
-            "precision": 98.37,
-            "f1_score": 98.34,
-            "latency": "3.47 ms (RTX 4050)"
+            "ci_95": "97.65–98.83",
+            "errors": 31,
+            "weighted_f1": 98.34,
+            "macro_f1": 95.90,
+            "latency": "3.47 ms"
         },
         {
-            "model": "X-MalViT (Optimal L=3 + Grad-CAM, Ours)",
-            "input_format": "196 Patches + Grad-CAM XAI",
+            "model": "X-MalViT, ε = 0.10 (Ours)",
+            "input_format": "196 patches",
             "parameters": "1.44 M",
             "accuracy": 98.77,
-            "precision": 98.77,
-            "f1_score": 98.77,
-            "latency": "3.79 ms (RTX 4050)"
+            "ci_95": "98.16–99.18",
+            "errors": 23,
+            "weighted_f1": 98.77,
+            "macro_f1": 96.91,
+            "latency": "3.79 ms"
+        },
+        {
+            "model": "X-MalViT-OA, ε = 0 (Ours)",
+            "input_format": "196 patches",
+            "parameters": "1.44 M",
+            "accuracy": 97.59,
+            "ci_95": "96.79–98.19",
+            "errors": 45,
+            "weighted_f1": 97.05,
+            "macro_f1": 92.57,
+            "latency": "3.42 ms"
         }
     ]
 
-    top_fams = ["Allaple.A", "Allaple.L", "Yuner.A", "Fakerean", "Dontovo.A", "Autorun.K", "Swizzor.gen!I"]
+    # Exact Table III Ablations from Papers/X-MalViT_Research_Paper.pdf
+    ablations = [
+        {"config": "L = 3, P = 16, ε = 0.10 (default)", "parameters": "1.44 M", "accuracy": 98.77, "macro_f1": 96.91},
+        {"config": "L = 3, P = 16, ε = 0.05", "parameters": "1.44 M", "accuracy": 98.34, "macro_f1": 95.90},
+        {"config": "L = 6, P = 16, ε = 0", "parameters": "2.78 M", "accuracy": 98.72, "macro_f1": 96.73},
+        {"config": "L = 12, P = 16", "parameters": "5.45 M", "accuracy": 97.16, "macro_f1": 91.41},
+        {"config": "L = 6, P = 32", "parameters": "2.90 M", "accuracy": 96.95, "macro_f1": 91.03},
+        {"config": "L = 3, OA, ε = 0", "parameters": "1.44 M", "accuracy": 97.59, "macro_f1": 92.57},
+        {"config": "L = 6, OA, class-balanced CE", "parameters": "2.78 M", "accuracy": 97.70, "macro_f1": 92.76},
+    ]
+
+    # Exact Table IV End-of-File Overlay Robustness (% accuracy across overlay height r%)
+    overlay_robustness = [
+        {"overlay": "Zero bytes (0x00)", "model": "ResNet-18", "r0": 98.39, "r10": 98.18, "r20": 94.16, "r30": 89.45, "r40": 57.76},
+        {"overlay": "Zero bytes (0x00)", "model": "X-MalViT (ε = 0.05)", "r0": 98.34, "r10": 41.01, "r20": 19.33, "r30": 15.95, "r40": 9.10},
+        {"overlay": "Zero bytes (0x00)", "model": "X-MalViT-OA", "r0": 97.59, "r10": 97.11, "r20": 97.06, "r30": 95.93, "r40": 93.68},
+        {"overlay": "Random bytes", "model": "ResNet-18", "r0": 98.39, "r10": 98.29, "r20": 97.00, "r30": 95.82, "r40": 91.11},
+        {"overlay": "Random bytes", "model": "X-MalViT (ε = 0.05)", "r0": 98.34, "r10": 83.67, "r20": 74.68, "r30": 68.68, "r40": 64.24},
+        {"overlay": "Random bytes", "model": "X-MalViT-OA", "r0": 97.59, "r10": 97.11, "r20": 97.32, "r30": 97.06, "r40": 95.29},
+    ]
+
+    # Real 25x25 row-normalized recall (%) evaluated on checkpoints/x_malvit_weights.pt
+    # Stratified 80/20 split (seed=42, N_test=1,867, Errors=30, Acc=98.39%, Macro-F1=95.74%)
     cm_matrix = [
-        [100,   0,   0,   0,   0,   0,   0],
-        [  0, 100,   0,   0,   0,   0,   0],
-        [  0,   0, 100,   0,   0,   0,   0],
-        [  0,   0,   0, 100,   0,   0,   0],
-        [  0,   0,   0,   0, 100,   0,   0],
-        [  0,   0,   0,   0,   0, 100,   0],
-        [  0,   0,   0,   0,   0,   0,  62]
+        [100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 76, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 3, 0],
+        [0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 96, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 96, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 92, 4, 4, 0, 0],
+        [0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 38, 8, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 98, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100]
     ]
 
     return {
         "benchmark_models": benchmark_models,
+        "ablations": ablations,
+        "overlay_robustness": overlay_robustness,
         "confusion_matrix": {
-            "families": top_fams,
-            "matrix": cm_matrix
+            "families": MALWARE_FAMILIES,
+            "matrix": cm_matrix,
+            "metadata": {
+                "source": "Evaluated active checkpoint (x_malvit_weights.pt, Epoch 9)",
+                "n_test": 1867,
+                "errors": 30,
+                "accuracy": 98.39,
+                "macro_f1": 95.74,
+                "weighted_f1": 98.29
+            }
         }
     }
 
@@ -539,38 +621,33 @@ def get_manuscripts():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     papers_dir = os.path.join(base_dir, "Papers")
     return {
-        "title": "X-MalViT: Explainable Vision Transformer with Grad-CAM for Visual Malware Family Classification",
+        "title": "X-MalViT: Compact, Explainable, and Overlay-Robust Vision Transformers for Malware Family Classification",
         "authors": ["Keshav Agrawal", "Arjun Singh Rajput"],
         "affiliation": "Department of Computer Science & Engineering, GLA University, Mathura",
-        "venue": "IEEE Conference Manuscript (Camera-Ready Double-Column Format)",
-        "status": "Peer-Review Ready / Camera-Ready Manuscript",
+        "venue": "IEEE Conference Manuscript (6-Page Double-Column Format)",
+        "status": "Camera-Ready Research Paper",
         "metrics": {
             "accuracy": "98.77%",
-            "f1_score": "96.91% Macro / 98.77% Weighted",
-            "latency": "3.79 ms",
-            "parameters": "1.44 Million",
-            "dataset": "9,339 Authenticated Binaries (25 Families)"
+            "macro_f1": "96.91%",
+            "weighted_f1": "98.77%",
+            "latency": "3.4–3.8 ms",
+            "parameters": "1.44 Million (0.32 GMACs)",
+            "overlay_survival": "93.68% (40% zero-byte)",
+            "dataset": "9,339 Malimg Images (25 Families)"
         },
         "manuscripts": [
             {
-                "title": "X-MalViT IEEE Research Paper (7-Page Camera-Ready PDF)",
-                "filename": "X-MalViT_IEEE_Research_Paper.pdf",
-                "size": _human_size(os.path.join(papers_dir, "X-MalViT_IEEE_Research_Paper.pdf"), "5.58 MB"),
-                "description": "Complete 7-page double-column IEEE conference manuscript with Table I literature gaps, PyTorch Grad-CAM forensics, ablations, and overlay robustness benchmarks.",
-                "url": "/api/documents/X-MalViT_IEEE_Research_Paper.pdf"
-            },
-            {
-                "title": "IEEEtran LaTeX Source Package (Overleaf-Ready ZIP)",
-                "filename": "X-MalViT_IEEE_Conference_LaTeX_Updated.zip",
-                "size": _human_size(os.path.join(papers_dir, "X-MalViT_IEEE_Conference_LaTeX_Updated.zip"), "4.00 MB"),
-                "description": "Synchronized IEEEtran .tex source, BibTeX references, IEEEtran.cls/.bst, and 300 DPI figures ready for IEEE/Springer submission.",
-                "url": "/api/documents/X-MalViT_IEEE_Conference_LaTeX_Updated.zip"
+                "title": "X-MalViT Research Paper (6-Page IEEE Conference PDF)",
+                "filename": "X-MalViT_Research_Paper.pdf",
+                "size": _human_size(os.path.join(papers_dir, "X-MalViT_Research_Paper.pdf"), "1.89 MB"),
+                "description": "Complete 6-page IEEE manuscript covering 3-layer ViT architecture (1.44M params, 0.32 GMACs), Tables I–IV (clean benchmarks, ablations, overlay fragility & OA defense), penultimate-token Grad-CAM, and limitations.",
+                "url": "/api/documents/X-MalViT_Research_Paper.pdf"
             },
             {
                 "title": "Malware Research Project Guide (Executive Blueprint)",
                 "filename": "Malware_Research_Project_Guide.pdf",
-                "size": _human_size(os.path.join(papers_dir, "Malware_Research_Project_Guide.pdf"), "373 KB"),
-                "description": "Executive research roadmap detailing visual tokenization methodology and threat intelligence pipeline.",
+                "size": _human_size(os.path.join(papers_dir, "Malware_Research_Project_Guide.pdf"), "374 KB"),
+                "description": "Executive research roadmap detailing visual tokenization methodology and static malware classification pipeline.",
                 "url": "/api/documents/Malware_Research_Project_Guide.pdf"
             }
         ]

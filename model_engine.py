@@ -28,7 +28,7 @@ class XMalViTEngine:
         self.device_name = torch.cuda.get_device_name(0) if self.device.type == "cuda" else "CPU Host"
 
         # Auto-detect layer depth from checkpoint so 3-layer and 6-layer weights both load cleanly
-        detected_layers = 6
+        detected_layers = 3
         ckpt_loaded_obj = None
         if os.path.exists(checkpoint_path):
             try:
@@ -44,7 +44,11 @@ class XMalViTEngine:
         self.model = XMalViTModel(num_classes=self.num_classes, num_layers=self.num_layers).to(self.device)
         self.param_count = sum(p.numel() for p in self.model.parameters())
         self.has_checkpoint = False
-        self.checkpoint_accuracy = 0.9877
+        self.checkpoint_accuracy = None
+        self.checkpoint_epoch = None
+        self.checkpoint_macro_f1 = None
+        self.checkpoint_weighted_f1 = None
+        self.checkpoint_overlay_aug = False
 
         if ckpt_loaded_obj is not None:
             try:
@@ -53,6 +57,14 @@ class XMalViTEngine:
                         self.model.load_state_dict(ckpt_loaded_obj["model_state_dict"])
                     if "accuracy" in ckpt_loaded_obj:
                         self.checkpoint_accuracy = float(ckpt_loaded_obj["accuracy"])
+                    if "epoch" in ckpt_loaded_obj:
+                        self.checkpoint_epoch = int(ckpt_loaded_obj["epoch"])
+                    if "macro_f1" in ckpt_loaded_obj:
+                        self.checkpoint_macro_f1 = float(ckpt_loaded_obj["macro_f1"])
+                    if "weighted_f1" in ckpt_loaded_obj:
+                        self.checkpoint_weighted_f1 = float(ckpt_loaded_obj["weighted_f1"])
+                    if "overlay_aug" in ckpt_loaded_obj:
+                        self.checkpoint_overlay_aug = bool(ckpt_loaded_obj["overlay_aug"])
                 else:
                     self.model.load_state_dict(ckpt_loaded_obj)
                 self.has_checkpoint = True
@@ -295,29 +307,54 @@ class XMalViTEngine:
         overlay = (0.52 * orig_rgb + 0.48 * heatmap_colored).astype(np.uint8)
 
         peak_y, peak_x = np.unravel_index(np.argmax(cam_resized), cam_resized.shape)
+        peak_y, peak_x = int(peak_y), int(peak_x)
 
-        if peak_y < int(h * 0.10):
-            section_name = ".text (PE Optional Header & Entry Point)"
-            va_offset = hex(0x00401000 + peak_y * 16 + peak_x)
-            meaning = "Unpacker stub & initial instruction jump"
-        elif peak_y < int(h * 0.55):
-            section_name = ".text (Core Assembly Bytecode)"
-            va_offset = hex(0x00402400 + peak_y * 32 + peak_x)
-            meaning = "API hook injection routines (kernel32.dll / advapi32.dll)"
-        elif peak_y < int(h * 0.80):
-            section_name = ".rsrc / .payload (Encrypted Embedded Binary)"
-            va_offset = hex(0x00408000 + peak_y * 64 + peak_x)
-            meaning = "High-entropy encrypted Trojan payload & C2 network beacon"
+        patch_size = 16
+        grid_cols = w // patch_size
+        patch_row = peak_y // patch_size
+        patch_col = peak_x // patch_size
+        patch_index = patch_row * grid_cols + patch_col + 1  # 1-indexed out of 196
+
+        # Extract authentic local 16x16 patch byte statistics
+        y0, y1 = patch_row * patch_size, min(h, (patch_row + 1) * patch_size)
+        x0, x1 = patch_col * patch_size, min(w, (patch_col + 1) * patch_size)
+        patch_bytes = (img_arr[y0:y1, x0:x1] * 255.0).round().astype(np.uint8)
+        counts = np.bincount(patch_bytes.ravel(), minlength=256)
+        probs = counts[counts > 0] / counts.sum()
+        patch_entropy = float(-np.sum(probs * np.log2(probs)))
+        patch_mean_byte = float(patch_bytes.mean())
+        patch_zero_frac = float(np.mean(patch_bytes == 0))
+
+        # Matrix byte offset in the 224x224 (50,176-byte) normalized grayscale image
+        matrix_byte_offset = peak_y * w + peak_x
+        row_pct = (peak_y / max(1, h - 1)) * 100.0
+
+        if peak_y < patch_size:
+            region_band = "Initial Byte Row (Top Patch Row 0 — File Start)"
+        elif row_pct < 45.0:
+            region_band = f"Upper Body Band ({row_pct:.0f}% depth, Patch Row {patch_row})"
+        elif row_pct < 75.0:
+            region_band = f"Mid-Lower Payload Band ({row_pct:.0f}% depth, Patch Row {patch_row})"
         else:
-            section_name = ".data (Config Strings & Imported Hashes)"
-            va_offset = hex(0x0040F000 + peak_y * 16 + peak_x)
-            meaning = "Embedded hardcoded C2 IP address or Mutex string"
+            region_band = f"Trailing Tail Band ({row_pct:.0f}% depth, Patch Row {patch_row})"
+
+        forensic_summary = (
+            f"Penultimate-layer Grad-CAM peaked at Patch #{patch_index}/196 "
+            f"(row {patch_row}, col {patch_col}) with local Shannon entropy {patch_entropy:.2f} bits, "
+            f"mean byte {patch_mean_byte:.0f}/255, and {patch_zero_frac * 100:.1f}% null bytes. "
+            "Malimg provides grayscale byte matrices without original PE binaries, so PE section headers are not inferred."
+        )
 
         pe_analysis = {
-            "hotspot_coords": (int(peak_x), int(peak_y)),
-            "section": section_name,
-            "virtual_address": va_offset,
-            "forensic_meaning": meaning,
+            "hotspot_coords": (peak_x, peak_y),
+            "patch_coords": (int(patch_col), int(patch_row)),
+            "patch_index": int(patch_index),
+            "section": region_band,
+            "virtual_address": f"0x{matrix_byte_offset:04X}",
+            "patch_entropy": round(patch_entropy, 2),
+            "patch_mean_byte": round(patch_mean_byte, 1),
+            "patch_zero_pct": round(patch_zero_frac * 100.0, 1),
+            "forensic_meaning": forensic_summary,
             "attention_weight": float(cam_resized[peak_y, peak_x]),
         }
 
@@ -327,22 +364,25 @@ class XMalViTEngine:
         for cat, families in FAMILY_CATEGORIES.items():
             if family in families:
                 return cat
-        return "Trojan"
+        return "Unknown"
 
     def _generate_hex_dump(self, arr, hotspot_coords, num_lines=6):
         """
-        Generates realistic disassembler hex dump bytes around the identified hotspot offset.
+        Extracts actual 8-bit grayscale matrix bytes around the Grad-CAM hotspot
+        using genuine 224x224 matrix byte offsets (0x0000 - 0xC3FF).
         """
         px, py = hotspot_coords
+        h, w = arr.shape
         lines = []
-        base_addr = 0x00401000 + py * 16 + px
+        col_start = min(max(0, (px // 16) * 16), max(0, w - 16))
+        start_row = min(max(0, py - 2), max(0, h - num_lines))
 
         for l in range(num_lines):
-            addr = base_addr + l * 16
-            sub_y = min(arr.shape[0] - 1, max(0, py - 3 + l))
-            raw_vals = [int(arr[sub_y, min(arr.shape[1] - 1, (px + i) % arr.shape[1])] * 255) for i in range(16)]
+            row = start_row + l
+            offset = row * w + col_start
+            raw_vals = [int(round(arr[row, col_start + i] * 255)) for i in range(16)]
             hex_str = " ".join([f"{v:02X}" for v in raw_vals])
             ascii_str = "".join([chr(v) if 32 <= v <= 126 else "." for v in raw_vals])
-            lines.append(f"{addr:08X}  {hex_str[:23]}  {hex_str[24:]}  |{ascii_str}|")
+            lines.append(f"{offset:08X}  {hex_str[:23]}  {hex_str[24:]}  |{ascii_str}|")
 
         return "\n".join(lines)

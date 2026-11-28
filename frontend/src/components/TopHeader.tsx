@@ -32,24 +32,24 @@ const MODULE_TITLES: Record<ModuleKey, { title: string; subtitle: string }> = {
     subtitle: "9,339 Disassembled Executable Binaries Across 25 Threat Families"
   },
   training: {
-    title: "RTX 4050 PyTorch Training Lab",
-    subtitle: "Hardware-Accelerated FP16 Mixed Precision & Real-Time Convergence"
+    title: "PyTorch Training Lab",
+    subtitle: "Stratified 80/20 Malimg Training, Overlay Augmentation & Live Convergence"
   },
   benchmark: {
-    title: "SOTA Comparative Benchmarks",
-    subtitle: "Empirical Performance vs CNNs, MalConv & Tree Baselines"
+    title: "Paper Benchmarks & Ablations",
+    subtitle: "Empirical Comparison, Ablations, Overlay Robustness & Confusion Matrix"
   },
   classifier: {
     title: "Real-Time Classifier & Explainability (XAI)",
-    subtitle: "Grad-CAM Activation Attribution & PE Header Disassembly Mapping"
+    subtitle: "Penultimate-Token Grad-CAM Attribution & Matrix Byte-Offset Inspection"
   },
   manuscript: {
-    title: "IEEE Research Manuscript & Documentation",
-    subtitle: "Official Camera-Ready Conference Paper, Architectural Specifications & Published Artifacts"
+    title: "Research Manuscript & Documentation",
+    subtitle: "6-Page IEEE Conference Paper, Model Specifications & Published Artifacts"
   },
   viva: {
-    title: "IEEE Research Manuscript & Documentation",
-    subtitle: "Official Camera-Ready Conference Paper, Architectural Specifications & Published Artifacts"
+    title: "Research Manuscript & Documentation",
+    subtitle: "6-Page IEEE Conference Paper, Model Specifications & Published Artifacts"
   }
 };
 

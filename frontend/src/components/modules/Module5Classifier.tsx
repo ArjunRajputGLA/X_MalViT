@@ -24,15 +24,17 @@ function getCategoryChipClass(category?: string): string {
     case "Worm":
       return "bg-critical-soft text-critical-ink";
     case "Backdoor":
-      return "bg-high-soft text-high-ink";
     case "Trojan":
       return "bg-high-soft text-high-ink";
+    case "Trojan Downloader":
     case "Downloader":
+    case "Dialer":
       return "bg-accent-soft text-accent";
+    case "PWS":
     case "Rogue":
       return "bg-ok-soft text-ok-ink";
     default:
-      return "bg-accent-soft text-accent";
+      return "bg-surface-2 text-muted";
   }
 }
 
@@ -578,14 +580,14 @@ export const Module5Classifier: React.FC = () => {
 
                   <div className="text-[12px] text-muted pt-3 border-t border-line text-center font-medium">
                     {isOod
-                      ? "Grad-CAM PE attribution was skipped because the upload failed binary texture validation."
-                      : "Red pixels highlight the exact PE hotspot activating the classification decision."}
+                      ? "Grad-CAM attribution was skipped because the upload failed binary texture validation."
+                      : "Red pixels highlight the 16×16 spatial patch tokens driving the penultimate-layer Grad-CAM decision."}
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Reverse-Engineered PE Section Disassembly */}
+            {/* Authentic Patch & Byte-Offset Forensic Attribution */}
             {!isOod && predictionResult.pe_analysis && (
             <motion.div
               initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
@@ -600,23 +602,23 @@ export const Module5Classifier: React.FC = () => {
                 <CardHeader className="pb-4 border-b border-line bg-surface-2">
                   <CardTitle className="flex items-center gap-2">
                     <Layers className="w-5 h-5 text-accent" />
-                    Reverse-Engineered PE Section Disassembly
+                    Patch-Level &amp; Byte-Offset Forensic Attribution
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-5">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                     <div className="p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/40 hover:bg-surface hover:-translate-y-0.5 transition-all duration-200">
                       <div className="text-[12px] text-muted font-medium">
-                        PE section pinpointed
+                        Spatial region band
                       </div>
-                      <div className="text-[20px] leading-[1.2] font-semibold text-ink mt-1.5 font-mono">
+                      <div className="text-[18px] leading-[1.25] font-semibold text-ink mt-1.5 font-mono">
                         {predictionResult.pe_analysis?.section}
                       </div>
                     </div>
 
                     <div className="p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/40 hover:bg-surface hover:-translate-y-0.5 transition-all duration-200">
                       <div className="text-[12px] text-muted font-medium">
-                        Virtual address offset
+                        224×224 matrix byte offset
                       </div>
                       <div className="text-[20px] leading-[1.2] font-semibold text-accent mt-1.5 font-mono tabular-nums">
                         {predictionResult.pe_analysis?.virtual_address}
@@ -625,7 +627,7 @@ export const Module5Classifier: React.FC = () => {
 
                     <div className="p-4 rounded-tile bg-surface-2 border border-line hover:border-accent/40 hover:bg-surface hover:-translate-y-0.5 transition-all duration-200">
                       <div className="text-[12px] text-muted font-medium">
-                        Attention peak weight
+                        Grad-CAM peak weight
                       </div>
                       <div className="text-[20px] leading-[1.2] font-semibold text-ok-ink mt-1.5 font-mono tabular-nums">
                         {predictionResult.pe_analysis?.attention_weight.toFixed(4)}
@@ -634,15 +636,15 @@ export const Module5Classifier: React.FC = () => {
                   </div>
 
                   <div className="p-4 rounded-r-tile rounded-l-chip bg-accent-soft/45 border border-line border-l-4 border-l-accent text-[13px] text-ink leading-[1.5]">
-                    <strong className="text-ink font-semibold">Forensic Attribution:</strong>{" "}
-                    {predictionResult.pe_analysis?.forensic_meaning}. The model isolated this bytecode cluster without requiring dynamic sandbox execution.
+                    <strong className="text-ink font-semibold">Patch Telemetry:</strong>{" "}
+                    {predictionResult.pe_analysis?.forensic_meaning}
                   </div>
 
                   {/* Hex Dump Inspector - Dark token scope */}
                   <div>
                     <div className="flex items-center gap-1.5 text-[13px] font-semibold text-ink mb-2">
                       <Terminal className="w-4 h-4 text-high" />
-                      Disassembly Hex-Dump Inspector (Around Hotspot Offset)
+                      Grayscale Matrix Byte Inspector (Around Peak Patch Offset)
                     </div>
                     <div className="dark hex-terminal p-3 text-[13px] leading-[1.6] font-mono overflow-x-auto text-ink tabular-nums">
                       <div className="min-w-[600px]">

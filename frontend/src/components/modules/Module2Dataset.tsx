@@ -13,11 +13,13 @@ function getCategoryChipClass(category: string): string {
     case "Worm":
       return "bg-critical-soft text-critical-ink";
     case "Backdoor":
-      return "bg-high-soft text-high-ink";
     case "Trojan":
       return "bg-high-soft text-high-ink";
+    case "Trojan Downloader":
     case "Downloader":
+    case "Dialer":
       return "bg-accent-soft text-accent";
+    case "PWS":
     case "Rogue":
       return "bg-ok-soft text-ok-ink";
     default:
@@ -182,9 +184,9 @@ export const Module2Dataset: React.FC = () => {
                 </dd>
               </div>
               <div className="py-3 space-y-1">
-                <dt className="text-muted">Typical Anatomy</dt>
+                <dt className="text-muted">Image Representation</dt>
                 <dd className="text-[12px] text-ink leading-[1.5]">
-                  Repetitive unpacking loops, polymorphic shellcode, and high-entropy encrypted payloads.
+                  Raw executable bytes rendered row-by-row as 8-bit grayscale textures (bilinearly resized to 224×224).
                 </dd>
               </div>
             </dl>

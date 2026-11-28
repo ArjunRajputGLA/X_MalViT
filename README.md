@@ -1,116 +1,79 @@
-# X-MalViT: Explainable Vision Transformer for Static Malware Family Classification
+# X-MalViT: Compact, Explainable, and Overlay-Robust Vision Transformers for Malware Family Classification
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![PyTorch 2.5](https://img.shields.io/badge/PyTorch-2.5%20CUDA-ee4c2c.svg)](https://pytorch.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-CUDA%20%2F%20CPU-ee4c2c.svg)](https://pytorch.org/)
 [![NVIDIA CUDA](https://img.shields.io/badge/NVIDIA-RTX%204050%20(FP16)-76b900.svg)](https://developer.nvidia.com/cuda-zone)
-[![Next.js 15](https://img.shields.io/badge/Next.js-15%20App%20Router-black.svg)](https://nextjs.org/)
-[![shadcn/ui](https://img.shields.io/badge/UI-shadcn%2Fui%20%2B%20Tailwind-38bdf8.svg)](https://ui.shadcn.com/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-High%20Performance%20Async-009688.svg)](https://fastapi.tiangolo.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-App%20Router-black.svg)](https://nextjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-REST%20%2B%20SSE-009688.svg)](https://fastapi.tiangolo.com/)
 
-An end-to-end Explainable AI (XAI) deep learning framework combining a lightweight **Vision Transformer (ViT-Tiny)** with **Gradient-weighted Class Activation Mapping (Grad-CAM)** for static Windows PE malware family classification on the **Malimg benchmark** (25 malware families, 9,339 binaries).
+A lightweight, explainable, and overlay-robust **Vision Transformer (X-MalViT)** paired with **penultimate-token Grad-CAM** for static Windows malware family classification on the **Malimg benchmark** (9,339 grayscale byte images across 25 families in 7 categories).
 
 ---
 
-## 👨‍💻 Authors & Affiliation
+## Authors & Affiliation
 - **Keshav Agrawal** (`keshavagr595@gmail.com`)
 - **Arjun Singh Rajput** (`arjunrajput2k4@gmail.com`)  
 *Department of Computer Science & Engineering, GLA University, Mathura, Uttar Pradesh, India*
 
 ---
 
-## 🏗️ Architecture & Technology Stack
+## Architecture & Key Findings
 
-The project features a decoupled, high-performance architecture:
-- **Frontend Dashboard:** Modern **Next.js (App Router) + TypeScript + Tailwind CSS + shadcn/ui**, providing a cyberpunk glassmorphic Cyber Defense Command Center.
-- **Backend AI Engine:** **FastAPI + Uvicorn**, serving real-time PyTorch tensor inference, Grad-CAM attribution, SSE streaming training updates, and PE section disassembly.
-- **Neural Backbone:** **ViT-Tiny (~5.8M parameters)** tokenizing $224 \times 224$ grayscale opcode textures into $16 \times 16$ non-overlapping patches with multi-head self-attention.
-
----
-
-## 🔬 Key Research Highlights & Novelty
-
-1. **Authentic 2D Byte Textures:** Converts raw Windows PE binaries into 2D grayscale byte matrices ($W \times H$). Contiguous machine opcodes, packed blocks, and encrypted payloads naturally appear as distinctive spatial textures without requiring runtime binary execution in sandboxes.
-2. **Global Self-Attention vs Local CNNs:** Traditional 2D CNNs (e.g., ResNet-18) use restricted local $3 \times 3$ sliding kernels that overlook long-range dependencies across distant PE sections. X-MalViT tokenizes $224 \times 224$ byte textures into 196 non-overlapping $16 \times 16$ patches and leverages 8-head self-attention to correlate optional PE headers with appended overlay payloads.
-3. **Forensic Explainability (Grad-CAM PE Attribution):** Solves the black-box dilemma by projecting visual activation heatmaps back to discrete PE offsets (`.text` code entry stubs, `.rsrc` encrypted blobs, `.data` strings), accompanied by real disassembly hex dumps.
-4. **Adversarial Robustness:** Tested against 50 KB appended overlay zero-padding attacks. While 1D dilated sequence models (e.g., MalConv) drop to ~52% accuracy, X-MalViT maintains **94.2%** accuracy due to 2D spatial texture preservation.
-5. **Edge Efficiency:** Only **~5.8M parameters** (48% smaller than ResNet-18) with an average inference latency of **23.4 ms** on an NVIDIA GeForce RTX 4050 Laptop GPU.
+- **Compact 3-Layer Vision Transformer:** 196 non-overlapping `16×16` patches (`D = 192`, `8` attention heads, `3` encoder layers, `1,443,289` / **1.44M parameters**, **0.32 GMACs** per `224×224` image).
+- **Penultimate-Token Grad-CAM:** Because `[CLS]`-pooled ViTs pass zero gradient to final-layer patch tokens, Grad-CAM is computed on the penultimate encoder layer (`L − 1`), producing a `14×14` patch-level attribution map in one backward pass.
+- **Overlay-Invariant Augmentation (X-MalViT-OA):** Standard ViTs on byte images collapse under end-of-file zero-padding overlays (`98.34%` → `9.10%` at `40%` height). Perturbing the bottom rows (`5%–28%`) of `30%` of each training batch restores **`93.68%`** accuracy under `40%` zero overlays and **`95.29%`** under `40%` random-byte overlays.
+- **Web Dashboard:** **FastAPI** backend serving live PyTorch inference, Grad-CAM heatmaps, local patch byte inspection, and SSE training telemetry, paired with a **Next.js + Tailwind CSS** frontend.
 
 ---
 
-## 📊 Benchmark Comparison vs SOTA Literature
+## Benchmark Summary (Paper Tables II & IV, Stratified 80/20 Malimg Split)
 
-Evaluated on the held-out test split of the Malimg benchmark:
-
-| Model Architecture | Input Representation | Parameters | Accuracy | F1-Score | Inference Latency | Explainability |
+| Model | Input | Params | Accuracy | Weighted F1 | Macro-F1 | Latency (RTX 4050) |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **MalConv (AAAI 2018)** [4] | Raw 1D Byte Sequence | ~45.0 M | 93.8% | 93.5% | 85.0 ms | ❌ None (Black-box) |
-| **ResNet-18 (CNN)** [2] | 224x224 Grayscale Image | 11.2 M | 97.6% | 97.5% | 16.5 ms | ⚠️ Limited local |
-| **MobileNetV2 (Edge)** [10] | 224x224 Grayscale Image | 3.4 M | 96.8% | 96.6% | 11.8 ms | ❌ Low fidelity |
-| **ViT-Tiny (Standard)** [6] | 16x16 Image Patches | 5.7 M | 98.2% | 98.1% | 22.1 ms | ❌ No PE mapping |
-| **X-MalViT (Ours)** | **Patches + Grad-CAM XAI** | **5.8 M** | **98.8%** | **98.7%** | **23.4 ms** | **✅ 100% (PE Mapped)** |
+| **Random forest** | 192 image statistics | — | 99.14% | 99.15% | 98.00% | 0.07 ms (CPU) |
+| **MalConv-style 1-D CNN** | 50,176-byte sequence | 0.26 M | 97.91% | 97.82% | 94.42% | 3.03 ms |
+| **ResNet-18** | 224×224 image | 11.18 M | 98.23% | 97.70% | 94.08% | 3.66 ms |
+| **MobileNetV2** | 224×224 image | 2.26 M | 99.04% | 99.03% | 97.47% | 8.51 ms |
+| **X-MalViT (`ε = 0.05`)** | 196 patches | 1.44 M | 98.34% | 98.34% | 95.90% | 3.47 ms |
+| **X-MalViT (`ε = 0.10`, Ours)** | **196 patches** | **1.44 M** | **98.77%** | **98.77%** | **96.91%** | **3.79 ms** |
+| **X-MalViT-OA (`ε = 0`, Ours)** | 196 patches + OA | 1.44 M | 97.59% | 97.05% | 92.57% | 3.42 ms |
+
+*Note: The repository's saved demo checkpoint (`checkpoints/x_malvit_weights.pt`, Epoch 9) achieves **98.39%** accuracy (`95.74%` Macro-F1) on the stratified validation split and is reported live in `/api/status`.*
 
 ---
 
-## 🚀 Quickstart Guide
+## Quickstart
 
-### Option 1: One-Click Launch (Recommended)
-Double-click [`run_fullstack.bat`](file:///c:/Users/imsto/Desktop/Final%20Year%20Paper/X_MalVit/run_fullstack.bat) or run from PowerShell:
-```cmd
-run_fullstack.bat
-```
-This automatically launches both the **FastAPI backend (port 8000)** and the **Next.js frontend (port 3000)** and opens your browser.
+### Option 1: One-Click Launch (Windows)
+Run [`run_fullstack.bat`](run_fullstack.bat) to start both FastAPI (`http://127.0.0.1:8000`) and Next.js (`http://localhost:3000`).
 
 ### Option 2: Manual Terminal Execution
-
-#### 1. Start FastAPI Backend:
 ```bash
+# Terminal 1 — FastAPI Backend
 python api_server.py
-# Backend running at http://127.0.0.1:8000
-# OpenAPI Swagger documentation available at http://127.0.0.1:8000/docs
-```
 
-#### 2. Start Next.js Frontend:
-```bash
+# Terminal 2 — Next.js Frontend
 cd frontend
 npm run dev
-# Dashboard running at http://localhost:3000
 ```
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
-```
+```text
 X_MalVit/
-├── api_server.py               # High-performance FastAPI REST & SSE Backend
-├── model_engine.py             # PyTorch Vision Transformer & Grad-CAM attribution engine
-├── dataset_generator.py        # Malimg 25-family dataset & synthetic PE texture generator
-├── train.py                    # Standalone PyTorch GPU/CPU training pipeline
+├── api_server.py                 # FastAPI REST & SSE backend
+├── model_engine.py               # PyTorch ViT inference & penultimate-token Grad-CAM
+├── dataset_generator.py          # Malimg 25-family / 7-category loader & fallback generator
+├── train.py                      # PyTorch training pipeline (supports L=3/6, OA, label smoothing)
 ├── checkpoints/
-│   └── x_malvit_weights.pt     # Pre-trained ViT-Tiny weights (98.8% accuracy)
-├── frontend/                   # Modern Next.js 15 + TypeScript + Tailwind + shadcn/ui App
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── layout.tsx      # Cyberpunk theme root layout
-│   │   │   ├── page.tsx        # Main application controller
-│   │   │   └── globals.css     # Glassmorphism & cyber variables
-│   │   ├── components/
-│   │   │   ├── CommandHeader.tsx
-│   │   │   ├── SidebarNav.tsx
-│   │   │   ├── modules/
-│   │   │   │   ├── Module1Executive.tsx   # Executive Briefing & Architecture
-│   │   │   │   ├── Module2Dataset.tsx     # Malimg Dataset Explorer & Histograms
-│   │   │   │   ├── Module3Training.tsx    # RTX 4050 Training Lab
-│   │   │   │   ├── Module4Benchmark.tsx   # SOTA Benchmarks & Confusion Matrix
-│   │   │   │   ├── Module5Classifier.tsx  # Real-Time Grad-CAM Classifier & Disassembly
-│   │   │   │   └── Module6Manuscript.tsx  # IEEE Research Manuscript & Documentation Panel
-│   │   │   └── ui/             # Radix & shadcn reusable primitives
-│   │   └── lib/
-│   └── next.config.ts          # Transparent API proxy to FastAPI (port 8000)
-├── run_fullstack.bat           # 1-Click launcher for both Backend & Frontend
-├── run_backend.bat             # Backend launcher
-├── run_frontend.bat            # Frontend launcher
-├── IEEE_Research_Paper_X_MalViT.pdf
-└── Malware_Research_Project_Guide.pdf
+│   └── x_malvit_weights.pt       # Saved 3-layer X-MalViT checkpoint (Epoch 9, 98.39% val acc)
+├── Papers/
+│   ├── X-MalViT_Research_Paper.pdf
+│   └── Malware_Research_Project_Guide.pdf
+├── frontend/                     # Next.js App Router + TypeScript + Tailwind CSS dashboard
+├── run_fullstack.bat
+├── run_backend.bat
+└── run_frontend.bat
 ```

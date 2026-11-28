@@ -69,36 +69,29 @@ export const Module6Manuscript: React.FC = () => {
 
   const manuscripts = data?.manuscripts || [
     {
-      title: "X-MalViT IEEE Research Paper (7-Page Camera-Ready PDF)",
-      filename: "X-MalViT_IEEE_Research_Paper.pdf",
-      size: "5.58 MB",
-      description: "Complete 7-page double-column IEEE conference manuscript with Table I literature gaps, PyTorch Grad-CAM forensics, ablations, and overlay robustness benchmarks.",
-      url: "/api/documents/X-MalViT_IEEE_Research_Paper.pdf"
-    },
-    {
-      title: "IEEEtran LaTeX Source Package (Overleaf-Ready ZIP)",
-      filename: "X-MalViT_IEEE_Conference_LaTeX_Updated.zip",
-      size: "4.00 MB",
-      description: "Synchronized IEEEtran .tex source, BibTeX references, IEEEtran.cls/.bst, and 300 DPI figures ready for IEEE/Springer submission.",
-      url: "/api/documents/X-MalViT_IEEE_Conference_LaTeX_Updated.zip"
+      title: "X-MalViT Research Paper (6-Page IEEE Conference PDF)",
+      filename: "X-MalViT_Research_Paper.pdf",
+      size: "1.89 MB",
+      description: "Complete 6-page IEEE manuscript covering 3-layer ViT architecture (1.44M params, 0.32 GMACs), Tables I–IV (clean benchmarks, ablations, overlay fragility & OA defense), penultimate-token Grad-CAM, and limitations.",
+      url: "/api/documents/X-MalViT_Research_Paper.pdf"
     },
     {
       title: "Malware Research Project Guide (Executive Blueprint)",
       filename: "Malware_Research_Project_Guide.pdf",
-      size: "373 KB",
-      description: "Executive research roadmap detailing visual tokenization methodology and threat intelligence pipeline.",
+      size: "374 KB",
+      description: "Executive research roadmap detailing visual tokenization methodology and static malware classification pipeline.",
       url: "/api/documents/Malware_Research_Project_Guide.pdf"
     }
   ];
 
   const bibtexCode = `@inproceedings{agrawal2026xmalvit,
-  title={X-MalViT: Explainable Vision Transformer with Grad-CAM for Visual Malware Family Classification},
+  title={X-MalViT: Compact, Explainable, and Overlay-Robust Vision Transformers for Malware Family Classification},
   author={Agrawal, Keshav and Rajput, Arjun Singh},
-  booktitle={IEEE Conference on Cyber Threat Intelligence \\& Machine Learning},
+  booktitle={IEEE Conference Manuscript},
   institution={GLA University, Mathura},
   year={2026},
-  pages={1--7},
-  keywords={Vision Transformer, Static Malware Analysis, Explainable AI, Grad-CAM, Malimg Benchmark}
+  pages={1--6},
+  keywords={Malware classification, vision transformer, explainable AI, Grad-CAM, adversarial robustness, overlay injection, Malimg}
 }`;
 
   const handleCopyBibtex = () => {
@@ -141,7 +134,7 @@ export const Module6Manuscript: React.FC = () => {
           </div>
 
           <h2 className="text-[32px] leading-[1.2] font-semibold text-ink max-w-4xl">
-            X-MalViT: Explainable Vision Transformer with Grad-CAM for Visual Malware Family Classification
+            X-MalViT: Compact, Explainable, and Overlay-Robust Vision Transformers for Malware Family Classification
           </h2>
 
           <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-muted font-medium">
@@ -164,7 +157,7 @@ export const Module6Manuscript: React.FC = () => {
           {/* Key Metrics Strip: Plain figures separated by hairlines */}
           <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-line mt-6 pt-6 border-t border-line">
             <div className="py-2 sm:py-1 sm:px-4 first:sm:pl-2 rounded-chip hover:bg-surface-2/60 transition-colors">
-              <div className="text-[12px] text-muted font-medium">Classification acc</div>
+              <div className="text-[12px] text-muted font-medium">Clean acc / Macro-F1</div>
               <div className="text-[24px] leading-[1.2] font-semibold text-ink mt-1 tabular-nums">
                 <AnimatedNumber value="98.77%" />
               </div>
@@ -176,15 +169,15 @@ export const Module6Manuscript: React.FC = () => {
               </div>
             </div>
             <div className="py-2 sm:py-1 px-0 sm:px-4 rounded-chip hover:bg-surface-2/60 transition-colors">
-              <div className="text-[12px] text-muted font-medium">GPU latency</div>
+              <div className="text-[12px] text-muted font-medium">40% zero-overlay (OA)</div>
               <div className="text-[24px] leading-[1.2] font-semibold text-ink mt-1 tabular-nums">
-                <AnimatedNumber value="3.79 ms" />
+                <AnimatedNumber value="93.68%" />
               </div>
             </div>
             <div className="py-2 sm:py-1 sm:px-4 rounded-chip hover:bg-surface-2/60 transition-colors">
-              <div className="text-[12px] text-muted font-medium">Hardware target</div>
-              <div className="text-[24px] leading-[1.2] font-semibold text-ink mt-1">
-                RTX 4050
+              <div className="text-[12px] text-muted font-medium">GPU latency (RTX 4050)</div>
+              <div className="text-[24px] leading-[1.2] font-semibold text-ink mt-1 tabular-nums">
+                3.4–3.8 ms
               </div>
             </div>
           </div>
@@ -204,11 +197,11 @@ export const Module6Manuscript: React.FC = () => {
             </p>
           </div>
           <span className="text-[12px] font-medium px-2.5 py-1 rounded-chip bg-surface-2 border border-line text-muted tabular-nums flex-shrink-0">
-            3 PDF Documents
+            {manuscripts.length} PDF Documents
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {manuscripts.map((doc: any, idx: number) => {
             const isPrimary = idx === 0;
             return (
@@ -270,9 +263,9 @@ export const Module6Manuscript: React.FC = () => {
               <div className="w-8 h-8 rounded-chip bg-accent-soft text-accent group-hover:bg-accent group-hover:text-on-accent group-hover:scale-105 transition-all duration-200 flex items-center justify-center mb-2.5">
                 <LayoutGrid className="w-4 h-4" />
               </div>
-              <div className="font-semibold text-[14px] text-ink">2D Visual Tokenization</div>
+              <div className="font-semibold text-[14px] text-ink">Compact 3-Layer ViT</div>
               <p className="text-[12px] text-muted mt-1.5 leading-[1.5]">
-                Projects raw byte streams into fixed-width assembly grids, preserving opcode layouts without requiring sandbox dynamic execution.
+                1.44M parameters and 0.32 GMACs per 224×224 image—7.8× smaller than ResNet-18 while reaching 98.77% accuracy and 96.91% Macro-F1.
               </p>
             </div>
 
@@ -280,9 +273,9 @@ export const Module6Manuscript: React.FC = () => {
               <div className="w-8 h-8 rounded-chip bg-accent-soft text-accent group-hover:bg-accent group-hover:text-on-accent group-hover:scale-105 transition-all duration-200 flex items-center justify-center mb-2.5">
                 <Network className="w-4 h-4" />
               </div>
-              <div className="font-semibold text-[14px] text-ink">Multi-Head Self-Attention</div>
+              <div className="font-semibold text-[14px] text-ink">Overlay-Invariant Augmentation</div>
               <p className="text-[12px] text-muted mt-1.5 leading-[1.5]">
-                Correlates non-local byte patches across 8 attention heads, linking initial PE headers with distant resource payloads.
+                Perturbing trailing rows (5%–28%) on 30% of each batch fixes ViT overlay collapse (9.10% &rarr; 93.68% at 40% zero-byte overlay).
               </p>
             </div>
 
@@ -290,9 +283,9 @@ export const Module6Manuscript: React.FC = () => {
               <div className="w-8 h-8 rounded-chip bg-accent-soft text-accent group-hover:bg-accent group-hover:text-on-accent group-hover:scale-105 transition-all duration-200 flex items-center justify-center mb-2.5">
                 <Flame className="w-4 h-4" />
               </div>
-              <div className="font-semibold text-[14px] text-ink">Grad-CAM Attribution</div>
+              <div className="font-semibold text-[14px] text-ink">Penultimate-Token Grad-CAM</div>
               <p className="text-[12px] text-muted mt-1.5 leading-[1.5]">
-                Reverse-maps activation gradients back to discrete PE sections (<span className="font-mono">.text</span>, <span className="font-mono">.rsrc</span>, shellcode jump offsets) for white-box forensic explainability.
+                Computes 14×14 patch-level gradient attribution on layer L&minus;1 in one backward pass, mapped to 224×224 image byte offsets.
               </p>
             </div>
 
@@ -300,9 +293,9 @@ export const Module6Manuscript: React.FC = () => {
               <div className="w-8 h-8 rounded-chip bg-accent-soft text-accent group-hover:bg-accent group-hover:text-on-accent group-hover:scale-105 transition-all duration-200 flex items-center justify-center mb-2.5">
                 <Cpu className="w-4 h-4" />
               </div>
-              <div className="font-semibold text-[14px] text-ink">Edge Hardware Feasibility</div>
+              <div className="font-semibold text-[14px] text-ink">Transparent Benchmarking</div>
               <p className="text-[12px] text-muted mt-1.5 leading-[1.5] tabular-nums">
-                Compact 3-layer ViT-Tiny uses only 1.44M parameters with 3.79 ms GPU latency and FP16 AMP support on an NVIDIA RTX 4050 laptop GPU.
+                Reports 95% Wilson CIs, error counts, and stronger clean baselines (Random Forest 99.14%, MobileNetV2 99.04%) alongside latency and robustness.
               </p>
             </div>
           </div>

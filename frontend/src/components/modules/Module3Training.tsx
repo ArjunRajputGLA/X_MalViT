@@ -127,7 +127,8 @@ function ConvergenceMiniChart({
 }
 
 export const Module3Training: React.FC = () => {
-  const [architecture, setArchitecture] = useState<string>("X-MalViT Tiny (3-Layer Optimal - 1.44M Params)");
+  const [architecture, setArchitecture] = useState<string>("X-MalViT (L=3, P=16, 1.44M - Optimal)");
+  const [labelSmoothing, setLabelSmoothing] = useState<number>(0.1);
   const [deviceMode, setDeviceMode] = useState<"cuda" | "cpu">("cuda");
   const [epochs, setEpochs] = useState<number>(12);
   const [batchSize, setBatchSize] = useState<number>(64);
@@ -233,6 +234,7 @@ export const Module3Training: React.FC = () => {
       lr: learningRate,
       samples_per_family: samplesPerFam,
       architecture: architecture,
+      label_smoothing: labelSmoothing,
       device: deviceMode,
     });
 
@@ -411,7 +413,7 @@ export const Module3Training: React.FC = () => {
             {/* Target Neural Architecture */}
             <div>
               <label className="text-[13px] font-medium text-ink block mb-1.5">
-                Target Neural Architecture
+                X-MalViT Variant (Paper Table III)
               </label>
               <div className="relative">
                 <select
@@ -420,18 +422,37 @@ export const Module3Training: React.FC = () => {
                   disabled={isTraining}
                   className="appearance-none h-10 w-full bg-surface-2 border border-line hover:border-accent/50 hover:bg-surface rounded-chip pl-3 pr-9 text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-colors font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option value="X-MalViT Tiny (3-Layer Optimal - 1.44M Params)">
-                    X-MalViT Tiny (3-Layer Optimal - 1.44M Params)
+                  <option value="X-MalViT (L=3, P=16, 1.44M - Optimal)">
+                    X-MalViT (L=3, P=16 — 1.44M Params, Default)
                   </option>
-                  <option value="ResNet-18 (CNN Baseline - 11.18M Params)">
-                    ResNet-18 (CNN Baseline - 11.18M Params)
+                  <option value="X-MalViT-OA (L=3, P=16, Overlay-Augmented - 1.44M)">
+                    X-MalViT-OA (L=3 + Overlay Augmentation — 1.44M Params)
                   </option>
-                  <option value="MobileNetV2 (Edge Baseline - 2.26M Params)">
-                    MobileNetV2 (Edge Baseline - 2.26M Params)
+                  <option value="X-MalViT (L=6, P=16, 2.78M)">
+                    X-MalViT (L=6, P=16 — 2.78M Params)
                   </option>
                 </select>
                 <ChevronDown className="w-4 h-4 text-muted pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
               </div>
+            </div>
+
+            {/* Label Smoothing Selector */}
+            <div>
+              <label className="text-[13px] font-medium text-ink block mb-1.5">
+                Label Smoothing (ε)
+              </label>
+              <SegmentedControl
+                ariaLabel="Label Smoothing"
+                layoutId="seg-label-smoothing"
+                value={labelSmoothing}
+                onChange={setLabelSmoothing}
+                disabled={isTraining}
+                className="tabular-nums"
+                options={[0.1, 0.05, 0].map((eps) => ({
+                  value: eps,
+                  label: eps.toFixed(2),
+                }))}
+              />
             </div>
 
             {/* Compute Accelerator Toggle (GPU vs CPU) */}
@@ -747,7 +768,7 @@ export const Module3Training: React.FC = () => {
                 <div className="py-2.5 last:pb-0 flex items-center justify-between gap-3 px-2 -mx-2 rounded-chip hover:bg-surface-2/80 transition-colors">
                   <dt className="text-muted">Loss Regularization</dt>
                   <dd className="font-mono text-ink font-medium tabular-nums text-right">
-                    Label Smoothing (ε = 0.1)
+                    Label Smoothing (ε = {labelSmoothing.toFixed(2)})
                   </dd>
                 </div>
               </dl>

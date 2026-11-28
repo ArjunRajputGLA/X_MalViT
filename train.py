@@ -223,8 +223,41 @@ class XMalViTModel(nn.Module):
         return logits
 
 
+def _compute_f1_metrics(y_true, y_pred, num_classes):
+    """Computes Macro-F1 and Weighted-F1 using NumPy without external dependencies."""
+    cm = np.zeros((num_classes, num_classes), dtype=np.int64)
+    for t, p in zip(y_true, y_pred):
+        cm[t, p] += 1
+    supports = cm.sum(axis=1)
+    f1s = []
+    for c in range(num_classes):
+        tp = cm[c, c]
+        fp = cm[:, c].sum() - tp
+        fn = cm[c, :].sum() - tp
+        denom = 2 * tp + fp + fn
+        f1s.append((2.0 * tp / denom) if denom > 0 else 0.0)
+    f1_arr = np.array(f1s, dtype=np.float64)
+    active = supports > 0
+    macro_f1 = float(f1_arr[active].mean()) if active.any() else 0.0
+    weighted_f1 = float(np.average(f1_arr, weights=supports)) if supports.sum() > 0 else 0.0
+    return macro_f1, weighted_f1
+
+
 # ==================== TRAINING ENGINE ====================
-def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, device=None, checkpoint_dir="checkpoints", callback=None, log_fn=None, stop_event=None):
+def train_model(
+    epochs=6,
+    batch_size=32,
+    lr=3e-4,
+    num_samples_per_family=25,
+    device=None,
+    checkpoint_dir="checkpoints",
+    callback=None,
+    log_fn=None,
+    stop_event=None,
+    num_layers=3,
+    overlay_aug=False,
+    label_smoothing=0.1,
+):
     log = log_fn or (lambda *args, **kwargs: print(*args, **kwargs, flush=True))
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -236,7 +269,7 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
     log("="*65)
     log(f"[ENGINE] X-MalViT Real PyTorch Training Pipeline Initialized")
     log(f"[DEVICE] Accelerator: {device} [{gpu_name}]")
-    log(f"[HYPERPARAMS] Epochs={epochs}, BatchSize={batch_size}, LR={lr}")
+    log(f"[HYPERPARAMS] Epochs={epochs}, BatchSize={batch_size}, LR={lr}, Layers={num_layers}, LabelSmooth={label_smoothing}, OA={overlay_aug}")
     if is_cuda:
         total_vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
         log(f"[HARDWARE] Dedicated VRAM: {total_vram_gb:.2f} GB | FP16 Mixed Precision (AMP): ENABLED")
@@ -273,12 +306,13 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
     train_size, val_size = len(train_set), len(val_set)
 
     log(f"[DATASET] Stratified 80/20 split configured: {train_size} Training samples, {val_size} Validation samples.")
+    model = XMalViTModel(num_classes=len(MALWARE_FAMILIES), num_layers=num_layers).to(device)
+    param_m = sum(p.numel() for p in model.parameters()) / 1e6
+    log(f"[MODEL] Constructing X-MalViT Model ({num_layers}-Layer ViT: 196 Patches, 8 Attention Heads, {param_m:.2f}M Params)...")
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, drop_last=False, pin_memory=is_cuda)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False, pin_memory=is_cuda)
 
-    log(f"[MODEL] Constructing X-MalViT Model (ViT-Tiny: 196 Patches, 8 Attention Heads, 3 Layers, 1.44M Params)...")
-    model = XMalViTModel(num_classes=len(MALWARE_FAMILIES), num_layers=3).to(device)
-    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+    criterion = nn.CrossEntropyLoss(label_smoothing=float(label_smoothing))
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
     scaler = torch.amp.GradScaler('cuda', enabled=is_cuda)
@@ -311,6 +345,27 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
             images, targets = images.to(device, non_blocking=True), targets.to(device, non_blocking=True)
             if images.dtype == torch.uint8:
                 images = (images.float() - 127.5) / 127.5
+
+            # Overlay-Invariant Augmentation (Section III-E): 30% of batch, rho ~ U[0.05, 0.28]
+            if overlay_aug and images.shape[0] > 0:
+                n_aug = max(1, int(round(0.30 * images.shape[0])))
+                perm = torch.randperm(images.shape[0], device=device)[:n_aug]
+                half = n_aug // 2
+                img_h = images.shape[2]
+                for idx_pos, b_i in enumerate(perm):
+                    rho = float(np.random.uniform(0.05, 0.28))
+                    rows = max(1, int(np.ceil(img_h * rho)))
+                    if idx_pos < half:
+                        # Zero bytes (0x00 -> -1.0 after normalization)
+                        images[b_i, :, img_h - rows:, :] = -1.0
+                    else:
+                        # Uniform random bytes in [-1.0, 1.0]
+                        images[b_i, :, img_h - rows:, :] = torch.empty(
+                            (images.shape[1], rows, images.shape[3]),
+                            device=device,
+                            dtype=images.dtype,
+                        ).uniform_(-1.0, 1.0)
+
             optimizer.zero_grad()
 
             with torch.amp.autocast('cuda', enabled=is_cuda):
@@ -343,6 +398,7 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
         val_loss = 0.0
         val_correct = 0
         val_total = 0
+        val_y_true, val_y_pred = [], []
         with torch.no_grad():
             for images, targets in val_loader:
                 if stop_event and stop_event.is_set():
@@ -357,12 +413,15 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
                 _, predicted = outputs.max(1)
                 val_total += targets.size(0)
                 val_correct += predicted.eq(targets).sum().item()
+                val_y_true.extend(targets.cpu().numpy().tolist())
+                val_y_pred.extend(predicted.cpu().numpy().tolist())
 
         if stop_event and stop_event.is_set():
             break
 
         val_loss = val_loss / max(1, val_total)
         val_acc = val_correct / max(1, val_total)
+        val_macro_f1, val_weighted_f1 = _compute_f1_metrics(val_y_true, val_y_pred, len(MALWARE_FAMILIES))
         scheduler.step()
         epoch_duration = time.time() - epoch_start
 
@@ -373,7 +432,7 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
         history["val_acc"].append(val_acc * 100)
         history["vram_mb"].append(vram_mb)
 
-        epoch_log_str = f"Epoch [{epoch:02d}/{epochs:02d}] ({epoch_duration:.1f}s) | Train Loss: {epoch_loss:.4f} | Train Acc: {epoch_acc*100:.2f}% | Val Loss: {val_loss:.4f} | Val Acc: {val_acc*100:.2f}%"
+        epoch_log_str = f"Epoch [{epoch:02d}/{epochs:02d}] ({epoch_duration:.1f}s) | Train Loss: {epoch_loss:.4f} | Train Acc: {epoch_acc*100:.2f}% | Val Loss: {val_loss:.4f} | Val Acc: {val_acc*100:.2f}% | Macro-F1: {val_macro_f1*100:.2f}%"
         if is_cuda:
             epoch_log_str += f" | VRAM: {vram_mb:.1f} MB"
         log(f"[EPOCH {epoch:02d}/{epochs:02d} DONE] {epoch_log_str}")
@@ -385,6 +444,11 @@ def train_model(epochs=6, batch_size=32, lr=3e-4, num_samples_per_family=25, dev
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'accuracy': val_acc,
+                'macro_f1': val_macro_f1,
+                'weighted_f1': val_weighted_f1,
+                'num_layers': num_layers,
+                'overlay_aug': overlay_aug,
+                'label_smoothing': float(label_smoothing),
                 'classes': MALWARE_FAMILIES
             }, checkpoint_path)
             log(f"[CHECKPOINT] Peak accuracy ({val_acc*100:.2f}%) achieved -> Saved to {checkpoint_path}")
@@ -406,7 +470,19 @@ if __name__ == "__main__":
     parser.add_argument("--batch-size", type=int, default=32, help="Batch size")
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
     parser.add_argument("--samples", type=int, default=25, help="Samples per family")
+    parser.add_argument("--layers", type=int, default=3, help="Transformer encoder layers (3 or 6)")
+    parser.add_argument("--overlay-aug", action="store_true", help="Enable Overlay-Invariant Augmentation (OA)")
+    parser.add_argument("--label-smoothing", type=float, default=0.1, help="Label smoothing epsilon")
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu", help="Device (cuda/cpu)")
     args = parser.parse_args()
 
-    train_model(epochs=args.epochs, batch_size=args.batch_size, lr=args.lr, num_samples_per_family=args.samples, device=args.device)
+    train_model(
+        epochs=args.epochs,
+        batch_size=args.batch_size,
+        lr=args.lr,
+        num_samples_per_family=args.samples,
+        device=args.device,
+        num_layers=args.layers,
+        overlay_aug=args.overlay_aug,
+        label_smoothing=args.label_smoothing,
+    )

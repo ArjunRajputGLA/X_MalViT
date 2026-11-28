@@ -56,7 +56,7 @@ const PIPELINE_STAGES = [
   {
     step: 5,
     title: "Grad-CAM XAI",
-    desc: "Reverse-mapped PE offsets",
+    desc: "Patch & byte-offset attribution",
     icon: Flame,
   },
 ];
@@ -67,12 +67,12 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
 
   useEffect(() => {
     fetch("/api/dataset/overview")
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((d) => setOverview(d))
       .catch((err) => console.error("Error loading overview:", err));
 
     fetch("/api/status")
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((d) => setSystemStatus(d))
       .catch((err) => console.error("Error loading status:", err));
   }, []);
@@ -83,9 +83,18 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
     .sort((a: any, b: any) => b.samples - a.samples)
     .slice(0, 5);
 
-  const accuracyFormatted = systemStatus?.checkpoint_accuracy 
-    ? `${(systemStatus.checkpoint_accuracy * 100).toFixed(1)}%`
-    : "98.8%";
+  const accuracyFormatted =
+    typeof systemStatus?.checkpoint_accuracy === "number"
+      ? `${(systemStatus.checkpoint_accuracy * 100).toFixed(2)}%`
+      : "98.77%";
+  const accuracyPctValue =
+    typeof systemStatus?.checkpoint_accuracy === "number"
+      ? `${(systemStatus.checkpoint_accuracy * 100).toFixed(1)}%`
+      : "98.8%";
+  const accuracySubtext =
+    typeof systemStatus?.checkpoint_accuracy === "number"
+      ? `Live checkpoint${systemStatus.checkpoint_epoch ? ` (Ep ${systemStatus.checkpoint_epoch})` : ""} • Paper: 98.77%`
+      : "+2.83% Macro-F1 over ResNet-18 (Paper)";
 
   return (
     <div className="space-y-6">
@@ -94,7 +103,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
         {/* Card 1: Accuracy */}
         <Card className="group p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between text-muted text-[13px] font-medium">
-            <span>Overall Accuracy</span>
+            <span>{typeof systemStatus?.checkpoint_accuracy === "number" ? "Live Checkpoint Accuracy" : "Paper Optimal Accuracy"}</span>
             <TrendingUp className="w-4 h-4 text-muted group-hover:text-accent transition-colors flex-shrink-0" />
           </div>
           <div className="mt-3">
@@ -102,7 +111,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
               <AnimatedNumber value={accuracyFormatted} />
             </div>
             <div className="text-[13px] font-medium text-ok-ink mt-1.5 flex items-center gap-1 tabular-nums">
-              <span className="font-semibold">+2.83% Macro-F1</span> over ResNet-18
+              <span>{accuracySubtext}</span>
             </div>
           </div>
         </Card>
@@ -118,7 +127,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
               <AnimatedNumber value={overview?.total_families || 25} />
             </div>
             <div className="text-[13px] text-muted mt-1.5 tabular-nums">
-              <AnimatedNumber value={totalSamples} useGrouping /> authenticated binaries
+              <AnimatedNumber value={totalSamples} useGrouping /> Malimg binaries (7 categories)
             </div>
           </div>
         </Card>
@@ -126,7 +135,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
         {/* Card 3: Inference Latency */}
         <Card className="group p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between text-muted text-[13px] font-medium">
-            <span>CUDA Kernel Latency</span>
+            <span>Paper GPU Latency</span>
             <Zap className="w-4 h-4 text-muted group-hover:text-accent transition-colors flex-shrink-0" />
           </div>
           <div className="mt-3">
@@ -134,7 +143,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
               <AnimatedNumber value="3.79 ms" />
             </div>
             <div className="text-[13px] text-muted mt-1.5 tabular-nums">
-              Real-time static triage (&lt;5 ms GPU)
+              3.4–3.8 ms on RTX 4050 (Paper Table II)
             </div>
           </div>
         </Card>
@@ -147,10 +156,10 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
           </div>
           <div className="mt-3">
             <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">
-              <AnimatedNumber value={systemStatus?.parameters ? systemStatus.parameters.replace(" Million", " M") : "2.78 M"} />
+              <AnimatedNumber value={systemStatus?.parameters ? systemStatus.parameters.replace(" Million", " M") : "1.44 M"} />
             </div>
             <div className="text-[13px] text-muted mt-1.5 tabular-nums">
-              ViT-Tiny (1.44M optimal, 14x14 patches)
+              {systemStatus?.num_layers || 3}-layer ViT • 0.32 GMACs (14×14 patches)
             </div>
           </div>
         </Card>
@@ -337,10 +346,10 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
             </div>
             <div className="max-w-[72ch] text-[15px] text-muted leading-[1.65] space-y-3">
               <p>
-                <strong className="text-ink font-semibold">Abstract:</strong> Static signature-based antivirus engines rely on cryptographic hash matching (MD5, SHA-256), which fails against modern polymorphic and metamorphic malware. We propose <strong className="text-ink font-semibold">X-MalViT</strong>, a lightweight Vision Transformer architecture coupled with Gradient-weighted Class Activation Mapping (Grad-CAM) visual explainability for static malware family classification.
+                <strong className="text-ink font-semibold">Abstract:</strong> Image-based malware classification renders the bytes of an executable as a grayscale image and recognizes families from its texture. We present <strong className="text-ink font-semibold">X-MalViT</strong>, a compact, explainable, and overlay-hardened Vision Transformer with three encoder layers (<strong className="text-ink font-semibold tabular-nums">1.44M parameters</strong>, <strong className="text-ink font-semibold tabular-nums">0.32 GMACs</strong> per 224×224 image). On a stratified 80/20 split of the 9,339-image Malimg benchmark (25 families), it achieves <strong className="text-ink font-semibold tabular-nums">98.77% accuracy</strong> and <strong className="text-ink font-semibold tabular-nums">96.91% Macro-F1</strong> at <strong className="text-ink font-semibold tabular-nums">3.4–3.8 ms</strong> per image on an RTX 4050 laptop GPU.
               </p>
               <p>
-                Executable binaries from the benchmark Malimg dataset (9,339 samples across 25 families) are converted into two-dimensional grayscale byte matrices, tokenized into non-overlapping patches, and analyzed with multi-head self-attention. Unlike black-box models, X-MalViT projects penultimate-token Grad-CAM heatmaps back to discrete PE file sections (<code className="text-ink bg-surface-2 px-1.5 py-0.5 rounded-chip border border-line font-mono text-[13px]">.text</code>, <code className="text-ink bg-surface-2 px-1.5 py-0.5 rounded-chip border border-line font-mono text-[13px]">.rsrc</code>, unpacking stubs). Trained locally using FP16 mixed precision on an NVIDIA RTX 4050 GPU, our 3-layer X-MalViT converges in under 2 minutes with <strong className="text-ink font-semibold tabular-nums">98.77% accuracy</strong>, <strong className="text-ink font-semibold tabular-nums">96.91% Macro-F1</strong>, and an inference latency of <strong className="text-ink font-semibold tabular-nums">3.79 ms per binary</strong>.
+                Because a <code className="text-ink bg-surface-2 px-1.5 py-0.5 rounded-chip border border-line font-mono text-[13px]">[CLS]</code>-pooled ViT passes zero gradient to final-layer patch tokens, we compute Grad-CAM on the penultimate encoder layer to produce a 14×14 patch-level attribution map in a single backward pass. Furthermore, unaugmented ViTs collapse from 98.34% to <strong className="text-ink font-semibold tabular-nums">9.10%</strong> under 40% end-of-file zero-byte overlays; <strong className="text-ink font-semibold">Overlay-Invariant Augmentation (X-MalViT-OA)</strong> restores <strong className="text-ink font-semibold tabular-nums">93.68%</strong> accuracy under zero overlays and <strong className="text-ink font-semibold tabular-nums">95.29%</strong> under random-byte overlays.
               </p>
             </div>
           </Card>
@@ -351,21 +360,27 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
           {/* Classification Performance Widget */}
           <Card className="p-6">
             <div className="text-[13px] font-medium text-muted mb-1">
-              Model Diagnostic Performance
+              {typeof systemStatus?.checkpoint_accuracy === "number" ? "Active Checkpoint Accuracy" : "Paper Optimal Accuracy"}
             </div>
             <div className="text-[40px] leading-[1.2] font-semibold text-ink tabular-nums">
               <AnimatedNumber value={accuracyFormatted} />
             </div>
             
-            <AnimatedBar percentage={accuracyFormatted} className="mt-3 mb-4" />
+            <AnimatedBar percentage={accuracyPctValue} className="mt-3 mb-4" />
 
             {/* 3-Column Row Split by Hairlines */}
             <div className="grid grid-cols-3 divide-x divide-line text-center pt-4 border-t border-line">
               <div className="px-2">
                 <div className="text-ink font-semibold text-[16px] leading-[1.2] tabular-nums">
-                  <AnimatedNumber value="96.9%" />
+                  <AnimatedNumber value={
+                    typeof systemStatus?.checkpoint_macro_f1 === "number"
+                      ? `${(systemStatus.checkpoint_macro_f1 * 100).toFixed(1)}%`
+                      : "96.9%"
+                  } />
                 </div>
-                <div className="text-[12px] text-muted font-medium mt-1">Macro-F1</div>
+                <div className="text-[12px] text-muted font-medium mt-1">
+                  {typeof systemStatus?.checkpoint_macro_f1 === "number" ? "Macro-F1" : "Paper Macro-F1"}
+                </div>
               </div>
               <div className="px-2">
                 <div className="text-ink font-semibold text-[16px] leading-[1.2] tabular-nums">
@@ -375,7 +390,7 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
               </div>
               <div className="px-2">
                 <div className="text-ink font-semibold text-[16px] leading-[1.2] tabular-nums">
-                  <AnimatedNumber value={systemStatus?.parameters ? systemStatus.parameters.replace(" Million", "M") : "2.78M"} />
+                  <AnimatedNumber value={systemStatus?.parameters ? systemStatus.parameters.replace(" Million", "M") : "1.44M"} />
                 </div>
                 <div className="text-[12px] text-muted font-medium mt-1">Weights</div>
               </div>
@@ -447,7 +462,9 @@ export const Module1Executive: React.FC<Module1ExecutiveProps> = ({ onNavigate }
               </div>
               <div className="py-2.5 flex items-center justify-between gap-3">
                 <dt className="text-muted">Encoder Layers</dt>
-                <dd className="font-mono text-ink font-medium text-right tabular-nums">6 Transformer Blocks</dd>
+                <dd className="font-mono text-ink font-medium text-right tabular-nums">
+                  {systemStatus?.num_layers ?? 3} Transformer Blocks
+                </dd>
               </div>
               <div className="py-2.5 last:pb-0 flex items-center justify-between gap-3">
                 <dt className="text-muted">Input Format</dt>
